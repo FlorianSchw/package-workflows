@@ -14,10 +14,6 @@ on:
         required: false
         type: string
         default: 'v1'
-    secrets:
-      GH_TOKEN:
-        description: 'Token semantic-release uses to push commits/tags.'
-        required: true
 
 jobs:
   release:
@@ -27,8 +23,8 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v6
         with:
+          ref: main
           fetch-depth: 0
-          # token: ${{ secrets.MEP_Package_Update }}
 
       - name: Checkout shared release config
         uses: actions/checkout@v6
@@ -59,7 +55,7 @@ jobs:
 
       - name: Release
         env:
-          GITHUB_TOKEN: ${{ secrets.GH_TOKEN }}
+          GITHUB_TOKEN: ${{ secrets.GitHub_TOKEN }}
         run: |
           if [ -f .releaserc.json ]; then
             npx semantic-release
