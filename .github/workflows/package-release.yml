@@ -3,6 +3,21 @@
 name: Release
 on:
   workflow_call:
+    inputs:
+      config-repo:
+        description: 'owner/repo of the shared workflow repo holding the base .releaserc.json'
+        required: false
+        type: string
+        default: 'FlorianSchw/package-workflows'
+      config-ref:
+        description: 'Tag/branch of the shared workflow repo to pull release config from'
+        required: false
+        type: string
+        default: 'v1'
+    secrets:
+      GH_TOKEN:
+        description: 'Token semantic-release uses to push commits/tags.'
+        required: true
 
 jobs:
   release:
@@ -14,6 +29,14 @@ jobs:
         with:
           fetch-depth: 0
           # token: ${{ secrets.MEP_Package_Update }}
+
+      - name: Checkout shared release config
+        uses: actions/checkout@v6
+        with:
+          repository: ${{ inputs.config-repo }}
+          ref: ${{ inputs.config-ref }}
+          path: .shared-config
+
       - name: setup r environment
         uses: r-lib/actions/setup-r@v2
 
@@ -36,6 +59,11 @@ jobs:
 
       - name: Release
         env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: npx semantic-release
+          GITHUB_TOKEN: ${{ secrets.GH_TOKEN }}
+        run: |
+          if [ -f .releaserc.json ]; then
+            npx semantic-release
+          else
+            npx semantic-release --extends ./.shared-config/.releaserc.json
+          fi
 
