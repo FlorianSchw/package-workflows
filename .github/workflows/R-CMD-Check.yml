@@ -1,0 +1,105 @@
+name: R-CMD-check
+
+on:
+  workflow_call:
+    inputs:
+      os-list:
+        description: 'JSON array of runner OSes to test on'
+        required: false
+        type: string
+        default: '["ubuntu-latest"]'
+      r-version-list:
+        description: 'JSON array of R versions to test'
+        required: false
+        type: string
+        default: '["release", "oldrel-1", "oldrel-2", "oldrel-3", "oldrel-4"]'
+      run-codecov:
+        description: 'Upload coverage to Codecov (runs once, on the first matrix cell)'
+        required: false
+        type: boolean
+        default: true
+      extra-apt-packages:
+        description: 'Space-separated apt packages to install before check (e.g. "r-cran-curl"), leave empty if none needed'
+        required: false
+        type: string
+        default: ''
+      extra-r-packages:
+        description: 'Additional R packages needed for check/tests, comma-separated (e.g. "httptest, xml2")'
+        required: false
+        type: string
+        default: ''
+    secrets:
+      CODECOV_TOKEN:
+        description: 'Required for private repos; optional for public repos'
+        required: false
+
+jobs:
+  R-CMD-check:
+    runs-on: ${{ matrix.os }}
+    name: ${{ matrix.os }} (${{ matrix.r-version }})
+
+    strategy:
+      fail-fast: false
+      matrix:
+        os: ${{ fromJSON(inputs.os-list) }}
+        r-version: ${{ fromJSON(inputs.r-version-list) }}
+
+    env:
+      GITHUB_PAT: ${{ secrets.GITHUB_TOKEN }}
+      R_KEEP_PKG_SOURCE: yes
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: r-lib/actions/setup-pandoc@v2
+
+      - uses: r-lib/actions/setup-r@v2
+        with:
+          r-version: ${{ matrix.r-version }}
+          use-public-rspm: true
+
+      - name: Install extra apt packages
+        if: ${{ inputs.extra-apt-packages != '' }}
+        run: sudo apt install ${{ inputs.extra-apt-packages }}
+
+      - name: Format extra R package list
+        id: extra_r_packages
+        if: ${{ inputs.extra-r-packages != '' }}
+        run: |
+          formatted=$(echo "${{ inputs.extra-r-packages }}" \
+            | tr ',' '\n' \
+            | sed 's/^[[:space:]]*//;s/[[:space:]]*$//' \
+            | sed '/^$/d' \
+            | sed 's/^/any::/' \
+            | paste -sd, -)
+          echo "list=$formatted" >> "$GITHUB_OUTPUT"
+
+      - uses: r-lib/actions/setup-r-dependencies@v2
+        with:
+          extra-packages: |
+            any::rcmdcheck
+            any::covr
+            ${{ steps.extra_r_packages.outputs.list }}
+          needs: check
+
+      - uses: r-lib/actions/check-r-package@v2
+        with:
+          upload-snapshots: true
+
+      - name: Show testthat output
+        if: always()
+        run: find ${{ runner.temp }}/package -name 'testthat.Rout*' -exec cat '{}' \; || true
+        shell: bash
+
+      - name: Test coverage
+        if: ${{ inputs.run-codecov && matrix.os == fromJSON(inputs.os-list)[0] && matrix.r-version == fromJSON(inputs.r-version-list)[0] }}
+        shell: Rscript {0}
+        env:
+          CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
+        run: |
+          covr::codecov(
+            quiet = FALSE,
+            clean = FALSE,
+            token = Sys.getenv("CODECOV_TOKEN"),
+            install_path = file.path(Sys.getenv("RUNNER_TEMP"), "package")
+          )
