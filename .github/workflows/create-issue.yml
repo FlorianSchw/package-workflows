@@ -1,0 +1,47 @@
+name: Create issue on test failure
+on:
+  workflow_call:
+    inputs:
+      pr_author:
+        required: true
+        type: string
+      run_url:
+        required: true
+        type: string
+      template:
+        required: false
+        type: string
+        default: .github/pr-issue-template.md
+      extra_assignees:
+        required: false
+        type: string
+        default: ''
+
+permissions:
+  contents: read
+  issues: write
+
+jobs:
+  create_issue:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          repository: FlorianSchw/package-workflows
+          ref: main
+
+      - name: Build assignee list
+        id: all_assignees
+        run: |
+          combined="${{ inputs.pr_author }},${{ inputs.extra_assignees }}"
+          deduped=$(echo "$combined" | tr ',' '\n' | sed '/^\s*$/d' | sed 's/^ *//;s/ *$//' | sort -u | paste -sd ',' -)
+          echo "list=$deduped" >> "$GITHUB_OUTPUT"
+
+      - uses: JasonEtco/create-an-issue@v2
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          PR_AUTHOR: ${{ inputs.pr_author }}
+          RUN_URL: ${{ inputs.run_url }}
+        with:
+          filename: ${{ inputs.template }}
+          assignees: ${{ steps.all_assignees.outputs.list }}
