@@ -55,6 +55,9 @@ files <- readLines("files_to_check.txt")
 files <- files[nzchar(files)]
 
 # --- Parsing -----------------------------------------------------------
+# Tolerates blank line(s) between an existing roxygen block and the function
+# definition (a common formatting habit) without losing them: the gap is
+# tracked separately and preserved verbatim on rewrite.
 
 parse_r_file <- function(path) {
   lines <- readLines(path, warn = FALSE)
@@ -95,18 +98,38 @@ parse_r_file <- function(path) {
   params <- trimws(vapply(split_args(args_str), function(a) sub("=.*$", "", a), character(1)))
   params <- params[nzchar(params)]
 
-  rox_end <- fn_start - 1
+  # Walk upward past any blank line(s) directly above the function first,
+  # so a doc block separated by whitespace is still found.
+  gap_end <- fn_start - 1
+  while (gap_end >= 1 && !nzchar(trimws(lines[gap_end]))) gap_end <- gap_end - 1
+
+  rox_end <- gap_end
   rox_start <- rox_end
   while (rox_start >= 1 && grepl("^\\s*#'", lines[rox_start])) rox_start <- rox_start - 1
   rox_start <- rox_start + 1
   has_roxygen <- rox_start <= rox_end
   roxygen_lines <- if (has_roxygen) lines[rox_start:rox_end] else character(0)
 
+  # pre_end: last line of "everything before the doc block" (or before the
+  # function, if there's no doc block at all).
+  pre_end <- if (has_roxygen) rox_start - 1 else fn_start - 1
+  # gap_lines: blank line(s) between the doc block and the function, kept
+  # verbatim on rewrite. Empty when there's no doc block (nothing to skip
+  # over) or no gap.
+  gap_lines <- if (has_roxygen && (rox_end + 1) <= (fn_start - 1)) {
+    lines[(rox_end + 1):(fn_start - 1)]
+  } else {
+    character(0)
+  }
+
   list(
     lines = lines, fn_start = fn_start, fn_header = header_text, params = params,
+    has_roxygen = has_roxygen,
     roxygen_start = if (has_roxygen) rox_start else fn_start,
     roxygen_end = if (has_roxygen) rox_end else fn_start - 1,
-    roxygen_lines = roxygen_lines
+    roxygen_lines = roxygen_lines,
+    pre_end = pre_end,
+    gap_lines = gap_lines
   )
 }
 
@@ -235,7 +258,7 @@ role_guidance <- function(datashield, ds_type, matched_group, example_env) {
 # --- Ask Claude to REVIEW, not just fill gaps -----------------------------
 # Uses a forced tool call rather than free-text JSON: this guarantees a
 # structured, already-parsed result with no risk of stray prose breaking
-# JSON parsing (the model can no longer prepend "Looking at this function...").
+# JSON parsing.
 
 ask_claude <- function(parsed, profile, role_text) {
   existing_block <- if (length(parsed$roxygen_lines) > 0) {
@@ -332,21 +355,33 @@ ask_claude <- function(parsed, profile, role_text) {
 write_in_place <- function(path, parsed, new_block) {
   lines <- parsed$lines
   new_lines <- strsplit(new_block, "\n")[[1]]
-  before <- if (parsed$roxygen_start > 1) lines[seq_len(parsed$roxygen_start - 1)] else character(0)
+  before <- if (parsed$pre_end >= 1) lines[seq_len(parsed$pre_end)] else character(0)
   after  <- lines[seq(parsed$fn_start, length(lines))]
-  writeLines(c(before, new_lines, after), path)
+  writeLines(c(before, new_lines, parsed$gap_lines, after), path)
 }
 
 post_suggestion_comment <- function(path, parsed, new_block, changed_tags) {
-  start_line <- parsed$roxygen_start
-  end_line   <- parsed$fn_start - 1
-  if (end_line < start_line) end_line <- start_line
-
   intro <- if (length(changed_tags) > 0) {
     sprintf("Updated: %s\n\n", paste(unlist(changed_tags), collapse = ", "))
   } else ""
 
-  body <- paste0(intro, "```suggestion\n", new_block, "\n```")
+  if (parsed$has_roxygen) {
+    # Existing doc block: replace exactly those lines. The gap and the
+    # function header are outside this range and stay untouched.
+    start_line <- parsed$roxygen_start
+    end_line   <- parsed$roxygen_end
+    body <- paste0(intro, "```suggestion\n", new_block, "\n```")
+  } else {
+    # No existing doc block: there is no line range to attach a pure
+    # insertion to, so the suggestion targets the function header line
+    # itself and its replacement text reproduces that header verbatim,
+    # after the new roxygen block, so nothing is lost.
+    start_line <- parsed$fn_start
+    end_line   <- parsed$fn_start
+    body <- paste0(
+      intro, "```suggestion\n", new_block, "\n", parsed$fn_header, "\n```"
+    )
+  }
 
   req <- request(sprintf("https://api.github.com/repos/%s/pulls/%s/comments", repo, pr_number)) |>
     req_headers("Authorization" = paste("Bearer", gh_token), "Accept" = "application/vnd.github+json") |>
