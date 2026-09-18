@@ -98,8 +98,6 @@ parse_r_file <- function(path) {
   params <- trimws(vapply(split_args(args_str), function(a) sub("=.*$", "", a), character(1)))
   params <- params[nzchar(params)]
 
-  # Walk upward past any blank line(s) directly above the function first,
-  # so a doc block separated by whitespace is still found.
   gap_end <- fn_start - 1
   while (gap_end >= 1 && !nzchar(trimws(lines[gap_end]))) gap_end <- gap_end - 1
 
@@ -110,12 +108,7 @@ parse_r_file <- function(path) {
   has_roxygen <- rox_start <= rox_end
   roxygen_lines <- if (has_roxygen) lines[rox_start:rox_end] else character(0)
 
-  # pre_end: last line of "everything before the doc block" (or before the
-  # function, if there's no doc block at all).
   pre_end <- if (has_roxygen) rox_start - 1 else fn_start - 1
-  # gap_lines: blank line(s) between the doc block and the function, kept
-  # verbatim on rewrite. Empty when there's no doc block (nothing to skip
-  # over) or no gap.
   gap_lines <- if (has_roxygen && (rox_end + 1) <= (fn_start - 1)) {
     lines[(rox_end + 1):(fn_start - 1)]
   } else {
@@ -159,6 +152,15 @@ select_profile <- function(parsed, style) {
 build_guidance_text <- function(profile) {
   parts <- vapply(names(profile), function(tag) sprintf("- %s: %s", tag, profile[[tag]]$guidance), character(1))
   paste(parts, collapse = "\n")
+}
+
+build_order_instruction <- function(style) {
+  if (is.null(style$tag_order)) return("")
+  paste0(
+    "Emit tags in exactly this order, each appearing exactly once: ",
+    paste(unlist(style$tag_order), collapse = " -> "),
+    ". Do not deviate from this order and do not repeat any tag."
+  )
 }
 
 # --- DataSHIELD demo environment: multi-study login snippet ---------------
@@ -276,6 +278,8 @@ ask_claude <- function(parsed, profile, role_text) {
     "",
     "%s",
     "",
+    "%s",
+    "",
     "Existing roxygen block:",
     "%s",
     "",
@@ -290,14 +294,22 @@ ask_claude <- function(parsed, profile, role_text) {
     "setup, that no longer matches reality) as inadequate too.",
     "",
     "Only regenerate tags that are missing, inaccurate, or inadequate. Copy",
-    "every already-adequate tag through byte-for-byte unchanged — do not",
-    "reword or 'improve' something that already meets the guidance, even if",
-    "you would have phrased it differently.",
+    "every already-adequate tag's WORDING through into the merged result",
+    "unchanged — do not reword or 'improve' something that already meets",
+    "the guidance, even if you would have phrased it differently.",
+    "",
+    "CRITICAL: roxygen_block must be exactly ONE valid roxygen2 comment",
+    "block — never the old block followed by a new or revised block. Each",
+    "tag (title, description, @param per parameter, @return, @export,",
+    "@import, @importFrom, @examples, etc.) must appear EXACTLY ONCE in the",
+    "final output. Do not duplicate any line or tag under any circumstance —",
+    "'preserving' a tag means keeping its existing wording in its one",
+    "rightful place in the merged block, not including it twice.",
     "",
     "Call the submit_review tool with your result. Do not write any prose",
     "response — only call the tool.",
     sep = "\n"
-  ), build_guidance_text(profile), role_text, existing_block, fn_source(parsed))
+  ), build_guidance_text(profile), build_order_instruction(style), role_text, existing_block, fn_source(parsed))
 
   resp <- request("https://api.anthropic.com/v1/messages") |>
     req_headers(
@@ -326,7 +338,7 @@ ask_claude <- function(parsed, profile, role_text) {
             ),
             roxygen_block = list(
               type = "string",
-              description = "Complete replacement roxygen block (every line starting with #'), including unchanged tags copied through verbatim. Omit or leave empty if needs_changes is false."
+              description = "The COMPLETE, MERGED, non-duplicated replacement roxygen block — every line starting with #', each tag appearing exactly once, in the required order. Omit or leave empty if needs_changes is false."
             )
           ),
           required = list("needs_changes", "changed_tags")
@@ -366,16 +378,10 @@ post_suggestion_comment <- function(path, parsed, new_block, changed_tags) {
   } else ""
 
   if (parsed$has_roxygen) {
-    # Existing doc block: replace exactly those lines. The gap and the
-    # function header are outside this range and stay untouched.
     start_line <- parsed$roxygen_start
     end_line   <- parsed$roxygen_end
     body <- paste0(intro, "```suggestion\n", new_block, "\n```")
   } else {
-    # No existing doc block: there is no line range to attach a pure
-    # insertion to, so the suggestion targets the function header line
-    # itself and its replacement text reproduces that header verbatim,
-    # after the new roxygen block, so nothing is lost.
     start_line <- parsed$fn_start
     end_line   <- parsed$fn_start
     body <- paste0(

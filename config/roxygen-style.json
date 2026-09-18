@@ -1,4 +1,15 @@
 {
+  "tag_order": [
+    "title",
+    "description",
+    "details",
+    "param",
+    "return",
+    "import",
+    "importFrom",
+    "examples",
+    "export"
+  ],
   "exported": {
     "title": {
       "required": true,
