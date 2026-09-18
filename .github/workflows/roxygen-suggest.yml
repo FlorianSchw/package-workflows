@@ -1,0 +1,120 @@
+name: Roxygen Doc Suggestions
+
+on:
+  workflow_call:
+    inputs:
+      scan-mode:
+        description: '"changed" (diff against PR base) or "all" (every R/*.R file)'
+        required: false
+        type: string
+        default: 'changed'
+      anthropic-federation-rule-id:
+        description: 'fdrl_... ID of the federation rule authorizing this repo'
+        required: true
+        type: string
+
+env:
+  ANTHROPIC_ORG_ID: ab598c51-a4e1-4c60-943d-c04722aecf04
+  ANTHROPIC_SERVICE_ACCOUNT_ID: svac_018HwE11GfPMYQhCYUQPeDS7
+
+jobs:
+  suggest-docs:
+    runs-on: ubuntu-latest
+    permissions:
+      id-token: write
+      contents: write
+      pull-requests: write
+
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+
+      - name: Determine files to check
+        id: files
+        run: |
+          if [ "${{ inputs.scan-mode }}" = "all" ]; then
+            find R -name '*.R' > files_to_check.txt
+          else
+            git diff --name-only \
+              origin/${{ github.event.pull_request.base.ref }}...HEAD -- 'R/*.R' \
+              > files_to_check.txt
+          fi
+          echo "count=$(wc -l < files_to_check.txt)" >> "$GITHUB_OUTPUT"
+
+      - uses: r-lib/actions/setup-r@v2
+        if: steps.files.outputs.count != '0'
+        with:
+          use-public-rspm: true
+
+      - uses: r-lib/actions/setup-r-dependencies@v2
+        if: steps.files.outputs.count != '0'
+        with:
+          extra-packages: any::roxygen2, any::httr2, any::jsonlite
+          needs: check
+
+      - name: Get GitHub OIDC token
+        id: oidc
+        if: steps.files.outputs.count != '0'
+        run: |
+          RESPONSE=$(curl -sS -H "Authorization: Bearer $ACTIONS_ID_TOKEN_REQUEST_TOKEN" \
+            "$ACTIONS_ID_TOKEN_REQUEST_URL&audience=https://api.anthropic.com")
+          echo "github_token=$(echo "$RESPONSE" | jq -r '.value')" >> "$GITHUB_OUTPUT"
+
+      - name: Exchange for Anthropic access token
+        id: anthropic_auth
+        if: steps.files.outputs.count != '0'
+        run: |
+          RESPONSE=$(curl -sS -X POST https://api.anthropic.com/v1/oauth/token \
+            -H "Content-Type: application/json" \
+            -d '{
+              "grant_type": "urn:ietf:params:oauth:grant-type:jwt-bearer",
+              "assertion": "${{ steps.oidc.outputs.github_token }}",
+              "federation_rule_id": "${{ inputs.anthropic-federation-rule-id }}",
+              "organization_id": "${{ env.ANTHROPIC_ORG_ID }}",
+              "service_account_id": "${{ env.ANTHROPIC_SERVICE_ACCOUNT_ID }}"
+            }')
+          TOKEN=$(echo "$RESPONSE" | jq -r '.access_token')
+          if [ "$TOKEN" = "null" ] || [ -z "$TOKEN" ]; then
+            echo "::error::Token exchange failed: $(echo "$RESPONSE" | jq -c '.')"
+            exit 1
+          fi
+          echo "access_token=$TOKEN" >> "$GITHUB_OUTPUT"
+          echo "::add-mask::$TOKEN"
+
+      - name: Run roxygen suggestion script
+        if: steps.files.outputs.count != '0'
+        env:
+          ANTHROPIC_API_KEY: ${{ steps.anthropic_auth.outputs.access_token }}
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          SCAN_MODE: ${{ inputs.scan-mode }}
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+        run: Rscript .github/scripts/suggest_roxygen.R
+
+      - name: Check for changes
+        id: diff
+        if: inputs.scan-mode == 'all' && steps.files.outputs.count != '0'
+        run: |
+          if [ -n "$(git status --porcelain)" ]; then
+            echo "changed=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "changed=false" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Open PR with suggested docs
+        if: inputs.scan-mode == 'all' && steps.diff.outputs.changed == 'true'
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          BRANCH="docs/roxygen-sweep-$(date +%Y-%m)"
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git checkout -b "$BRANCH"
+          git add R/
+          git commit -m "docs: monthly roxygen suggestion sweep"
+          git push origin "$BRANCH"
+          gh pr create \
+            --base dev \
+            --head "$BRANCH" \
+            --title "Monthly roxygen documentation sweep" \
+            --body "Automated suggestions from the roxygen doc-assist workflow. Review before merging."
