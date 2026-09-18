@@ -233,6 +233,9 @@ role_guidance <- function(datashield, ds_type, matched_group, example_env) {
 }
 
 # --- Ask Claude to REVIEW, not just fill gaps -----------------------------
+# Uses a forced tool call rather than free-text JSON: this guarantees a
+# structured, already-parsed result with no risk of stray prose breaking
+# JSON parsing (the model can no longer prepend "Looking at this function...").
 
 ask_claude <- function(parsed, profile, role_text) {
   existing_block <- if (length(parsed$roxygen_lines) > 0) {
@@ -268,15 +271,8 @@ ask_claude <- function(parsed, profile, role_text) {
     "reword or 'improve' something that already meets the guidance, even if",
     "you would have phrased it differently.",
     "",
-    "Return ONLY a JSON object:",
-    "{",
-    "  \"needs_changes\": true or false,",
-    "  \"changed_tags\": [\"list\", \"of\", \"tags you actually changed\"],",
-    "  \"roxygen_block\": \"complete replacement block if needs_changes is true, else omit\"",
-    "}",
-    "If every required tag is already adequate, return needs_changes: false",
-    "and omit roxygen_block. Do not produce a suggestion just to make small",
-    "stylistic tweaks to content that already meets the guidance.",
+    "Call the submit_review tool with your result. Do not write any prose",
+    "response — only call the tool.",
     sep = "\n"
   ), build_guidance_text(profile), role_text, existing_block, fn_source(parsed))
 
@@ -290,21 +286,45 @@ ask_claude <- function(parsed, profile, role_text) {
       model = "claude-sonnet-5",
       max_tokens = 4096,
       thinking = list(type = "disabled"),
+      tools = list(list(
+        name = "submit_review",
+        description = "Submit the roxygen2 documentation review result for this function.",
+        input_schema = list(
+          type = "object",
+          properties = list(
+            needs_changes = list(
+              type = "boolean",
+              description = "Whether any required tag needs to be added, corrected, or updated."
+            ),
+            changed_tags = list(
+              type = "array",
+              items = list(type = "string"),
+              description = "Names of the tags actually changed, e.g. c('@return', 'title'). Empty if needs_changes is false."
+            ),
+            roxygen_block = list(
+              type = "string",
+              description = "Complete replacement roxygen block (every line starting with #'), including unchanged tags copied through verbatim. Omit or leave empty if needs_changes is false."
+            )
+          ),
+          required = list("needs_changes", "changed_tags")
+        )
+      )),
+      tool_choice = list(type = "tool", name = "submit_review"),
       messages = list(list(role = "user", content = prompt))
     )) |>
     req_perform()
 
   body <- resp_body_json(resp)
 
-  text_block <- Filter(function(block) identical(block$type, "text"), body$content)
-  if (length(text_block) == 0) {
+  tool_block <- Filter(function(block) identical(block$type, "tool_use"), body$content)
+  if (length(tool_block) == 0) {
     stop(sprintf(
-      "No text content block in Claude's response. Full response: %s",
+      "No tool_use content block in Claude's response. Full response: %s",
       jsonlite::toJSON(body, auto_unbox = TRUE)
     ))
   }
 
-  fromJSON(text_block[[1]]$text, simplifyVector = FALSE)
+  tool_block[[1]]$input
 }
 
 # --- Mode-specific output --------------------------------------------------
