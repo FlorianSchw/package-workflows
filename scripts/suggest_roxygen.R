@@ -9,11 +9,12 @@
 # fields (title, description, per-param docs, return, examples), and this
 # script deterministically stitches them into one block in the configured
 # tag order. @export/@import/@importFrom lines are carried forward verbatim
-# from the original file and never pass through Claude at all. This makes
-# duplication structurally impossible, rather than relying on prompt wording.
+# from the original file and never pass through Claude at all.
 
 library(httr2)
 library(jsonlite)
+
+`%||%` <- function(a, b) if (is.null(a)) b else a
 
 scan_mode     <- Sys.getenv("SCAN_MODE", "changed")
 pr_number     <- Sys.getenv("PR_NUMBER")
@@ -62,9 +63,6 @@ files <- readLines("files_to_check.txt")
 files <- files[nzchar(files)]
 
 # --- Parsing -----------------------------------------------------------
-# Tolerates blank line(s) between an existing roxygen block and the function
-# definition, and separately extracts @export/@import/@importFrom lines so
-# they can be carried forward verbatim without ever going through Claude.
 
 parse_r_file <- function(path) {
   lines <- readLines(path, warn = FALSE)
@@ -166,8 +164,6 @@ build_guidance_text <- function(profile) {
 }
 
 # --- DataSHIELD demo environment: multi-study login snippet ---------------
-# Returned as raw example CODE ONLY — no #' prefixes, no @examples tag, no
-# \dontrun{} wrapper. The assembly step adds all of that structure.
 
 build_demo_login_snippet <- function(package_name, group, server) {
   appends <- vapply(group$studies, function(s) {
@@ -221,9 +217,9 @@ role_guidance <- function(datashield, ds_type, matched_group, example_env) {
       "- details: focus on what server-side call this function constructs. If",
       "  the function's code identifies a specific server-side function it",
       "  invokes (e.g. a function name passed as a string or symbol to a call",
-      "  construction), name it explicitly on its own line in the established",
-      "  convention: 'Server function called: \\code{<name>}'. Only include",
-      "  this if a specific name is actually identifiable from the code; never",
+      "  construction), name it explicitly using the established convention:",
+      "  'Server function called: the name in code font'. Only include this",
+      "  if a specific name is actually identifiable from the code; never",
       "  guess or fabricate one.",
       "If a corresponding server-side function or package exists, you may note",
       "the relationship briefly — but do not assume or invent one; some client",
@@ -231,19 +227,21 @@ role_guidance <- function(datashield, ds_type, matched_group, example_env) {
       sep = "\n"
     )
     if (!is.null(matched_group)) {
-      text <- paste(text, sprintf(paste(
+      demo_snippet <- build_demo_login_snippet(package_name, matched_group, example_env$server)
+      demo_text <- paste(
         "",
         "Canonical current demo environment for the examples field — use this",
-        "verbatim as the example CODE (do not add #' prefixes, @examples, or",
-        "\\dontrun{} yourself — the script adds that structure). This reflects",
-        "DataSHIELD's typical multi-centric usage (multiple studies connected",
-        "at once). Treat any existing example content that connects to only",
-        "one server, or references a different server/VM setup, as OUTDATED",
-        "and replace it with this:",
+        "verbatim as the example code (do not add any comment markers, tag",
+        "labels, or wrapper syntax yourself — the script adds that structure).",
+        "This reflects DataSHIELD's typical multi-centric usage (multiple",
+        "studies connected at once). Treat any existing example content that",
+        "connects to only one server, or references a different server or VM",
+        "setup, as outdated and replace it with this:",
         "",
-        "%s",
+        demo_snippet,
         sep = "\n"
-      ), build_demo_login_snippet(package_name, matched_group, example_env$server)))
+      )
+      text <- paste(text, demo_text, sep = "\n")
     }
     text
   } else if (identical(ds_type, "server")) {
@@ -265,9 +263,48 @@ role_guidance <- function(datashield, ds_type, matched_group, example_env) {
   }
 }
 
+# --- Build the Claude tool schema (flat, one level per step) --------------
+
+build_submit_review_tool <- function(parsed) {
+  param_properties <- setNames(
+    lapply(parsed$params, function(p) {
+      list(type = "string", description = sprintf("Documentation prose for parameter '%s'.", p))
+    }),
+    parsed$params
+  )
+
+  params_schema <- list(
+    type = "object",
+    description = "One entry per function parameter, keyed by exact parameter name.",
+    properties = param_properties,
+    required = as.list(parsed$params)
+  )
+
+  top_level_properties <- list(
+    needs_changes = list(type = "boolean", description = "Whether any field needs to change."),
+    changed_tags = list(type = "array", items = list(type = "string"), description = "Names of fields actually changed."),
+    title = list(type = "string", description = "Plain-text title, no markup, matching the style guidance."),
+    description = list(type = "string", description = "Plain-text description prose."),
+    details = list(type = "string", description = "Plain-text details prose. Empty string if not applicable."),
+    return_doc = list(type = "string", description = "Plain-text description of the return value."),
+    examples_body = list(type = "string", description = "Raw runnable example code only, no comment markers, no tag label, no wrapper syntax. Empty string if examples are not required and none exist."),
+    params = params_schema
+  )
+
+  input_schema <- list(
+    type = "object",
+    properties = top_level_properties,
+    required = list("needs_changes", "changed_tags", "title", "description", "return_doc", "params")
+  )
+
+  list(
+    name = "submit_review",
+    description = "Submit the roxygen2 documentation review as individual prose fields, never as assembled roxygen text.",
+    input_schema = input_schema
+  )
+}
+
 # --- Ask Claude for structured PROSE FIELDS ONLY — never assembled text ---
-# The model never sees or produces #' markers, tag labels, or a merged
-# block. It supplies content per field; the script assembles everything.
 
 ask_claude <- function(parsed, profile, role_text) {
   existing_block <- if (length(parsed$roxygen_lines) > 0) {
@@ -280,8 +317,8 @@ ask_claude <- function(parsed, profile, role_text) {
 
   prompt <- sprintf(paste(
     "You are reviewing roxygen2 documentation for an R function for accuracy",
-    "and completeness. You do NOT write roxygen syntax, #' markers, or tag",
-    "labels — you only supply the PROSE CONTENT for each field below. A",
+    "and completeness. You do NOT write roxygen syntax, comment markers, or",
+    "tag labels — you only supply the prose content for each field below. A",
     "script assembles the final documentation from your fields, so there is",
     "no way for you to duplicate anything or get the tag order wrong; just",
     "answer each field once.",
@@ -307,19 +344,16 @@ ask_claude <- function(parsed, profile, role_text) {
     "server) as inadequate and rewrite it. List every field you actually",
     "changed in changed_tags.",
     "",
-    "Do not include @export, @import, or @importFrom anywhere in your",
-    "answer — those are handled entirely outside this review and are not",
-    "part of any field.",
+    "Do not include export or import directives anywhere in your answer —",
+    "those are handled entirely outside this review and are not part of any",
+    "field.",
     "",
     "Call the submit_review tool with your result. Do not write any prose",
     "response — only call the tool.",
     sep = "\n"
   ), build_guidance_text(profile), role_text, existing_block, fn_source(parsed), param_list)
 
-  param_properties <- setNames(
-    lapply(parsed$params, function(p) list(type = "string", description = sprintf("Documentation prose for parameter '%s'.", p))),
-    parsed$params
-  )
+  submit_review_tool <- build_submit_review_tool(parsed)
 
   resp <- request("https://api.anthropic.com/v1/messages") |>
     req_headers(
@@ -331,31 +365,7 @@ ask_claude <- function(parsed, profile, role_text) {
       model = "claude-sonnet-5",
       max_tokens = 4096,
       thinking = list(type = "disabled"),
-      tools = list(list(
-        name = "submit_review",
-        description = "Submit the roxygen2 documentation review as individual prose fields, never as assembled roxygen text.",
-        input_schema = list(
-          type = "object",
-          properties = c(
-            list(
-              needs_changes = list(type = "boolean", description = "Whether any field needs to change."),
-              changed_tags = list(type = "array", items = list(type = "string"), description = "Names of fields actually changed."),
-              title = list(type = "string", description = "Plain-text title, no markup, matching the style guidance."),
-              description = list(type = "string", description = "Plain-text description prose."),
-              details = list(type = "string", description = "Plain-text details prose. Empty string if not applicable."),
-              return_doc = list(type = "string", description = "Plain-text description of the return value."),
-              examples_body = list(type = "string", description = "Raw runnable example CODE only (no #' prefix, no @examples tag, no \\dontrun{} wrapper). Empty string if examples are not required and none exist.")
-            ),
-            list(params = list(
-              type = "object",
-              description = "One entry per function parameter, keyed by exact parameter name.",
-              properties = param_properties,
-              required = as.list(parsed$params)
-            ))
-          ),
-          required = list("needs_changes", "changed_tags", "title", "description", "return_doc", "params")
-        )
-      )),
+      tools = list(submit_review_tool),
       tool_choice = list(type = "tool", name = "submit_review"),
       messages = list(list(role = "user", content = prompt))
     )) |>
@@ -376,7 +386,7 @@ ask_claude <- function(parsed, profile, role_text) {
 
 # --- Deterministic assembly: the ONLY place the final block is built -----
 
-build_roxygen_block <- function(result, parsed, profile) {
+build_roxygen_block <- function(result, parsed) {
   order <- unlist(style$tag_order)
   sections <- list()
 
@@ -411,9 +421,10 @@ build_roxygen_block <- function(result, parsed, profile) {
       if (length(importfrom_lines) > 0) sections[["importFrom"]] <- paste0("#' ", importfrom_lines)
     } else if (tag == "examples" && nzchar(trimws(result$examples_body %||% ""))) {
       ex_lines <- strsplit(result$examples_body, "\n")[[1]]
+      examples_open <- "#' \\dontrun"
       sections[["examples"]] <- c(
         "#' @examples",
-        "#' \\dontrun{",
+        paste0(examples_open, "{"),
         paste0("#' ", ex_lines),
         "#' }"
       )
@@ -425,8 +436,6 @@ build_roxygen_block <- function(result, parsed, profile) {
 
   paste(unlist(sections, use.names = FALSE), collapse = "\n")
 }
-
-`%||%` <- function(a, b) if (is.null(a)) b else a
 
 # --- Mode-specific output --------------------------------------------------
 
@@ -471,3 +480,36 @@ post_suggestion_comment <- function(path, parsed, new_block, changed_tags) {
 
 for (f in files) {
   parsed <- tryCatch(parse_r_file(f), error = function(e) {
+    message(sprintf("Skipping %s: %s", f, conditionMessage(e)))
+    NULL
+  })
+  if (is.null(parsed)) next
+
+  profile   <- select_profile(parsed)
+  role_text <- role_guidance(datashield, ds_type, matched_group, example_env)
+
+  result <- tryCatch(ask_claude(parsed, profile, role_text), error = function(e) {
+    message(sprintf("Claude call failed for %s: %s", f, conditionMessage(e)))
+    NULL
+  })
+  if (is.null(result)) next
+
+  if (!isTRUE(result$needs_changes)) {
+    message(sprintf("%s: documentation already adequate, skipping.", f))
+    next
+  }
+
+  new_block <- tryCatch(build_roxygen_block(result, parsed), error = function(e) {
+    message(sprintf("Failed to assemble roxygen block for %s: %s", f, conditionMessage(e)))
+    NULL
+  })
+  if (is.null(new_block)) next
+
+  message(sprintf("%s: updating %s.", f, paste(unlist(result$changed_tags), collapse = ", ")))
+
+  if (identical(scan_mode, "all")) {
+    write_in_place(f, parsed, new_block)
+  } else {
+    post_suggestion_comment(f, parsed, new_block, result$changed_tags)
+  }
+}
