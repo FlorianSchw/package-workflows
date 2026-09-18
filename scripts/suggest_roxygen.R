@@ -288,7 +288,8 @@ ask_claude <- function(parsed, profile, role_text) {
     ) |>
     req_body_json(list(
       model = "claude-sonnet-5",
-      max_tokens = 1024,
+      max_tokens = 4096,
+      thinking = list(type = "disabled"),
       messages = list(list(role = "user", content = prompt))
     )) |>
     req_perform()
