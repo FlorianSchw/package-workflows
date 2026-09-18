@@ -293,7 +293,17 @@ ask_claude <- function(parsed, profile, role_text) {
     )) |>
     req_perform()
 
-  fromJSON(resp_body_json(resp)$content[[1]]$text, simplifyVector = FALSE)
+  body <- resp_body_json(resp)
+
+  text_block <- Filter(function(block) identical(block$type, "text"), body$content)
+  if (length(text_block) == 0) {
+    stop(sprintf(
+      "No text content block in Claude's response. Full response: %s",
+      jsonlite::toJSON(body, auto_unbox = TRUE)
+    ))
+  }
+
+  fromJSON(text_block[[1]]$text, simplifyVector = FALSE)
 }
 
 # --- Mode-specific output --------------------------------------------------
