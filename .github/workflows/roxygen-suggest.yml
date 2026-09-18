@@ -30,6 +30,14 @@ jobs:
         with:
           fetch-depth: 0
 
+      - name: Checkout shared scripts
+        uses: actions/checkout@v6
+        with:
+          repository: FlorianSchw/package-workflows
+          ref: main
+          path: .shared-workflows
+
+
       - name: Determine files to check
         id: files
         run: |
@@ -89,7 +97,8 @@ jobs:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           SCAN_MODE: ${{ inputs.scan-mode }}
           PR_NUMBER: ${{ github.event.pull_request.number }}
-        run: Rscript .github/scripts/suggest_roxygen.R
+          PR_HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+        run: Rscript .shared-workflows/scripts/suggest_roxygen.R
 
       - name: Check for changes
         id: diff
