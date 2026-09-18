@@ -355,7 +355,7 @@ ask_claude <- function(parsed, profile, role_text) {
 
   submit_review_tool <- build_submit_review_tool(parsed)
 
-  resp <- request("https://api.anthropic.com/v1/messages") |>
+  req <- request("https://api.anthropic.com/v1/messages") |>
     req_headers(
       "Authorization" = paste("Bearer", api_key),
       "anthropic-version" = "2023-06-01",
@@ -369,7 +369,16 @@ ask_claude <- function(parsed, profile, role_text) {
       tool_choice = list(type = "tool", name = "submit_review"),
       messages = list(list(role = "user", content = prompt))
     )) |>
-    req_perform()
+    req_error(is_error = function(resp) FALSE)  # handle errors manually so we can see the real body
+
+  resp <- req_perform(req)
+
+  if (resp_status(resp) >= 400) {
+    stop(sprintf(
+      "Anthropic API error (HTTP %d): %s",
+      resp_status(resp), resp_body_string(resp)
+    ))
+  }
 
   body <- resp_body_json(resp)
 
