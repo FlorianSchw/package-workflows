@@ -441,11 +441,11 @@ build_roxygen_block <- function(result, parsed, path) {
 
   for (tag in order) {
     if (tag == "title") {
-      sections[["title"]] <- c(wrap(paste0("@title ", title)), "#'")
+      sections[["title"]] <- wrap(paste0("@title ", title))
     } else if (tag == "description") {
-      sections[["description"]] <- c(wrap(paste0("@description ", description)), "#'")
+      sections[["description"]] <- wrap(paste0("@description ", description))
     } else if (tag == "details" && nzchar(trimws(details))) {
-      sections[["details"]] <- c(wrap(paste0("@details ", details)), "#'")
+      sections[["details"]] <- wrap(paste0("@details ", details))
     } else if (tag == "param") {
       param_lines <- character(0)
       for (p in parsed$params) {
