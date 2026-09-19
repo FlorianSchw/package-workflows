@@ -297,11 +297,17 @@ build_submit_review_tool <- function(parsed) {
     required = list("needs_changes", "changed_tags", "title", "description", "return_doc", "params")
   )
 
-  list(
+  tool <- list(
     name = "submit_review",
     description = "Submit the roxygen2 documentation review as individual prose fields, never as assembled roxygen text.",
     input_schema = input_schema
   )
+
+  # Temporary diagnostic: print the exact schema being sent, so a validation
+  # failure can be inspected directly in the job log instead of guessed at.
+  message("DEBUG submit_review tool schema:\n", jsonlite::toJSON(tool, auto_unbox = TRUE, pretty = TRUE, null = "null"))
+
+  tool
 }
 
 # --- Ask Claude for structured PROSE FIELDS ONLY — never assembled text ---
