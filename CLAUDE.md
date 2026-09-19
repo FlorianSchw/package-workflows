@@ -35,7 +35,8 @@ push landed.
 - `.github/workflows/R-CMD-Check.yml` — reusable R CMD check matrix
   (last-5-R-versions via `oldrel-1..4`, ubuntu-only default). Done.
 - `.github/workflows/roxygen-suggest.yml` — reusable LLM-assisted roxygen2
-  doc-suggestion workflow. **Status: in progress, see below.**
+  doc-suggestion workflow. **Status: `changed`-mode path confirmed working
+  end to end, see below.**
 - `config/roxygen-style.json` — per-tag writing guidance + `tag_order` array,
   split into `exported`/`internal` profiles (a function's `@export` presence
   decides which profile applies).
@@ -43,8 +44,8 @@ push landed.
   `study_groups` config, used only when a caller sets `datashield: true` and
   `datashield-type: client`. Matched to the calling repo via its `Package:`
   field in `DESCRIPTION`.
-- `scripts/suggest_roxygen.R` — the actual doc-review script. **Status: in
-  progress, see below.**
+- `scripts/suggest_roxygen.R` — the actual doc-review script. **Status:
+  confirmed working end to end on `changed` mode, see below.**
 
 ## roxygen-suggest.yml — CURRENT STATUS (most recent work)
 
@@ -103,13 +104,27 @@ are hardcoded as repo-level `env:` (same across every caller); only
    (`stop()`) if a required field is empty after stripping — so this failure
    mode can no longer silently reach a real PR suggestion.
 
-**NOT YET CONFIRMED:** whether fix #7 actually resolves it in a fresh run —
-the last test result reviewed was later determined to likely be a *stale*
-run (predating the fix landing on `main`), not a new failure of the fix
-itself. **Next step: trigger a genuinely fresh run (new commit after
-confirming this file is current on `main`) and check the job log for
-whether `sanitize_field`'s message appears** (confirms the fix executed) and
-whether the resulting suggestion is finally clean.
+**CONFIRMED:** fix #7 (`sanitize_field()`) works. Verified via a genuinely
+fresh run on `dsSupportClient` PR #4 (triggered by a trivial commit, checked
+via the GitHub API's `original_commit_id` on the posted review comment to
+rule out reading a stale/historical comment) — single, non-duplicated block,
+no leaked roxygen syntax in any field.
+
+**Two follow-up fixes, also confirmed on fresh runs after #7:**
+8. `title`/`description` were assembled as bare untagged paragraphs (the
+   idiomatic roxygen2 style), but the desired convention for this project is
+   explicit tags. Fixed: `build_roxygen_block()` now emits
+   `#' @title ...` / `#' @description ...`, matching the `@details`/`@param`/
+   `@return` pattern already used elsewhere.
+9. Leftover blank `"#'"` separator lines after `title`/`description`/
+   `details` — a holdover from when those were bare paragraphs and roxygen2
+   needed a blank comment line to delimit them. No longer needed now that
+   every section has its own explicit tag, and inconsistent with
+   `param`/`return`/`import`/`examples`/`export` (which never had them).
+   Fixed: removed; all sections now assemble back-to-back with no gaps.
+
+`roxygen-suggest.yml` / `suggest_roxygen.R` can be considered done for the
+core `changed`-mode path. Remaining open items are listed below.
 
 ## Still open / not yet done
 - Not yet tagged `v1` — everything still referenced via `@main` by callers.
