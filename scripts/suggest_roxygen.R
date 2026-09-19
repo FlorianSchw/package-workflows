@@ -329,7 +329,11 @@ ask_claude <- function(parsed, profile, role_text) {
     "%s",
     "",
     "Existing roxygen block (for context on current wording/accuracy only —",
-    "do not reproduce its syntax):",
+    "DO NOT COPY OR ECHO THIS BACK. If any field in your answer contains",
+    "text from this block — including its comment markers (#') or tag",
+    "labels like @param, @return, @export, @import — that is an error. Every",
+    "field must be your own new prose, written from scratch, with no",
+    "roxygen syntax of any kind:",
     "%s",
     "",
     "Function source:",
@@ -394,8 +398,27 @@ ask_claude <- function(parsed, profile, role_text) {
 }
 
 # --- Deterministic assembly: the ONLY place the final block is built -----
+# Defense in depth: strip any roxygen syntax (comment markers, tag labels)
+# that leaks into a Claude-supplied field before it's ever wrapped. This
+# guards against the model echoing the "existing roxygen block" context
+# back into a field instead of writing new prose, which no amount of
+# prompt wording alone has reliably prevented.
 
-build_roxygen_block <- function(result, parsed) {
+sanitize_field <- function(text, field_name, path) {
+  if (is.null(text) || !nzchar(trimws(text))) return(text %||% "")
+  lines <- strsplit(text, "\n")[[1]]
+  is_artifact <- grepl("^\\s*#'", lines) | grepl("^\\s*@[A-Za-z]+\\b", lines)
+  if (any(is_artifact)) {
+    message(sprintf(
+      "%s: field '%s' contained roxygen syntax (comment markers or tag labels) — stripping before assembly. This indicates Claude echoed context instead of writing new prose.",
+      path, field_name
+    ))
+    lines <- lines[!is_artifact]
+  }
+  paste(lines, collapse = "\n")
+}
+
+build_roxygen_block <- function(result, parsed, path) {
   order <- unlist(style$tag_order)
   sections <- list()
 
@@ -403,13 +426,26 @@ build_roxygen_block <- function(result, parsed) {
     paste0("#' ", strsplit(text, "\n")[[1]])
   }
 
+  title       <- sanitize_field(result$title, "title", path)
+  description <- sanitize_field(result$description, "description", path)
+  details     <- sanitize_field(result$details, "details", path)
+  return_doc  <- sanitize_field(result$return_doc, "return_doc", path)
+  examples_body <- sanitize_field(result$examples_body, "examples_body", path)
+
+  if (!nzchar(trimws(title))) {
+    stop(sprintf("%s: 'title' field was empty after sanitization — Claude's response likely contained only roxygen artifacts with no real title.", path))
+  }
+  if (!nzchar(trimws(description))) {
+    stop(sprintf("%s: 'description' field was empty after sanitization — Claude's response likely contained only roxygen artifacts with no real description.", path))
+  }
+
   for (tag in order) {
     if (tag == "title") {
-      sections[["title"]] <- c(wrap(result$title), "#'")
+      sections[["title"]] <- c(wrap(title), "#'")
     } else if (tag == "description") {
-      sections[["description"]] <- c(wrap(result$description), "#'")
-    } else if (tag == "details" && nzchar(trimws(result$details %||% ""))) {
-      sections[["details"]] <- c(wrap(paste0("@details ", result$details)), "#'")
+      sections[["description"]] <- c(wrap(description), "#'")
+    } else if (tag == "details" && nzchar(trimws(details))) {
+      sections[["details"]] <- c(wrap(paste0("@details ", details)), "#'")
     } else if (tag == "param") {
       param_lines <- character(0)
       for (p in parsed$params) {
@@ -417,19 +453,23 @@ build_roxygen_block <- function(result, parsed) {
         if (is.null(doc)) {
           stop(sprintf("Claude's response is missing documentation for parameter '%s'.", p))
         }
+        doc <- sanitize_field(doc, sprintf("param.%s", p), path)
+        if (!nzchar(trimws(doc))) {
+          stop(sprintf("%s: documentation for parameter '%s' was empty after sanitization.", path, p))
+        }
         param_lines <- c(param_lines, wrap(paste0("@param ", p, " ", doc)))
       }
       sections[["param"]] <- param_lines
     } else if (tag == "return") {
-      sections[["return"]] <- wrap(paste0("@return ", result$return_doc))
+      sections[["return"]] <- wrap(paste0("@return ", return_doc))
     } else if (tag == "import") {
       import_lines <- parsed$passthrough_lines[grepl("^@import\\b(?!From)", parsed$passthrough_lines, perl = TRUE)]
       if (length(import_lines) > 0) sections[["import"]] <- paste0("#' ", import_lines)
     } else if (tag == "importFrom") {
       importfrom_lines <- parsed$passthrough_lines[grepl("^@importFrom\\b", parsed$passthrough_lines)]
       if (length(importfrom_lines) > 0) sections[["importFrom"]] <- paste0("#' ", importfrom_lines)
-    } else if (tag == "examples" && nzchar(trimws(result$examples_body %||% ""))) {
-      ex_lines <- strsplit(result$examples_body, "\n")[[1]]
+    } else if (tag == "examples" && nzchar(trimws(examples_body))) {
+      ex_lines <- strsplit(examples_body, "\n")[[1]]
       examples_open <- "#' \\dontrun"
       sections[["examples"]] <- c(
         "#' @examples",
@@ -508,7 +548,7 @@ for (f in files) {
     next
   }
 
-  new_block <- tryCatch(build_roxygen_block(result, parsed), error = function(e) {
+  new_block <- tryCatch(build_roxygen_block(result, parsed, f), error = function(e) {
     message(sprintf("Failed to assemble roxygen block for %s: %s", f, conditionMessage(e)))
     NULL
   })
