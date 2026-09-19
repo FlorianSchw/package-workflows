@@ -441,9 +441,9 @@ build_roxygen_block <- function(result, parsed, path) {
 
   for (tag in order) {
     if (tag == "title") {
-      sections[["title"]] <- c(wrap(title), "#'")
+      sections[["title"]] <- c(wrap(paste0("@title ", title)), "#'")
     } else if (tag == "description") {
-      sections[["description"]] <- c(wrap(description), "#'")
+      sections[["description"]] <- c(wrap(paste0("@description ", description)), "#'")
     } else if (tag == "details" && nzchar(trimws(details))) {
       sections[["details"]] <- c(wrap(paste0("@details ", details)), "#'")
     } else if (tag == "param") {
