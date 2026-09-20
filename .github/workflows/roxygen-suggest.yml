@@ -67,7 +67,7 @@ jobs:
       - uses: r-lib/actions/setup-r-dependencies@v2
         if: steps.files.outputs.count != '0'
         with:
-          extra-packages: any::roxygen2, any::httr2, any::jsonlite
+          extra-packages: any::roxygen2, any::httr2, any::jsonlite, any::purrr, any::config
           needs: check
 
       - name: Get GitHub OIDC token
@@ -99,6 +99,22 @@ jobs:
           echo "access_token=$TOKEN" >> "$GITHUB_OUTPUT"
           echo "::add-mask::$TOKEN"
 
+      - name: Create .Renviron file
+        if: steps.files.outputs.count != '0'
+        run: |
+          touch .Renviron
+          echo R_CONFIG_ACTIVE = "roxygen-review" >> .Renviron
+
+          echo "cat .Renviron"
+          cat .Renviron
+
+          echo "ls -a ."
+          ls -a .
+
+          echo "ls -a ${{ github.workspace }}"
+          ls -a ${{ github.workspace }}
+        shell: bash
+
       - name: Run roxygen suggestion script
         if: steps.files.outputs.count != '0'
         env:
@@ -109,7 +125,7 @@ jobs:
           PR_HEAD_SHA: ${{ github.event.pull_request.head.sha }}
           DATASHIELD: ${{ inputs.datashield }}
           DATASHIELD_TYPE: ${{ inputs.datashield-type }}
-        run: Rscript .shared-workflows/scripts/suggest_roxygen.R
+        run: Rscript .shared-workflows/R/suggest_roxygen.R
 
       - name: Check for changes
         id: diff
