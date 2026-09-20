@@ -1,0 +1,59 @@
+{
+  "client": {
+    "intro": [
+      "This function is part of a DataSHIELD CLIENT-side package. Client-side",
+      "functions typically construct and dispatch a call to a DataSHIELD server",
+      "(e.g. via DSI::datashield.aggregate() or .assign()) rather than performing",
+      "computation locally. When documenting:"
+    ],
+    "documentation": {
+      "param": [
+        "note where a parameter names an object that exists on the",
+        "server (e.g. a table or variable name), rather than a local R value,",
+        "if that is the case."
+      ],
+      "return": [
+        "describe what is actually returned to the caller in R",
+        "(which may be a status, a message, or a lightweight object), not",
+        "results that are computed server-side and never returned by this",
+        "function."
+      ],
+      "details": [
+        "focus on what server-side call this function constructs. If",
+        "the function's code identifies a specific server-side function it",
+        "invokes (e.g. a function name passed as a string or symbol to a call",
+        "construction), name it explicitly using the established convention:",
+        "'Server function called: the name in code font'. Only include this",
+        "if a specific name is actually identifiable from the code; never",
+        "guess or fabricate one."
+      ]
+    },
+    "closing": [
+      "If a corresponding server-side function or package exists, you may note",
+      "the relationship briefly — but do not assume or invent one; some client",
+      "packages are standalone wrappers with no server-side counterpart."
+    ]
+  },
+  "server": {
+    "intro": [
+      "This function is part of a DataSHIELD SERVER-side package. Server-side",
+      "functions typically perform the actual computation (often using base R,",
+      "stats, or tidyverse functions directly) on data not directly visible to",
+      "the client. When documenting:"
+    ],
+    "documentation": {
+      "param": [
+        "parameters are typically real, resolved R objects at",
+        "this point."
+      ],
+      "return": [
+        "describe the actual computed result, including type and",
+        "shape."
+      ],
+      "details": [
+        "reference the base/stats/tidyverse functions this builds on",
+        "where it aids understanding."
+      ]
+    }
+  }
+}
