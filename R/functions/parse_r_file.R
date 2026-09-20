@@ -1,10 +1,8 @@
-# --- R file parsing -------------------------------------------------------
 # Parses a single R file to locate its (first) function definition and the
 # roxygen block immediately preceding it (if any), plus enough structural
 # detail (params, the blank-line gap between block and function, @export/
 # @import passthrough lines) for suggest_roxygen.R to build a review request
 # and reassemble a new block afterward.
-
 parse_r_file <- function(path) {
   lines <- readLines(path, warn = FALSE)
   fn_line_idx <- grep("^[A-Za-z._][A-Za-z0-9._]*\\s*(<-|=)\\s*function\\s*\\(", lines)
@@ -76,19 +74,4 @@ parse_r_file <- function(path) {
     is_exported = is_exported,
     passthrough_lines = passthrough_lines
   )
-}
-
-fn_source <- function(parsed) {
-  lines <- parsed$lines
-  start <- parsed$fn_start
-  depth <- 0; started <- FALSE; end <- start
-  for (i in start:length(lines)) {
-    opens  <- lengths(regmatches(lines[i], gregexpr("\\{", lines[i])))
-    closes <- lengths(regmatches(lines[i], gregexpr("\\}", lines[i])))
-    if (opens > 0) started <- TRUE
-    depth <- depth + opens - closes
-    if (started && depth <= 0) { end <- i; break }
-    end <- i
-  }
-  paste(lines[start:end], collapse = "\n")
 }
