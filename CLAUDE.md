@@ -44,8 +44,12 @@ push landed.
   `study_groups` config, used only when a caller sets `datashield: true` and
   `datashield-type: client`. Matched to the calling repo via its `Package:`
   field in `DESCRIPTION`.
-- `scripts/suggest_roxygen.R` — the actual doc-review script. **Status:
-  confirmed working end to end on `changed` mode, see below.**
+- `R/suggest_roxygen.R` — the doc-review script's orchestration entry point
+  (env/config wiring + main loop only). Actual logic lives in `R/functions/`
+  — one function per file, loaded in bulk via `purrr::walk()`. Claude call
+  settings (model, max_tokens, thinking, tool_choice type) live in
+  `config.yml` at repo root, not hardcoded. **Status: confirmed working end
+  to end on `changed` mode, see below.**
 
 ## roxygen-suggest.yml — CURRENT STATUS (most recent work)
 
@@ -133,6 +137,6 @@ core `changed`-mode path. Remaining open items are listed below.
   ready to roll this out beyond `dsSupportClient`.
 - Monthly-sweep mode (`scan-mode: all`) — built, never actually tested yet.
 - Shared caching for `check.yml` — flagged, not started.
-- `.github/scripts/suggest_roxygen.R` is one large file; user has said they
-  may split it into multiple files themselves — not something to do
-  proactively.
+- `R/suggest_roxygen.R` was split into one function per file under
+  `R/functions/` (loaded via `purrr::walk()`), plus `config.yml` for Claude
+  call settings, at the user's explicit request. Done.
