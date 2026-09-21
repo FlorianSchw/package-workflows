@@ -12,7 +12,7 @@ on:
         description: 'JSON array of R versions to test'
         required: false
         type: string
-        default: '["release", "oldrel-1", "oldrel-2", "oldrel-3", "oldrel-4"]'
+        default: '["release", "oldrel-1", "oldrel-2"]'
       run-codecov:
         description: 'Upload coverage to Codecov (runs once, on the first matrix cell)'
         required: false
