@@ -1,5 +1,3 @@
-# scan-mode: changed — posts the new roxygen block as a GitHub PR review
-# suggestion comment.
 post_suggestion_comment <- function(path, parsed, new_block, changed_tags) {
   intro <- if (length(changed_tags) > 0) {
     sprintf("Updated: %s\n\n", paste(unlist(changed_tags), collapse = ", "))
@@ -22,9 +20,15 @@ post_suggestion_comment <- function(path, parsed, new_block, changed_tags) {
     req_body_json(list(
       body = body, commit_id = pr_head_sha, path = path,
       start_line = start_line, line = end_line, side = "RIGHT", start_side = "RIGHT"
-    ))
+    )) |>
+    req_error(is_error = function(resp) FALSE)
 
-  tryCatch(req_perform(req), error = function(e) {
-    message(sprintf("Failed to post suggestion comment for %s: %s", path, conditionMessage(e)))
-  })
+  resp <- req_perform(req)
+
+  if (resp_status(resp) >= 400) {
+    message(sprintf(
+      "Failed to post suggestion comment for %s (HTTP %d): %s",
+      path, resp_status(resp), resp_body_string(resp)
+    ))
+  }
 }
