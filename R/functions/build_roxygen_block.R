@@ -62,6 +62,9 @@ build_roxygen_block <- function(result, parsed, path) {
     } else if (tag == "export") {
       export_lines <- parsed$passthrough_lines[grepl("^@export\\b", parsed$passthrough_lines)]
       if (length(export_lines) > 0) sections[["export"]] <- paste0("#' ", export_lines)
+    } else if (tag == "author") {
+      author_lines <- parsed$passthrough_lines[grepl("^@author\\b", parsed$passthrough_lines)]
+      if (length(author_lines) > 0) sections[["author"]] <- paste0("#' ", author_lines)
     }
   }
 

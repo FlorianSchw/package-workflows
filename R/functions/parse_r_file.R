@@ -61,7 +61,7 @@ parse_r_file <- function(path) {
 
   body_text <- if (length(roxygen_lines) > 0) sub("^\\s*#'\\s?", "", roxygen_lines) else character(0)
   is_exported <- any(grepl("^@export\\b", body_text))
-  passthrough_lines <- body_text[grepl("^@(export|import|importFrom)\\b", body_text)]
+  passthrough_lines <- body_text[grepl("^@(export|import|importFrom|author)\\b", body_text)]
 
   list(
     lines = lines, fn_start = fn_start, fn_header = header_text, params = params,
