@@ -1,0 +1,23 @@
+name: Commitlint
+
+on:
+  workflow_call: {}
+
+jobs:
+  lint:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+
+      - name: Checkout shared commitlint config
+        uses: actions/checkout@v6
+        with:
+          repository: FlorianSchw/package-workflows
+          ref: main
+          path: .shared-workflows
+
+      - uses: wagoid/commitlint-github-action@v6
+        with:
+          configFile: .shared-workflows/config/commitlint-config.js
