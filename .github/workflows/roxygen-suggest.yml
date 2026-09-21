@@ -115,7 +115,7 @@ jobs:
           PR_HEAD_SHA: ${{ github.event.pull_request.head.sha }}
           DATASHIELD: ${{ inputs.datashield }}
           DATASHIELD_TYPE: ${{ inputs.datashield-type }}
-        run: Rscript .shared-workflows/scripts/suggest_roxygen.R
+        run: Rscript .shared-workflows/R/suggest_roxygen.R
 
       - name: Commit roxygen suggestions to PR branch
         if: inputs.scan-mode == 'changed' && steps.files.outputs.count != '0'
