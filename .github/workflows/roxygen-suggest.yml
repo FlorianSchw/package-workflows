@@ -22,7 +22,16 @@ on:
         required: false
         type: string
         default: ''
-
+    secrets:
+      app-id:
+        description: 'GitHub App ID — to create a short-lived App token. Optional'
+        required: false
+      app-private-key:
+        description: 'GitHub App private key — to create a short-lived App token. Optional'
+        required: false
+      commit-push-pat:
+        description: 'A classic or fine-grained PAT. Optional.'
+        required: false
 env:
   ANTHROPIC_ORG_ID: ab598c51-a4e1-4c60-943d-c04722aecf04
   ANTHROPIC_SERVICE_ACCOUNT_ID: svac_018HwE11GfPMYQhCYUQPeDS7
@@ -38,11 +47,6 @@ jobs:
     steps:
       - uses: actions/checkout@v6
         with:
-          # For pull_request events, check out the real head branch by name
-          # (not the default detached merge-commit checkout) so a later
-          # commit + push actually lands on the PR's own branch. Falls back
-          # to the default ref for non-PR triggers (schedule/workflow_dispatch,
-          # used by "all" mode, which creates its own separate branch anyway).
           ref: ${{ github.event.pull_request.head.ref || github.ref }}
           fetch-depth: 0
 
@@ -108,17 +112,7 @@ jobs:
       - name: Create .Renviron file
         if: steps.files.outputs.count != '0'
         run: |
-          touch .Renviron
           echo R_CONFIG_ACTIVE = "roxygen-review" >> .Renviron
-
-          echo "cat .Renviron"
-          cat .Renviron
-
-          echo "ls -a ."
-          ls -a .
-
-          echo "ls -a ${{ github.workspace }}"
-          ls -a ${{ github.workspace }}
         shell: bash
 
       - name: Run roxygen suggestion script
@@ -133,11 +127,20 @@ jobs:
           DATASHIELD_TYPE: ${{ inputs.datashield-type }}
         run: Rscript .shared-workflows/R/suggest_roxygen.R
 
+      - name: Resolve push token
+        id: push_token
+        if: steps.files.outputs.count != '0'
+        uses: FlorianSchw/package-workflows/.github/actions/resolve-push-token@main
+        with:
+          app-id: ${{ secrets.app-id }}
+          app-private-key: ${{ secrets.app-private-key }}
+
       - name: Commit roxygen suggestions to PR branch
         if: inputs.scan-mode == 'changed' && steps.files.outputs.count != '0'
+        env:
+          GH_TOKEN: ${{ steps.push_token.outputs.token || secrets.commit-push-pat || secrets.GITHUB_TOKEN }}
         run: |
           if [ ! -s docs_updated_files.txt ]; then
-            echo "No files were updated — nothing to commit."
             exit 0
           fi
 
@@ -149,6 +152,7 @@ jobs:
             git commit -m "docs: apply roxygen suggestion for $f"
           done < docs_updated_files.txt
 
+          git remote set-url origin "https://x-access-token:${GH_TOKEN}@github.com/${{ github.repository }}.git"
           git push
 
       - name: Check for changes
@@ -164,7 +168,7 @@ jobs:
       - name: Open PR with suggested docs
         if: inputs.scan-mode == 'all' && steps.diff.outputs.changed == 'true'
         env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GH_TOKEN: ${{ steps.push_token.outputs.token || secrets.commit-push-pat || secrets.GITHUB_TOKEN }}
         run: |
           BRANCH="docs/roxygen-sweep-$(date +%Y-%m)"
           git config user.name "github-actions[bot]"
@@ -172,6 +176,7 @@ jobs:
           git checkout -b "$BRANCH"
           git add R/
           git commit -m "docs: monthly roxygen suggestion sweep"
+          git remote set-url origin "https://x-access-token:${GH_TOKEN}@github.com/${{ github.repository }}.git"
           git push origin "$BRANCH"
           gh pr create \
             --base dev \
