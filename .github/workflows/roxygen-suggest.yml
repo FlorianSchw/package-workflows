@@ -105,6 +105,22 @@ jobs:
           echo "access_token=$TOKEN" >> "$GITHUB_OUTPUT"
           echo "::add-mask::$TOKEN"
 
+     - name: Create .Renviron file
+        if: steps.files.outputs.count != '0'
+        run: |
+          touch .Renviron
+          echo R_CONFIG_ACTIVE = "roxygen-review" >> .Renviron
+
+          echo "cat .Renviron"
+          cat .Renviron
+
+          echo "ls -a ."
+          ls -a .
+
+          echo "ls -a ${{ github.workspace }}"
+          ls -a ${{ github.workspace }}
+        shell: bash
+
       - name: Run roxygen suggestion script
         if: steps.files.outputs.count != '0'
         env:
