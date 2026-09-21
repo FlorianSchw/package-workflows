@@ -1,0 +1,23 @@
+name: 'Resolve Push Token'
+description: 'Resolves a GitHub App installation token. If app-id is not supplied, resolves to an empty string'
+inputs:
+  app-id:
+    description: 'GitHub App ID.'
+    required: false
+  app-private-key:
+    description: 'GitHub App private key. Required if app-id is set.'
+    required: false
+outputs:
+  token:
+    description: 'Resolved App installation token, or empty string if app-id was not supplied.'
+    value: ${{ steps.app_token.outputs.token }}
+runs:
+  using: 'composite'
+  steps:
+    - name: Generate App token
+      id: app_token
+      if: inputs.app-id != ''
+      uses: actions/create-github-app-token@v3
+      with:
+        app-id: ${{ inputs.app-id }}
+        private-key: ${{ inputs.app-private-key }}
