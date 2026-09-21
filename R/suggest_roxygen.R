@@ -86,6 +86,8 @@ files <- files[nzchar(files)]
 
 # --- Main loop ---------------------------------------------------------------
 
+updated_files <- character(0)
+
 for (f in files) {
   parsed <- tryCatch(parse_r_file(f), error = function(e) {
     message(sprintf("Skipping %s: %s", f, conditionMessage(e)))
@@ -115,9 +117,8 @@ for (f in files) {
 
   message(sprintf("%s: updating %s.", f, paste(unlist(result$changed_tags), collapse = ", ")))
 
-  if (identical(scan_mode, "all")) {
-    write_in_place(f, parsed, new_block)
-  } else {
-    post_suggestion_comment(f, parsed, new_block, result$changed_tags)
-  }
+  write_in_place(f, parsed, new_block)
+  updated_files <- c(updated_files, f)
 }
+
+writeLines(updated_files, "docs_updated_files.txt")

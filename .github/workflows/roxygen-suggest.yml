@@ -38,6 +38,12 @@ jobs:
     steps:
       - uses: actions/checkout@v6
         with:
+          # For pull_request events, check out the real head branch by name
+          # (not the default detached merge-commit checkout) so a later
+          # commit + push actually lands on the PR's own branch. Falls back
+          # to the default ref for non-PR triggers (schedule/workflow_dispatch,
+          # used by "all" mode, which creates its own separate branch anyway).
+          ref: ${{ github.event.pull_request.head.ref || github.ref }}
           fetch-depth: 0
 
       - name: Checkout shared scripts
@@ -99,22 +105,6 @@ jobs:
           echo "access_token=$TOKEN" >> "$GITHUB_OUTPUT"
           echo "::add-mask::$TOKEN"
 
-      - name: Create .Renviron file
-        if: steps.files.outputs.count != '0'
-        run: |
-          touch .Renviron
-          echo R_CONFIG_ACTIVE = "roxygen-review" >> .Renviron
-
-          echo "cat .Renviron"
-          cat .Renviron
-
-          echo "ls -a ."
-          ls -a .
-
-          echo "ls -a ${{ github.workspace }}"
-          ls -a ${{ github.workspace }}
-        shell: bash
-
       - name: Run roxygen suggestion script
         if: steps.files.outputs.count != '0'
         env:
@@ -125,7 +115,25 @@ jobs:
           PR_HEAD_SHA: ${{ github.event.pull_request.head.sha }}
           DATASHIELD: ${{ inputs.datashield }}
           DATASHIELD_TYPE: ${{ inputs.datashield-type }}
-        run: Rscript .shared-workflows/R/suggest_roxygen.R
+        run: Rscript .shared-workflows/scripts/suggest_roxygen.R
+
+      - name: Commit roxygen suggestions to PR branch
+        if: inputs.scan-mode == 'changed' && steps.files.outputs.count != '0'
+        run: |
+          if [ ! -s docs_updated_files.txt ]; then
+            echo "No files were updated — nothing to commit."
+            exit 0
+          fi
+
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+
+          while IFS= read -r f; do
+            git add "$f"
+            git commit -m "docs: apply roxygen suggestion for $f"
+          done < docs_updated_files.txt
+
+          git push
 
       - name: Check for changes
         id: diff
