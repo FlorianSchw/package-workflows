@@ -20,4 +20,4 @@ jobs:
 
       - uses: wagoid/commitlint-github-action@v6
         with:
-          configFile: .shared-workflows/config/commitlint-config.js
+          configFile: .shared-workflows/config/commitlint-config.mjs
