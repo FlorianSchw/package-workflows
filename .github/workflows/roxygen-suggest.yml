@@ -149,6 +149,10 @@ jobs:
 
           while IFS= read -r f; do
             git add "$f"
+            if git diff --cached --quiet -- "$f"; then
+              echo "No actual change for $f — skipping commit."
+              continue
+            fi
             git commit -m "docs: apply roxygen suggestion for $f"
           done < docs_updated_files.txt
 
