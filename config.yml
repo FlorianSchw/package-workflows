@@ -10,3 +10,11 @@ default:
 roxygen-review:
   anthropic:
     tool_name: submit_review
+
+test-review:
+  anthropic:
+    tool_name: submit_tests
+
+test-failure-classification:
+  anthropic:
+    tool_name: submit_failure_classification
