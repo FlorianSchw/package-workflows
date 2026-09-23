@@ -1,0 +1,63 @@
+# roxygen-suggest.yml
+
+Reusable workflow that reviews each function's roxygen2 documentation for
+completeness and accuracy with Claude, rewrites the block, and commits the
+result. Shares auth, config and R conventions with
+[test-coverage-suggest.yml](test-coverage-suggest.md) (see `CLAUDE.md`).
+
+## How it works
+
+Entry script: `R/suggest_roxygen.R`. Per file in `files_to_check.txt`:
+
+1. `parse_r_file()` finds the (first) function, its params and the roxygen
+   block above it, grouping every tag with its continuation lines.
+2. `select_profile()` picks the `exported` or `internal` guidance from
+   `config/roxygen-style.json` (by `@export` presence).
+3. `ask_claude_for_review()` (profile `roxygen-review`, prompt
+   `prompts/roxygen-review-prompt.md`) returns prose **fields** — title,
+   description, details, return, examples, one entry per param — via a
+   forced tool call. Never `#'` markers or tag labels.
+4. `build_roxygen_block()` assembles the block deterministically in
+   `tag_order`; `write_in_place()` swaps it into the file.
+5. Rewritten files are listed in `updated_files.txt`; the
+   `commit-updated-files` action commits them.
+
+For DataSHIELD packages, `role_guidance()` adds client/server guidance from
+`config/datashield-role-guidance.json`. For client packages matching a
+`study_group` in `config/datashield-example-env.json` (by `Package:` in
+`DESCRIPTION`), the prompt also carries a canonical multi-study Opal login
+example to use in `@examples`.
+
+## Design decisions
+
+- **Claude never writes final roxygen text** — only fields, which R stitches
+  together. Adopted after two prompt-only attempts to stop Claude emitting
+  the old block followed by a new one both failed identically.
+- **Only six tags are Claude-managed**: title, description, details, param,
+  return, examples. Every other tag in the existing block (`@export`,
+  `@import`, `@author`, `@seealso`, `@section`, ...) is carried forward
+  verbatim, including multi-line ones. Nothing needs registering; unknown
+  tags go where `"*"` sits in `tag_order`.
+- **Explicit `@title` / `@description` tags**, no blank `#'` separator lines
+  between sections (project convention).
+- **Defense in depth on Claude's fields:** `strip_artifact_lines()` removes
+  leaked `#'`/`@tag` lines; an empty required field after stripping is a
+  hard error, never a silently broken block.
+
+## Pitfalls already hit (don't regress)
+
+- A blank line between block and function must not read as "no block" —
+  the gap is tracked and preserved.
+- Adaptive thinking (default on Sonnet 5) used the whole `max_tokens`
+  budget before answering → `thinking: disabled` in `config.yml`.
+- Free-text "return only JSON" got prose prepended → forced tool call.
+- `vapply()`'s default `USE.NAMES = TRUE` attached raw argument text as
+  names on `params`, which serialized the schema's `required` as a JSON
+  object (HTTP 400) → `USE.NAMES = FALSE`.
+- Claude once put the entire old block into `title` → artifact stripping.
+
+## Status
+
+`changed` mode confirmed end to end on dsSupportClient PR #4. `all` mode
+(monthly sweep) has not run in CI yet; its commit/PR logic was verified
+locally.

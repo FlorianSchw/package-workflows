@@ -1,10 +1,10 @@
-name: Roxygen Doc Suggestions
+name: Test Coverage Suggestions
 
 on:
   workflow_call:
     inputs:
       scan-mode:
-        description: '"changed" (diff against PR base) or "all" (every R/*.R file)'
+        description: '"changed" (new/modified functions in this PR) or "all" (whole-package sweep)'
         required: false
         type: string
         default: 'changed'
@@ -34,12 +34,13 @@ on:
         required: false
 
 jobs:
-  suggest-docs:
+  suggest-tests:
     runs-on: ubuntu-latest
     permissions:
       id-token: write
       contents: write
       pull-requests: write
+      issues: write
 
     steps:
       - uses: actions/checkout@v6
@@ -71,10 +72,14 @@ jobs:
         with:
           use-public-rspm: true
 
+      # needs: check installs the target package's own Imports/Suggests
+      # (testthat, and — for DataSHIELD client packages — DSLite/DSI/the
+      # relevant server package) from ITS DESCRIPTION. The package itself is
+      # loaded from source by run_test_blocks() via testthat/pkgload.
       - uses: r-lib/actions/setup-r-dependencies@v2
         if: steps.files.outputs.count != '0'
         with:
-          extra-packages: any::roxygen2, any::httr2, any::jsonlite, any::purrr, any::config
+          extra-packages: any::httr2, any::jsonlite, any::purrr, any::config, any::testthat
           needs: check
 
       - name: Get Anthropic access token
@@ -87,16 +92,18 @@ jobs:
       - name: Create .Renviron file
         if: steps.files.outputs.count != '0'
         run: |
-          echo R_CONFIG_ACTIVE = "roxygen-review" >> .Renviron
+          echo R_CONFIG_ACTIVE = "test-review" >> .Renviron
         shell: bash
 
-      - name: Run roxygen suggestion script
+      - name: Run test suggestion script
         if: steps.files.outputs.count != '0'
         env:
           ANTHROPIC_API_KEY: ${{ steps.anthropic_auth.outputs.access-token }}
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          PR_NUMBER: ${{ github.event.pull_request.number }}
           DATASHIELD: ${{ inputs.datashield }}
           DATASHIELD_TYPE: ${{ inputs.datashield-type }}
-        run: Rscript .shared-workflows/R/suggest_roxygen.R
+        run: Rscript .shared-workflows/R/suggest_tests.R
 
       - name: Resolve push token
         id: push_token
@@ -106,14 +113,14 @@ jobs:
           app-id: ${{ secrets.app-id }}
           app-private-key: ${{ secrets.app-private-key }}
 
-      - name: Commit roxygen suggestions
+      - name: Commit generated tests
         if: steps.files.outputs.count != '0'
         uses: FlorianSchw/package-workflows/.github/actions/commit-updated-files@main
         with:
           scan-mode: ${{ inputs.scan-mode }}
           token: ${{ steps.push_token.outputs.token || secrets.commit-push-pat || secrets.GITHUB_TOKEN }}
-          commit-prefix: 'docs: apply roxygen suggestion for'
-          sweep-branch-prefix: 'docs/roxygen-sweep'
-          sweep-commit-message: 'docs: monthly roxygen suggestion sweep'
-          sweep-pr-title: 'Monthly roxygen documentation sweep'
-          sweep-pr-body: 'Automated suggestions from the roxygen doc-assist workflow. Review before merging.'
+          commit-prefix: 'test: add generated test for'
+          sweep-branch-prefix: 'tests/coverage-sweep'
+          sweep-commit-message: 'test: monthly test coverage sweep'
+          sweep-pr-title: 'Monthly test coverage sweep'
+          sweep-pr-body: 'Automated generated tests from the test-coverage-suggest workflow. Every included test already passed a real run before being committed — review before merging.'

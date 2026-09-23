@@ -1,4 +1,5 @@
-# scan-mode: all — rewrites the file directly with the new roxygen block.
+# Rewrites the file with the new roxygen block in place of the old one
+# (both scan modes — the calling workflow commits the result).
 write_in_place <- function(path, parsed, new_block) {
   lines <- parsed$lines
   new_lines <- strsplit(new_block, "\n")[[1]]
