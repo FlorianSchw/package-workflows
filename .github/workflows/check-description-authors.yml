@@ -1,0 +1,104 @@
+name: Check DESCRIPTION Authors
+
+on:
+  workflow_call:
+    secrets:
+      app-id:
+        description: 'Optional. See resolve-push-token action for details.'
+        required: false
+      app-private-key:
+        description: 'Optional. See resolve-push-token action for details.'
+        required: false
+      commit-push-pat:
+        description: >
+          Optional. A classic or fine-grained PAT with write access to this
+          repo's contents — used as a fallback if app-id is not supplied.
+        required: false
+
+jobs:
+  check-authors:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          ref: ${{ github.event.pull_request.head.ref }}
+          fetch-depth: 0
+
+      - name: Checkout shared config
+        uses: actions/checkout@v6
+        with:
+          repository: FlorianSchw/package-workflows
+          ref: main
+          path: .shared-workflows
+
+      - uses: r-lib/actions/setup-r@v2
+        with:
+          use-public-rspm: true
+
+      - uses: r-lib/actions/setup-r-dependencies@v2
+        with:
+          extra-packages: any::desc, any::jsonlite
+          needs: check
+
+      - name: Find and add missing contributors
+        id: authors
+        run: |
+          Rscript -e '
+            config_path <- if (file.exists("bot-authors.json")) {
+              "bot-authors.json"
+            } else {
+              ".shared-workflows/config/bot-authors.json"
+            }
+            bot_names <- jsonlite::fromJSON(config_path)$bot_names
+
+            raw <- system2(
+              "git", c("log", "origin/${{ github.event.pull_request.base.ref }}...HEAD", "--format=%an"),
+              stdout = TRUE
+            )
+            commit_authors <- unique(raw)
+            commit_authors <- commit_authors[!commit_authors %in% bot_names]
+
+            d <- desc::description$new("DESCRIPTION")
+            existing <- format(d$get_authors())
+
+            new_people <- Filter(
+              function(name) !any(grepl(name, existing, fixed = TRUE)),
+              commit_authors
+            )
+
+            if (length(new_people) > 0) {
+              for (name in new_people) {
+                d$add_author(given = name, role = "aut")
+              }
+              d$write("DESCRIPTION")
+              writeLines(new_people, "new_authors.txt")
+            }
+          '
+
+      - name: Resolve push token
+        id: push_token
+        if: hashFiles('new_authors.txt') != ''
+        uses: FlorianSchw/package-workflows/.github/actions/resolve-push-token@main
+        with:
+          app-id: ${{ secrets.app-id }}
+          app-private-key: ${{ secrets.app-private-key }}
+
+      - name: Commit DESCRIPTION update
+        if: hashFiles('new_authors.txt') != ''
+        env:
+          GH_TOKEN: ${{ steps.push_token.outputs.token || secrets.commit-push-pat || secrets.GITHUB_TOKEN }}
+        run: |
+          git add DESCRIPTION
+          if git diff --cached --quiet -- DESCRIPTION; then
+            exit 0
+          fi
+
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git commit -m "chore: add contributor(s) to DESCRIPTION"
+
+          git remote set-url origin "https://x-access-token:${GH_TOKEN}@github.com/${{ github.repository }}.git"
+          git push

@@ -1,0 +1,7 @@
+{
+  "bot_names": [
+    "github-actions[bot]",
+    "semantic-release-bot",
+    "dependabot[bot]"
+  ]
+}
