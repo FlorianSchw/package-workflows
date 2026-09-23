@@ -1,11 +1,12 @@
 # Actually runs the just-written test file via testthat and reports
-# pass/fail per test_that() block, matched by description. This is the
-# "every generated test must actually be run before being trusted" step —
-# a test either passes or fails mechanically, checked here rather than
-# assumed. Returns a list of list(description, passed, message) — message
-# is NA for passing tests, the failure/error text otherwise.
-run_test_blocks <- function(path) {
-  raw <- testthat::test_file(path, reporter = "list")
+# pass/fail per test_that() block, matched by description — the "every
+# generated test must actually be run before being trusted" step. The
+# package under test is loaded from source first (testthat -> pkgload);
+# without that, every test fails in a fresh CI process with "could not
+# find function". Returns a list of list(description, passed, message) —
+# message is NA for passing tests, the failure/error text otherwise.
+run_test_blocks <- function(path, package_name) {
+  raw <- testthat::test_file(path, reporter = "list", package = package_name, load_package = "source")
 
   lapply(raw, function(item) {
     failure <- Filter(

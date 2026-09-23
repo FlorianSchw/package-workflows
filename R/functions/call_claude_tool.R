@@ -1,10 +1,12 @@
 # Shared low-level Claude tool-call mechanics: builds the request, forces
 # the given tool, and returns its parsed input. Every Claude-calling
-# function (roxygen's review, test generation, failure classification —
-# and whatever comes after) shares this exact request/error-handling/
-# tool-extraction logic; before this existed it was duplicated verbatim in
-# each one. Only the config, tool schema, and prompt differ per caller.
+# function shares this; only the config profile, tool schema, and prompt
+# differ per caller. The tool's name is set here from config$tool_name —
+# the same value tool_choice forces — so the two can never disagree; tool
+# schema builders deliberately leave `name` out.
 call_claude_tool <- function(config, tool, prompt) {
+  tool$name <- config$tool_name
+
   req <- request("https://api.anthropic.com/v1/messages") |>
     req_headers(
       "Authorization" = paste("Bearer", api_key),

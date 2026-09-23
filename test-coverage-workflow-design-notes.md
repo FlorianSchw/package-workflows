@@ -118,8 +118,8 @@ copied blindly):
   `test-review:`, alongside `roxygen-review:`).** Direct structural
   precedent — same conventions, not a new pattern.
 - ~~`server function called` identification... load-bearing here~~ —
-  **turned out wrong, see DSLite section below.** DSLite auto-discovers
-  server-side method registration from the client package name alone; no
+  **turned out wrong, see DSLite section below.** DSLite registers
+  server-side methods automatically from the installed server package; no
   reuse of that roxygen extraction logic was needed after all.
 
 ## COVERAGE MEASUREMENT — integrate with R-CMD-Check.yml, don't duplicate
@@ -240,14 +240,24 @@ no domain match" fallback tier — it's simply not a real failure mode here.
 
 1. **The right test dataset(s)** — resolved via the priority order above.
 2. **The server-side package installed in CI** (`dsBase`, `dsTidyverse`,
-   whatever pairs with the client package under test) — still needed, via
-   `needs: check` in the workflow (not yet validated against a real CI run,
-   only locally where the packages were already installed).
+   whatever pairs with the client package under test) — **this is the
+   load-bearing piece.** DSLite's method table comes from
+   `defaultDSConfiguration()`, which scans every *installed* package for an
+   `inst/DATASHIELD` file; only server packages ship one (confirmed:
+   `arrangeDS` is registered from `dsTidyverse`, and neither
+   `dsTidyverseClient` nor `dsBaseClient` has the file). The `packages =`
+   argument of `setupCNSIMTest()` is just a `requireNamespace()` check. In
+   CI the server package only gets installed if the client's `DESCRIPTION`
+   lists it (e.g. `Suggests`) for `needs: check` to pick up — if it
+   doesn't, every DSLite test fails with an unregistered-method error
+   (which should classify as `env_misconfiguration`). Not yet validated in
+   a real CI run.
 3. ~~Correct DSLite method registration (e.g.
    `dslite.server$assignMethod(...)`)~~ — **confirmed unnecessary by
-   actually running it.** `setupCNSIMTest(packages = c("dsTidyverseClient"))`
-   auto-discovered and registered `arrangeDS` with zero manual
-   registration call. The "server function called" identification (reused
+   actually running it:** no manual registration call is needed, given
+   (2). (An earlier revision of this doc said registration came "from the
+   client package alone" — imprecise; it comes from the installed server
+   package, see (2).) The "server function called" identification (reused
    from roxygen's `@details` field) is NOT load-bearing here after all —
    contrary to what this doc originally claimed.
 
@@ -262,11 +272,54 @@ no domain match" fallback tier — it's simply not a real failure mode here.
   are new or modified" (likely a `git diff` against the PR base, same
   technique `roxygen-suggest.yml` already uses) — needs confirming this
   reuses that exact mechanism or needs adjustment for test-file mapping.
-- Whether `needs: check` in the workflow yml actually makes the target
-  package's own functions resolvable to `testthat::test_file()` in a real
-  CI run — validated locally (where the package was manually pre-loaded
-  into the session), not yet validated in an actual GitHub Actions run
-  where the package must be built/installed/loaded from scratch.
+- ~~Whether `needs: check` makes the target package's own functions
+  resolvable to `testthat::test_file()`~~ — **answered: it didn't.** The
+  earlier local validation had masked this by pre-loading the function into
+  the session; in a fresh process every generated test failed with "could
+  not find function". Fixed by `run_test_blocks()` passing
+  `package = , load_package = "source"` (testthat → pkgload, already a
+  testthat dependency, so `devtools` was dropped from the workflow).
+  Verified locally with a package that is NOT installed, including a
+  DataSHIELD client package: pkgload registers the namespace before
+  `setup.R` runs, so `setupCNSIMTest(packages = c(pkg))`'s
+  `requireNamespace()` check passes. Still not run in actual CI.
+
+## REFACTORING DONE — second pass
+
+Workflows: the OIDC/token exchange and the commit/push/sweep-PR logic,
+previously copy-pasted in both suggestion workflows, are now composite
+actions (`.github/actions/anthropic-token`, `commit-updated-files`).
+`commit-updated-files` is driven by the script's `updated_files.txt`
+manifest in both modes, which also fixed a bug: in `all` mode the old
+`git status --porcelain` check always saw the workflow's own untracked
+scratch files (`.Renviron`, `.shared-workflows/`, `files_to_check.txt`), so
+a no-op sweep always went down the "changed" path and then failed on an
+empty commit (reproduced before fixing).
+
+R: `fill_template()` (single-pass `{{KEY}}` fill that errors on unfilled
+placeholders; the classification prompt moved to
+`prompts/test-failure-classification-prompt.md`); `call_claude_tool()` sets
+the tool's name from config so schema and `tool_choice` can't disagree;
+`resolve_shared_path()`/`read_json_config()`/`read_text_file()`/
+`read_package_name()` replace repeated loading code; the two sanitize
+functions merged into `strip_artifact_lines()`; `parse_r_file()` returns
+`fn_name` and every tag grouped with its continuation lines, and roxygen
+assembly now carries forward every tag Claude doesn't manage (no allowlist
+to maintain — unknown tags like `@seealso`/`@rdname` were previously
+dropped silently); test role guidance moved to
+`config/test-role-guidance.json` (and roxygen's inline demo-environment
+paragraph into `datashield-role-guidance.json`), matching the earlier
+decision that role guidance lives in JSON.
+
+Bugs fixed along the way, each reproduced/verified locally first:
+- package not loaded before running generated tests (above);
+- a pre-existing failing test in the same file was treated as a generated
+  failure and classified — could have filed a bogus "possible bug" issue;
+- a generated `setup.R` was committed even when no test passed;
+- an error during the test run (e.g. broken `setup.R`) aborted the whole
+  run instead of just that function;
+- the new-setup prompt never told Claude that `setup.R` defines `conns`
+  with the dataset assigned as `D`.
 
 ## REFACTORING DONE (beyond the DSLite correction above)
 

@@ -7,10 +7,14 @@
 # running, so callers can match pass/fail results back to specific blocks
 # without re-parsing generated source. NOT yet run, NOT yet written to disk.
 assemble_test_block <- function(tests, function_name) {
+  clean <- function(text, field_name) {
+    strip_artifact_lines(text, "^\\s*```", "markdown code fences", field_name, function_name)
+  }
+
   blocks <- vapply(tests, function(t) {
-    description <- sanitize_test_code_field(t$description, "description", function_name)
-    setup_code  <- sanitize_test_code_field(t$setup_code, "setup_code", function_name)
-    assertions  <- sanitize_test_code_field(t$assertions_code, "assertions_code", function_name)
+    description <- clean(t$description, "description")
+    setup_code  <- clean(t$setup_code, "setup_code")
+    assertions  <- clean(t$assertions_code, "assertions_code")
 
     if (!nzchar(trimws(description))) {
       stop(sprintf("%s: a test's 'description' field was empty after sanitization.", function_name))

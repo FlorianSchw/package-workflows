@@ -37,9 +37,22 @@ push landed.
 - `.github/workflows/roxygen-suggest.yml` — reusable LLM-assisted roxygen2
   doc-suggestion workflow. **Status: `changed`-mode path confirmed working
   end to end, see below.**
+- `.github/workflows/test-coverage-suggest.yml` — sibling workflow that
+  generates, runs, and commits testthat tests (DSLite for DataSHIELD client
+  packages). Design + status: `test-coverage-workflow-design-notes.md`.
+- `.github/actions/` — composite actions shared by both suggestion
+  workflows: `anthropic-token` (OIDC → Anthropic WIF token exchange; holds
+  the org/service-account IDs), `resolve-push-token` (App token if
+  configured), `commit-updated-files` (commits exactly the files listed in
+  the script's `updated_files.txt` manifest — per-file commits to the PR
+  branch in `changed` mode, one sweep branch + PR in `all` mode).
 - `config/roxygen-style.json` — per-tag writing guidance + `tag_order` array,
   split into `exported`/`internal` profiles (a function's `@export` presence
-  decides which profile applies).
+  decides which profile applies). Claude only writes title, description,
+  details, param, return and examples; EVERY other tag in a function's
+  existing block (incl. multi-line ones like `@section`) is carried forward
+  verbatim, so new/unknown tags never need registering. `tag_order` only
+  controls placement; its `"*"` entry is where tags not named in it go.
 - `config/datashield-example-env.json` — canonical demo server + multi-study
   `study_groups` config, used only when a caller sets `datashield: true` and
   `datashield-type: client`. Matched to the calling repo via its `Package:`
@@ -48,7 +61,10 @@ push landed.
   (env/config wiring + main loop only). Actual logic lives in `R/functions/`
   — one function per file, loaded in bulk via `purrr::walk()`. Claude call
   settings (model, max_tokens, thinking, tool_choice type) live in
-  `config.yml` at repo root, not hardcoded. **Status: confirmed working end
+  `config.yml` at repo root, not hardcoded. Config/prompt files are located
+  via `resolve_shared_path("config/x.json")`: a caller repo can override
+  any of them by placing its own copy at the same relative path; otherwise
+  the `.shared-workflows/` checkout is used. **Status: confirmed working end
   to end on `changed` mode, see below.**
 
 ## roxygen-suggest.yml — CURRENT STATUS (most recent work)

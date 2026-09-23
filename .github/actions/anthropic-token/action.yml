@@ -1,0 +1,50 @@
+name: 'Anthropic Token'
+description: >-
+  Exchanges the job's GitHub OIDC token for a short-lived Anthropic API
+  access token via Workload Identity Federation. The calling job needs
+  `permissions: id-token: write`.
+inputs:
+  federation-rule-id:
+    description: 'fdrl_... ID of the federation rule authorizing the calling repo.'
+    required: true
+outputs:
+  access-token:
+    description: 'Short-lived Anthropic access token (masked in logs).'
+    value: ${{ steps.exchange.outputs.access_token }}
+runs:
+  using: 'composite'
+  steps:
+    - name: Get GitHub OIDC token
+      id: oidc
+      shell: bash
+      run: |
+        RESPONSE=$(curl -sS -H "Authorization: Bearer $ACTIONS_ID_TOKEN_REQUEST_TOKEN" \
+          "$ACTIONS_ID_TOKEN_REQUEST_URL&audience=https://api.anthropic.com")
+        echo "github_token=$(echo "$RESPONSE" | jq -r '.value')" >> "$GITHUB_OUTPUT"
+
+    - name: Exchange for Anthropic access token
+      id: exchange
+      shell: bash
+      env:
+        ASSERTION: ${{ steps.oidc.outputs.github_token }}
+        FEDERATION_RULE_ID: ${{ inputs.federation-rule-id }}
+        ANTHROPIC_ORG_ID: ab598c51-a4e1-4c60-943d-c04722aecf04
+        ANTHROPIC_SERVICE_ACCOUNT_ID: svac_018HwE11GfPMYQhCYUQPeDS7
+      run: |
+        BODY=$(jq -n \
+          --arg assertion "$ASSERTION" \
+          --arg rule "$FEDERATION_RULE_ID" \
+          --arg org "$ANTHROPIC_ORG_ID" \
+          --arg sa "$ANTHROPIC_SERVICE_ACCOUNT_ID" \
+          '{grant_type: "urn:ietf:params:oauth:grant-type:jwt-bearer",
+            assertion: $assertion, federation_rule_id: $rule,
+            organization_id: $org, service_account_id: $sa}')
+        RESPONSE=$(curl -sS -X POST https://api.anthropic.com/v1/oauth/token \
+          -H "Content-Type: application/json" -d "$BODY")
+        TOKEN=$(echo "$RESPONSE" | jq -r '.access_token')
+        if [ "$TOKEN" = "null" ] || [ -z "$TOKEN" ]; then
+          echo "::error::Token exchange failed: $(echo "$RESPONSE" | jq -c '.')"
+          exit 1
+        fi
+        echo "::add-mask::$TOKEN"
+        echo "access_token=$TOKEN" >> "$GITHUB_OUTPUT"

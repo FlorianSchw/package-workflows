@@ -1,5 +1,5 @@
-# Shared low-level GitHub API POST mechanics — used for review-suggestion
-# comments, plain PR comments, and issue creation alike. Failure is
+# Shared low-level GitHub API POST mechanics — used for PR comments and
+# issue creation alike. Failure is
 # reported via message(), never stop(): one failed post shouldn't abort
 # the whole run over every other file/function still being processed.
 post_github_json <- function(path, body, context) {

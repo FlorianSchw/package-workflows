@@ -3,7 +3,6 @@
 # into a structural enum rather than trusting free text to stay on-category.
 build_submit_failure_classification_tool <- function() {
   list(
-    name = failure_classification_config$tool_name,
     description = "Classify why a generated test failed, as exactly one of three distinct categories.",
     input_schema = list(
       type = "object",

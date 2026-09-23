@@ -1,11 +1,12 @@
 # Parses a single R file to locate its (first) function definition and the
 # roxygen block immediately preceding it (if any), plus enough structural
-# detail (params, the blank-line gap between block and function, @export/
-# @import passthrough lines) for suggest_roxygen.R to build a review request
-# and reassemble a new block afterward.
+# detail (name, params, the blank-line gap between block and function, the
+# existing block's tag lines) for both suggestion workflows to build their
+# review requests and write results back.
 parse_r_file <- function(path) {
   lines <- readLines(path, warn = FALSE)
-  fn_line_idx <- grep("^[A-Za-z._][A-Za-z0-9._]*\\s*(<-|=)\\s*function\\s*\\(", lines)
+  fn_def_pattern <- "^([A-Za-z._][A-Za-z0-9._]*)\\s*(<-|=)\\s*function\\s*\\("
+  fn_line_idx <- grep(fn_def_pattern, lines)
   if (length(fn_line_idx) == 0) return(NULL)
   if (length(fn_line_idx) > 1) {
     warning(sprintf(
@@ -14,6 +15,7 @@ parse_r_file <- function(path) {
     ))
   }
   fn_start <- fn_line_idx[1]
+  fn_name <- sub(paste0(fn_def_pattern, ".*$"), "\\1", lines[fn_start])
 
   header_text <- lines[fn_start]
   open_count  <- lengths(regmatches(header_text, gregexpr("\\(", header_text)))
@@ -26,7 +28,7 @@ parse_r_file <- function(path) {
     close_count <- lengths(regmatches(header_text, gregexpr("\\)", header_text)))
   }
 
-  args_str <- sub("^[A-Za-z._][A-Za-z0-9._]*\\s*(<-|=)\\s*function\\s*\\(", "", header_text)
+  args_str <- sub(fn_def_pattern, "", header_text)
   args_str <- sub("\\)[^)]*$", "", args_str)
 
   split_args <- function(s) {
@@ -61,10 +63,33 @@ parse_r_file <- function(path) {
 
   body_text <- if (length(roxygen_lines) > 0) sub("^\\s*#'\\s?", "", roxygen_lines) else character(0)
   is_exported <- any(grepl("^@export\\b", body_text))
-  passthrough_lines <- body_text[grepl("^@(export|import|importFrom|author)\\b", body_text)]
+
+  # Each tag together with its continuation lines (everything up to the next
+  # @tag, as roxygen itself reads them), kept as the original raw lines so
+  # they can be carried forward byte-for-byte. Trailing blank lines are
+  # dropped; text before the first tag (an untagged title/description) isn't
+  # part of any chunk.
+  tag_chunks <- list()
+  for (i in seq_along(body_text)) {
+    if (grepl("^@[A-Za-z]", body_text[i])) {
+      tag_chunks[[length(tag_chunks) + 1]] <- list(
+        tag = sub("^@([A-Za-z][A-Za-z0-9]*).*$", "\\1", body_text[i]),
+        text = body_text[i],
+        lines = roxygen_lines[i]
+      )
+    } else if (length(tag_chunks) > 0) {
+      n <- length(tag_chunks)
+      tag_chunks[[n]]$text  <- c(tag_chunks[[n]]$text, body_text[i])
+      tag_chunks[[n]]$lines <- c(tag_chunks[[n]]$lines, roxygen_lines[i])
+    }
+  }
+  tag_chunks <- lapply(tag_chunks, function(ch) {
+    last_content <- max(which(nzchar(trimws(ch$text))))
+    list(tag = ch$tag, lines = ch$lines[seq_len(last_content)])
+  })
 
   list(
-    lines = lines, fn_start = fn_start, fn_header = header_text, params = params,
+    lines = lines, fn_start = fn_start, fn_name = fn_name, fn_header = header_text, params = params,
     has_roxygen = has_roxygen,
     roxygen_start = if (has_roxygen) rox_start else fn_start,
     roxygen_end = if (has_roxygen) rox_end else fn_start - 1,
@@ -72,6 +97,6 @@ parse_r_file <- function(path) {
     pre_end = pre_end,
     gap_lines = gap_lines,
     is_exported = is_exported,
-    passthrough_lines = passthrough_lines
+    tag_chunks = tag_chunks
   )
 }

@@ -1,0 +1,89 @@
+name: 'Commit Updated Files'
+description: >-
+  Commits exactly the files listed in a manifest (one path per line, written
+  by the suggestion script) — never anything else in the working tree, so
+  the workflow's own scratch files (.Renviron, files_to_check.txt, the
+  .shared-workflows checkout) can't be picked up. scan-mode "changed": one
+  commit per file, pushed to the current PR branch. scan-mode "all": one
+  commit on a new dated sweep branch, pushed, with a PR opened against
+  sweep-base. Does nothing if the manifest is missing, empty, or lists only
+  files with no actual changes.
+inputs:
+  scan-mode:
+    description: '"changed" or "all".'
+    required: true
+  token:
+    description: 'Token used to push (and, in "all" mode, to open the PR).'
+    required: true
+  manifest:
+    description: 'Path to the manifest file.'
+    required: false
+    default: 'updated_files.txt'
+  commit-prefix:
+    description: '"changed" mode: per-file commit message prefix; the file path is appended.'
+    required: false
+  sweep-branch-prefix:
+    description: '"all" mode: branch name prefix; "-YYYY-MM" is appended.'
+    required: false
+  sweep-commit-message:
+    description: '"all" mode: commit message.'
+    required: false
+  sweep-pr-title:
+    description: '"all" mode: PR title.'
+    required: false
+  sweep-pr-body:
+    description: '"all" mode: PR body.'
+    required: false
+  sweep-base:
+    description: '"all" mode: PR base branch.'
+    required: false
+    default: 'dev'
+runs:
+  using: 'composite'
+  steps:
+    - name: Commit and push
+      shell: bash
+      env:
+        GH_TOKEN: ${{ inputs.token }}
+        SCAN_MODE: ${{ inputs.scan-mode }}
+        MANIFEST: ${{ inputs.manifest }}
+        COMMIT_PREFIX: ${{ inputs.commit-prefix }}
+        SWEEP_BRANCH_PREFIX: ${{ inputs.sweep-branch-prefix }}
+        SWEEP_COMMIT_MESSAGE: ${{ inputs.sweep-commit-message }}
+        SWEEP_PR_TITLE: ${{ inputs.sweep-pr-title }}
+        SWEEP_PR_BODY: ${{ inputs.sweep-pr-body }}
+        SWEEP_BASE: ${{ inputs.sweep-base }}
+      run: |
+        if [ ! -s "$MANIFEST" ]; then
+          echo "No updated files — nothing to commit."
+          exit 0
+        fi
+
+        git config user.name "github-actions[bot]"
+        git config user.email "github-actions[bot]@users.noreply.github.com"
+        git remote set-url origin "https://x-access-token:${GH_TOKEN}@github.com/${{ github.repository }}.git"
+
+        if [ "$SCAN_MODE" = "all" ]; then
+          while IFS= read -r f; do
+            git add -- "$f"
+          done < "$MANIFEST"
+          if git diff --cached --quiet; then
+            echo "Manifest files have no actual changes — skipping sweep PR."
+            exit 0
+          fi
+          BRANCH="${SWEEP_BRANCH_PREFIX}-$(date +%Y-%m)"
+          git checkout -b "$BRANCH"
+          git commit -m "$SWEEP_COMMIT_MESSAGE"
+          git push origin "$BRANCH"
+          gh pr create --base "$SWEEP_BASE" --head "$BRANCH" --title "$SWEEP_PR_TITLE" --body "$SWEEP_PR_BODY"
+        else
+          while IFS= read -r f; do
+            git add -- "$f"
+            if git diff --cached --quiet -- "$f"; then
+              echo "No actual change for $f — skipping commit."
+              continue
+            fi
+            git commit -m "$COMMIT_PREFIX $f"
+          done < "$MANIFEST"
+          git push
+        fi

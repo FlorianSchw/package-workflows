@@ -49,7 +49,6 @@ build_submit_tests_tool <- function(dslite_datasets) {
   )
 
   list(
-    name = anthropic_config$tool_name,
     description = "Submit generated testthat tests as individual structured fields, never as assembled test_that() syntax.",
     input_schema = input_schema
   )

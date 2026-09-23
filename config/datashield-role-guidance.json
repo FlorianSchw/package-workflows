@@ -32,6 +32,15 @@
       "If a corresponding server-side function or package exists, you may note",
       "the relationship briefly — but do not assume or invent one; some client",
       "packages are standalone wrappers with no server-side counterpart."
+    ],
+    "demo_environment": [
+      "Canonical current demo environment for the examples field — use this",
+      "verbatim as the example code (do not add any comment markers, tag",
+      "labels, or wrapper syntax yourself — the script adds that structure).",
+      "This reflects DataSHIELD's typical multi-centric usage (multiple",
+      "studies connected at once). Treat any existing example content that",
+      "connects to only one server, or references a different server or VM",
+      "setup, as outdated and replace it with this:"
     ]
   },
   "server": {

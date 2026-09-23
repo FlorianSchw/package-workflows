@@ -34,7 +34,6 @@ build_submit_review_tool <- function(parsed, profile) {
   )
 
   list(
-    name = anthropic_config$tool_name,
     description = "Submit the roxygen2 documentation review as individual prose fields, never as assembled roxygen text.",
     input_schema = input_schema
   )
