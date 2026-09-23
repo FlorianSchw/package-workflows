@@ -113,6 +113,9 @@ jobs:
           scan-mode: ${{ inputs.scan-mode }}
           token: ${{ steps.push_token.outputs.token || secrets.commit-push-pat || secrets.GITHUB_TOKEN }}
           commit-prefix: 'docs: apply roxygen suggestion for'
+          sub-branch-prefix: 'docs-suggest'
+          sub-pr-title: 'Roxygen documentation suggestions'
+          sub-pr-body: 'Automated roxygen2 documentation suggestions. Review and merge to include them.'
           sweep-branch-prefix: 'docs/roxygen-sweep'
           sweep-commit-message: 'docs: monthly roxygen suggestion sweep'
           sweep-pr-title: 'Monthly roxygen documentation sweep'
