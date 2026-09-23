@@ -2,12 +2,24 @@ name: Check DESCRIPTION Authors
 
 on:
   workflow_call:
-    secrets: {}
+    secrets:
+      app-id:
+        description: 'Optional. See resolve-push-token action for details.'
+        required: false
+      app-private-key:
+        description: 'Optional. See resolve-push-token action for details.'
+        required: false
+      commit-push-pat:
+        description: >
+          Optional. A classic or fine-grained PAT with write access to this
+          repo's contents — used as a fallback if app-id is not supplied.
+        required: false
 
 jobs:
   check-authors:
     runs-on: ubuntu-latest
     permissions:
+      id-token: write
       contents: write
       pull-requests: write
 
@@ -68,12 +80,20 @@ jobs:
             }
           '
 
+      - name: Resolve push token
+        id: push_token
+        if: hashFiles('updated_files.txt') != ''
+        uses: FlorianSchw/package-workflows/.github/actions/resolve-push-token@main
+        with:
+          app-id: ${{ secrets.app-id }}
+          app-private-key: ${{ secrets.app-private-key }}
+
       - name: Commit DESCRIPTION update
         if: hashFiles('updated_files.txt') != ''
         uses: FlorianSchw/package-workflows/.github/actions/commit-updated-files@main
         with:
           scan-mode: 'changed'
-          token: ${{ secrets.GITHUB_TOKEN }}
+          token: ${{ steps.push_token.outputs.token || secrets.commit-push-pat || secrets.GITHUB_TOKEN }}
           commit-prefix: 'chore: add contributor(s) to'
           sub-branch-prefix: 'authors-suggest'
           sub-pr-title: 'Add contributor(s) to DESCRIPTION'
