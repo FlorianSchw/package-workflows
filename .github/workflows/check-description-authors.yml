@@ -42,13 +42,27 @@ jobs:
 
       - uses: r-lib/actions/setup-r-dependencies@v2
         with:
-          extra-packages: any::desc, any::jsonlite
+          extra-packages: any::desc, any::jsonlite, any::httr2
           needs: check
 
+      # Resolves each commit to its GitHub account's profile display name
+      # (via the commits API + users API), not just the free-text git
+      # config name a contributor happened to set locally — avoids
+      # false positives like a GitHub handle not matching an existing
+      # "Real Name" entry in DESCRIPTION. Falls back to the raw git commit
+      # author name when a commit isn't linked to any GitHub account, or
+      # when that account's profile name field is left blank.
       - name: Find and add missing contributors
         id: authors
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           Rscript -e '
+            library(httr2)
+
+            repo <- Sys.getenv("GITHUB_REPOSITORY")
+            gh_token <- Sys.getenv("GH_TOKEN")
+
             config_path <- if (file.exists("bot-authors.json")) {
               "bot-authors.json"
             } else {
@@ -56,12 +70,57 @@ jobs:
             }
             bot_names <- jsonlite::fromJSON(config_path)$bot_names
 
-            raw <- system2(
-              "git", c("log", "origin/${{ github.event.pull_request.base.ref }}...HEAD", "--format=%an"),
+            gh_get <- function(path) {
+              resp <- request(paste0("https://api.github.com", path)) |>
+                req_headers(
+                  "Authorization" = paste("Bearer", gh_token),
+                  "Accept" = "application/vnd.github+json"
+                ) |>
+                req_error(is_error = function(resp) FALSE) |>
+                req_perform()
+              if (resp_status(resp) >= 400) return(NULL)
+              resp_body_json(resp)
+            }
+
+            shas <- unique(system2(
+              "git", c("log", "origin/${{ github.event.pull_request.base.ref }}...HEAD", "--format=%H"),
               stdout = TRUE
-            )
-            commit_authors <- unique(raw)
-            commit_authors <- commit_authors[!commit_authors %in% bot_names]
+            ))
+
+            resolved_names <- character(0)
+            seen_logins <- character(0)
+
+            for (sha in shas) {
+              commit_data <- gh_get(sprintf("/repos/%s/commits/%s", repo, sha))
+              if (is.null(commit_data)) next
+
+              git_author_name <- commit_data$commit$author$name
+              gh_author <- commit_data$author
+
+              if (is.null(gh_author)) {
+                if (!is.null(git_author_name) && !git_author_name %in% bot_names) {
+                  resolved_names <- c(resolved_names, git_author_name)
+                }
+                next
+              }
+
+              login <- gh_author$login
+              if (login %in% bot_names || login %in% seen_logins) next
+              seen_logins <- c(seen_logins, login)
+
+              user_data <- gh_get(sprintf("/users/%s", login))
+              profile_name <- if (!is.null(user_data) && !is.null(user_data$name) && nzchar(user_data$name)) {
+                user_data$name
+              } else {
+                git_author_name
+              }
+
+              if (!is.null(profile_name)) {
+                resolved_names <- c(resolved_names, profile_name)
+              }
+            }
+
+            commit_authors <- unique(resolved_names)
 
             d <- desc::description$new("DESCRIPTION")
             existing <- format(d$get_authors())
