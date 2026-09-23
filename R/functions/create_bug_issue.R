@@ -1,7 +1,7 @@
 # Creates a separate GitHub issue for a failing generated test classified
 # as real_bug — a genuine defect the test caught deserves more durability
 # than a PR comment (survives even if the PR is closed without the
-# generated test being merged), per test-coverage-workflow-design-notes.md.
+# generated test being merged), per docs/test-coverage-suggest.md.
 create_bug_issue <- function(function_name, test_block, failure_message, classification) {
   title <- sprintf("Possible bug found by generated test: %s", function_name)
   body <- sprintf(

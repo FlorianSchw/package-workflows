@@ -1,6 +1,6 @@
 # Builds the testing-strategy guidance folded into the test-generation
 # prompt — a genuinely different STRATEGY per role, not just wording (see
-# test-coverage-workflow-design-notes.md's "DATASHIELD ROLE SPLIT").
+# "DataSHIELD client packages: DSLite" in docs/test-coverage-suggest.md).
 # `guidance` is config/test-role-guidance.json. dslite_datasets is the
 # config/dslite-canned-datasets.json$datasets list, only needed when a
 # fresh setup.R will be generated: Claude picks one via the dslite_dataset

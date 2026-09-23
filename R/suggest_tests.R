@@ -12,7 +12,7 @@
 # Sibling to R/suggest_roxygen.R — same conventions: orchestration only
 # here, logic in R/functions/, Claude call settings in config.yml,
 # deterministic field-based assembly (Claude never writes final test_that()
-# syntax directly). See test-coverage-workflow-design-notes.md for the
+# syntax directly). See docs/test-coverage-suggest.md for the
 # design reasoning, including which pieces are still placeholders
 # (per-function coverage data, in particular).
 
