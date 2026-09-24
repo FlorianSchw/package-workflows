@@ -1,0 +1,53 @@
+---
+title: "package-workflows"
+subtitle: "Reusable GitHub Actions workflows for R packages"
+---
+
+This repository holds **reusable workflows** (`on: workflow_call`) for R
+package repositories: checks, releases, and bot suggestions for
+documentation, tests and contributor credits. Each package repository only
+needs thin *caller* files that point here, so CI logic is written once
+instead of being copied into every repository.
+
+A caller is a normal workflow file in your repository whose job `uses:` a
+workflow from here:
+
+```yaml
+jobs:
+  check:
+    uses: FlorianSchw/package-workflows/.github/workflows/R-CMD-Check.yml@main
+```
+
+::: {.callout-note}
+## Work in progress
+These workflows are referenced at `@main` and still evolving. Versioned
+releases will follow once the inputs have settled — feedback on what you
+need is very welcome, via [issues](https://github.com/FlorianSchw/package-workflows/issues).
+:::
+
+## Workflows
+
+| Group | Workflow | What it does |
+|---|---|---|
+| Pull request checks | [R CMD check](r-cmd-check.qmd) | `R CMD check` on an OS × R version matrix, optional Codecov upload |
+| | [Commitlint](commitlint.qmd) | Checks that commit messages follow Conventional Commits |
+| | [Require head branch](require-head-branch.qmd) | Only lets PRs into a branch (e.g. `main`) come from one branch (e.g. `dev`) |
+| Release | [Release chain](release.qmd) | How the release workflows below fit together |
+| | [Package release](package-release.qmd) | Versions, tags and drafts a GitHub release with semantic-release |
+| | [Merge pull request](merge-pull-request.qmd) | Merges a PR from a workflow |
+| | [Create issue](create-issue.qmd) | Opens an issue when a check fails |
+| | [Trigger release publish](trigger-release-publish.qmd) | Starts the release as a separate run |
+| Bot suggestions | [How suggestions work](suggestions.qmd) | Shared mechanics: suggestion PRs, sweeps, cleanup |
+| | [DESCRIPTION authors](check-description-authors.qmd) | Suggests adding new contributors to `DESCRIPTION` |
+| | [Roxygen suggestions](roxygen-suggest.qmd) | Claude reviews and rewrites roxygen2 documentation |
+| | [Test coverage suggestions](test-coverage-suggest.qmd) | Claude writes testthat tests; only passing ones are proposed |
+| | [Claude setup](claude-setup.qmd) | Keyless Claude API access for the two workflows above |
+| | [Cleanup suggestion branch](cleanup-suggestion-branch.qmd) | Deletes bot branches once their PR is closed |
+
+## Where to start
+
+1. [Getting started](getting-started.qmd) — branch model, secrets and the
+   GitHub App most workflows rely on.
+2. [How it fits together](overview.qmd) — diagrams of what runs when.
+3. Copy the example caller of each workflow you want into
+   `.github/workflows/` of your repository.

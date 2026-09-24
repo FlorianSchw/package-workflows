@@ -1,0 +1,67 @@
+---
+title: "Test coverage suggestions"
+description: "Claude writes testthat tests; only tests that pass are proposed."
+---
+
+`test-coverage-suggest.yml` finds functions without tests, has Claude
+write real `testthat` tests for them, **runs every generated test**, and
+proposes only the ones that pass as a [suggestion PR](suggestions.qmd).
+
+## What it does
+
+- **Which functions**: a function counts as tested if
+  `tests/testthat/test-<function>.R` exists and mentions it. Others get up
+  to five new tests. One function per file is assumed.
+- **Existing tests are never changed** — new tests are only appended, or
+  the test file is created.
+- **Every test is run** with your package loaded from source before it is
+  proposed.
+
+## Failing tests
+
+A generated test that fails is not proposed. Claude classifies why it
+failed, from the actual error output, and the workflow reports it:
+
+| Classification | Meaning | Reported as |
+|---|---|---|
+| `real_bug` | The test is right and found a defect | An issue |
+| `bad_test` | The test itself is wrong | A comment on your PR |
+| `env_misconfiguration` | The test setup is broken, e.g. a missing package | A comment on your PR |
+
+In a [sweep](suggestions.qmd#sweeps) there is no PR to comment on, so the
+last two are listed in the sweep PR's description instead, or in one issue
+if no test passed at all.
+
+## DataSHIELD client packages
+
+Client-side functions need a DataSHIELD server. With `datashield: true` and
+`datashield-type: client`, tests run against
+[DSLite](https://github.com/datashield/DSLite), an in-process server:
+an existing DSLite `tests/testthat/setup.R` is reused; otherwise one is
+created with one of DSLite's bundled datasets.
+
+::: {.callout-important}
+DSLite takes the server functions from the **installed server packages**.
+List them (e.g. `dsBase`), together with `DSLite` and `testthat`, in your
+`DESCRIPTION` — for example under `Suggests` — so the workflow installs
+them. Otherwise every test fails as `env_misconfiguration`.
+:::
+
+## Example
+
+{{< example test-suggest.yml >}}
+
+Claude is called without a stored API key; the three `anthropic-*` secrets
+come from the [Claude setup](claude-setup.qmd).
+
+## Inputs
+
+{{< wf-inputs test-coverage-suggest.yml >}}
+
+## Secrets
+
+{{< wf-secrets test-coverage-suggest.yml >}}
+
+## Permissions
+
+{{< wf-permissions test-coverage-suggest.yml >}}

@@ -52,7 +52,7 @@ example to use in `@examples`.
 - A blank line between block and function must not read as "no block" —
   the gap is tracked and preserved.
 - Adaptive thinking (default on Sonnet 5) used the whole `max_tokens`
-  budget before answering → `thinking: disabled` in `config.yml`.
+  budget before answering → `thinking: disabled` in `config/claude.yml`.
 - Free-text "return only JSON" got prose prepended → forced tool call.
 - `vapply()`'s default `USE.NAMES = TRUE` attached raw argument text as
   names on `params`, which serialized the schema's `required` as a JSON

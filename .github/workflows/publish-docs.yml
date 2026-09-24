@@ -1,0 +1,44 @@
+# Not a reusable workflow: builds the Quarto site in docs/ and publishes it
+# to GitHub Pages. The pages read the workflow files and examples/ directly,
+# so a change to either also rebuilds the site.
+name: Publish Docs
+
+on:
+  push:
+    branches: [main]
+    paths: ['docs/**', 'examples/**', '.github/workflows/**']
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: false
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: quarto-dev/quarto-actions/setup@v2
+
+      - name: Render site
+        run: quarto render docs
+
+      - uses: actions/upload-pages-artifact@v4
+        with:
+          path: docs/_site
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - id: deployment
+        uses: actions/deploy-pages@v4

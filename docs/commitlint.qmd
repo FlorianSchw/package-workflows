@@ -1,0 +1,30 @@
+---
+title: "Commitlint"
+description: "Checks that every commit in a PR follows Conventional Commits."
+---
+
+`commitlint.yml` lints every commit of the pull request against
+[Conventional Commits](https://www.conventionalcommits.org), e.g.
+`feat: add ds.mean wrapper` or `fix(ds.summary): handle NA input`.
+
+This matters beyond style: the [release](package-release.qmd) derives the
+next version from these prefixes — `fix:` gives a patch, `feat:` a minor
+and a `BREAKING CHANGE:` footer (or `feat!:`) a major release.
+
+## Example
+
+{{< example commitlint.yml >}}
+
+## Rules
+
+The shared configuration extends `@commitlint/config-conventional`, with
+one change: commit headers may be up to **150** characters (default 100).
+Body and footer lines are still limited to 100 characters.
+
+## Inputs
+
+{{< wf-inputs commitlint.yml >}}
+
+## Permissions
+
+{{< wf-permissions commitlint.yml >}}

@@ -1,0 +1,50 @@
+---
+title: "Roxygen suggestions"
+description: "Claude reviews and rewrites roxygen2 documentation."
+---
+
+`roxygen-suggest.yml` has Claude review each changed function's roxygen2
+block for completeness and accuracy against its code, and proposes an
+improved block as a [suggestion PR](suggestions.qmd).
+
+## What it changes
+
+- **Only six parts are rewritten**: title, description, details,
+  parameters, return value and examples. Every other tag — `@export`,
+  `@importFrom`, `@seealso`, `@rdname`, … — is kept exactly as written.
+- **Exported and internal functions** get different guidance, e.g. examples
+  are required only for exported ones.
+- **Style**: explicit `@title` / `@description` tags, tags in a fixed
+  order, examples wrapped in `\dontrun{}`. Order and guidance are set in
+  `config/roxygen-style.json` and can be
+  [overridden](suggestions.qmd#adjusting-the-guidance).
+- **One function per file** is assumed: only the first function of a file
+  is reviewed.
+
+If a block is already adequate, nothing is proposed.
+
+## DataSHIELD packages
+
+With `datashield: true`, Claude gets role-specific guidance for client or
+server packages (`datashield-type`), e.g. about disclosure control. Client
+packages listed in `config/datashield-example-env.json` also get a
+ready-made multi-study login to the Opal demo server for their examples.
+
+## Example
+
+{{< example docs-suggest.yml >}}
+
+Claude is called without a stored API key; the three `anthropic-*` secrets
+come from the [Claude setup](claude-setup.qmd).
+
+## Inputs
+
+{{< wf-inputs roxygen-suggest.yml >}}
+
+## Secrets
+
+{{< wf-secrets roxygen-suggest.yml >}}
+
+## Permissions
+
+{{< wf-permissions roxygen-suggest.yml >}}

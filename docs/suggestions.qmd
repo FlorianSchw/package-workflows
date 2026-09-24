@@ -1,0 +1,69 @@
+---
+title: "How suggestions work"
+description: "Shared mechanics of the bot suggestion workflows."
+---
+
+Three workflows propose changes to your package instead of just checking
+it: [DESCRIPTION authors](check-description-authors.qmd),
+[roxygen suggestions](roxygen-suggest.qmd) and
+[test coverage suggestions](test-coverage-suggest.qmd). They share how
+their changes reach you.
+
+## Suggestions are pull requests, never direct commits
+
+A bot never commits to your branch. When a workflow has something to
+suggest for your PR, it
+
+1. commits each changed file separately on a branch
+   `bot-suggest/<kind>/<your branch>`;
+2. opens a pull request from there **into your feature branch**;
+3. comments on your PR, e.g.
+
+   > **Roxygen documentation suggestions** opened: #19 (into `feat/my-feature`)
+   >
+   > - `R/ds.wrapper.R`
+
+You review the suggestion like any PR: merge it, edit it first, or close
+it. New pushes to your PR update the same suggestion PR instead of opening
+another one.
+
+## Sweeps {#sweeps}
+
+The roxygen and test workflows also have a `scan-mode: all`, meant for a
+monthly schedule: they review the **whole package** on `dev` (the
+`sweep-base` input) and collect everything in one pull request into `dev`
+from `bot-suggest/<kind>-sweep-YYYY-MM`. Running a sweep again in the same
+month updates that month's pull request.
+
+The example callers switch mode by trigger, so one file handles both:
+
+```yaml
+    with:
+      scan-mode: ${{ github.event_name == 'pull_request' && 'changed' || 'all' }}
+```
+
+## Housekeeping
+
+- The bot never reviews its own pull requests: the suggestion workflows skip
+  any PR from a `bot-suggest/*` branch.
+- [Cleanup suggestion branch](cleanup-suggestion-branch.qmd) deletes a
+  `bot-suggest/*` branch once its pull request is merged or closed.
+- With the [GitHub App](getting-started.qmd#github-app) configured, your
+  required checks run on suggestion PRs; without it they don't, and a
+  ruleset requiring them would block the merge.
+
+## Adjusting the guidance
+
+The workflows read their settings, guidance and prompts from this
+repository. To change one for your package only, put a file at the **same
+path** in your repository — it is used instead of the shared one:
+
+| File | Controls |
+|---|---|
+| `config/bot-authors.json` | Accounts never added to `DESCRIPTION` |
+| `config/claude.yml` | Claude model and request settings |
+| `config/roxygen-style.json` | Roxygen tag order and per-tag guidance |
+| `config/test-role-guidance.json` | Testing strategy given to Claude |
+| `prompts/*.md` | The full prompts sent to Claude |
+
+Start from a copy of the shared file, since yours replaces it completely.

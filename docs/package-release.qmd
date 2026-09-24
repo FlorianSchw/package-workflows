@@ -1,0 +1,55 @@
+---
+title: "Package release"
+description: "Versions the package, tags it and drafts a GitHub release with semantic-release."
+---
+
+`package-release.yml` runs [semantic-release](https://semantic-release.gitbook.io)
+on `main`. From the [Conventional Commits](commitlint.qmd) since the last
+release it
+
+1. works out the next version (`fix:` → patch, `feat:` → minor,
+   breaking change → major) — no release if nothing qualifies;
+2. writes it to `DESCRIPTION` and commits that as
+   `chore(release): set Description file to <version>`;
+3. tags the commit with the plain version (`1.2.0`, no `v` prefix);
+4. drafts a GitHub release with generated release notes — publish it
+   yourself after a final look.
+
+It is normally started by the [release chain](release.qmd), not directly.
+
+## Example
+
+{{< example release-publish.yml >}}
+
+## Configuration
+
+If your repository has a `.releaserc.json` in its root, it is used as is.
+Otherwise the shared configuration of this repository is used, read at the
+ref given by `config-ref`.
+
+Only `desc` is installed for R. If your own configuration runs R code that
+needs more packages, the release will fail on the missing package.
+
+## Dry run
+
+With `dry-run: true`, semantic-release checks its access, works out the
+next version and prints the release notes — but prepares, commits, tags and
+publishes nothing. Useful for testing the chain on a real repository.
+
+## Inputs
+
+{{< wf-inputs package-release.yml >}}
+
+## Secrets
+
+{{< wf-secrets package-release.yml >}}
+
+::: {.callout-important}
+On a protected `main`, the version commit and tag need the
+[GitHub App](getting-started.qmd#github-app) as a bypass actor — see
+[Branch protection](branch-protection.qmd).
+:::
+
+## Permissions
+
+{{< wf-permissions package-release.yml >}}

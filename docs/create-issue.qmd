@@ -1,0 +1,34 @@
+---
+title: "Create issue"
+description: "Opens an issue for the PR author when a check fails."
+---
+
+`create-issue.yml` opens an issue titled *Pull Request test showed possible
+problems* with the labels `bug` and `review`, links the failed run and
+assigns the PR author (plus any extra assignees). In the
+[release chain](release.qmd) it runs when R CMD check fails on the
+`dev` → `main` PR.
+
+## Example
+
+It is used as a job inside the release trigger:
+
+```yaml
+  on-failure:
+    needs: check
+    if: needs.check.result == 'failure'
+    uses: FlorianSchw/package-workflows/.github/workflows/create-issue.yml@main
+    with:
+      pr_author: ${{ github.event.pull_request.user.login }}
+      run_url: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+```
+
+## Inputs
+
+{{< wf-inputs create-issue.yml >}}
+
+The `template` path refers to this repository, not yours.
+
+## Permissions
+
+{{< wf-permissions create-issue.yml >}}

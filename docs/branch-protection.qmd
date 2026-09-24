@@ -1,0 +1,46 @@
+---
+title: "Branch protection"
+description: "The ruleset settings the workflows rely on."
+---
+
+The workflows work without branch protection, but the branch model only
+holds if GitHub enforces it. These are the settings the workflows expect,
+configured as [repository or organization rulesets](https://docs.github.com/en/repositories/configuring-branches-and-merges-in-your-repository/managing-rulesets/about-rulesets).
+
+## `dev`
+
+- **Require a pull request before merging.**
+- **Require status checks to pass**: the jobs of [R CMD check](r-cmd-check.qmd)
+  and [Commitlint](commitlint.qmd), plus any others you rely on.
+- Block force pushes and deletion.
+
+Suggestion PRs target your feature branches, not `dev`, so they are not
+affected. The monthly [sweep](suggestions.qmd#sweeps) PR does target `dev`;
+with the [GitHub App](getting-started.qmd#github-app) configured, the
+required checks run on it like on any other PR.
+
+## `main`
+
+- **Require a pull request before merging.**
+- **Require status checks to pass**: the job of
+  [Require head branch](require-head-branch.qmd), so only `dev` can be
+  merged.
+- **Allow merge commits**: the [automatic merge](merge-pull-request.qmd)
+  uses one.
+- **Bypass list: your GitHub App.** The [release](package-release.qmd)
+  pushes a version commit and a tag straight to `main`, which the
+  pull-request rule would otherwise block.
+- Block force pushes and deletion.
+
+::: {.callout-important}
+The bypass only works for pushes made with the App's token. Without the App
+configured, the release falls back to `GITHUB_TOKEN`, which can't be a
+bypass actor — the version commit is then rejected on a protected `main`.
+:::
+
+## Status check names
+
+A required status check is named after the **job** in your caller file,
+combined with the job inside the reusable workflow — for example
+`require-head-branch / verify-source-branch`. Pick the names from a PR's
+checks list after the workflow has run once.

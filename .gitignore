@@ -2,3 +2,8 @@
 .Rhistory
 .RData
 .Ruserdata
+
+# Quarto site build output
+docs/_site/
+docs/.quarto/
+/.quarto/

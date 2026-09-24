@@ -1,0 +1,22 @@
+---
+title: "Cleanup suggestion branch"
+description: "Deletes bot branches once their pull request is closed."
+---
+
+`cleanup-suggestion-branch.yml` deletes the branch of a closed pull
+request — merged or not — if it is a `bot-suggest/*` branch and no other
+open pull request still uses it. Branches of your own pull requests are
+never touched.
+
+## Example
+
+{{< example cleanup-suggestion-branch.yml >}}
+
+The workflow only runs if this caller exists on the **base branch** of the
+closed pull request: for suggestion PRs that is your feature branch, for
+[sweep](suggestions.qmd#sweeps) PRs `dev`. Adding it to `dev` covers both,
+since feature branches start from there.
+
+## Permissions
+
+{{< wf-permissions cleanup-suggestion-branch.yml >}}

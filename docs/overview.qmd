@@ -1,0 +1,69 @@
+---
+title: "How it fits together"
+description: "What runs when: feature PRs, the release chain and the monthly sweeps."
+---
+
+The workflows cover three moments in a package's life. Each diagram shows
+the trigger on the left and what ends up in your repository on the right.
+
+## Pull request into `dev`
+
+Every PR from a feature branch runs the checks and the bot suggestions in
+parallel. Suggestions never land on your branch directly: each opens its own
+small pull request *into* your feature branch, and a comment on your PR
+links to it.
+
+```{mermaid}
+flowchart LR
+  pr(["PR: feature → dev"])
+  pr --> check["R CMD check"]
+  pr --> lint["Commitlint"]
+  pr --> authors["DESCRIPTION authors"]
+  pr --> rox["Roxygen suggestions"]
+  pr --> tests["Test suggestions"]
+  authors --> sub["Suggestion PR into the feature branch<br/>+ link comment on your PR"]
+  rox --> sub
+  tests --> sub
+  tests -. "failing generated test" .-> fb["PR comment, or issue<br/>for a likely bug"]
+  sub -- "merged or closed" --> clean["Bot branch deleted"]
+```
+
+Checks and suggestions only act if there is something to report; a PR
+without changes to `R/` skips the suggestion workflows entirely.
+
+## Release: `dev` into `main`
+
+Opening a PR from `dev` into `main` is the only manual step. If the check
+passes, the PR is merged automatically and the release is started as a
+separate run.
+
+```{mermaid}
+flowchart LR
+  pr(["PR: dev → main"])
+  pr --> head["Require head branch<br/>(only dev allowed)"]
+  pr --> check["R CMD check"]
+  check -- "success" --> merge["Merge PR"]
+  check -- "failure" --> issue["Issue assigned<br/>to the PR author"]
+  merge --> trigger["Trigger release<br/>(repository_dispatch)"]
+  trigger --> release["semantic-release: next version,<br/>DESCRIPTION, tag, draft GitHub release"]
+```
+
+Why the release runs separately is explained on the
+[release chain](release.qmd) page.
+
+## Monthly sweep
+
+On a schedule, the suggestion workflows review the *whole* package on
+`dev`, not just changed files, and collect everything in one pull request
+per month.
+
+```{mermaid}
+flowchart LR
+  cron(["Schedule, e.g. 1st of the month"])
+  cron --> rox["Roxygen sweep of dev"]
+  cron --> tests["Test sweep of dev"]
+  rox --> pr["Sweep PR into dev"]
+  tests --> pr
+  tests -. "failing generated tests" .-> report["Report in the sweep PR,<br/>issues for likely bugs"]
+  pr -- "merged or closed" --> clean["Bot branch deleted"]
+```

@@ -1,0 +1,36 @@
+---
+title: "Trigger release publish"
+description: "Starts the release as a separate workflow run."
+---
+
+`trigger-release-publish.yml` sends a `repository_dispatch` event of type
+`release-publish` to your repository. A caller listening for it — the
+publish file of the [release chain](release.qmd) — then runs the release as
+a new, independent run. Why this detour is needed is explained there.
+
+## Example
+
+It is the last job of the release trigger:
+
+```yaml
+  trigger-release:
+    needs: on-success
+    if: needs.on-success.result == 'success'
+    uses: FlorianSchw/package-workflows/.github/workflows/trigger-release-publish.yml@main
+```
+
+The receiving side:
+
+```yaml
+on:
+  repository_dispatch:
+    types: [release-publish]
+```
+
+## Inputs
+
+{{< wf-inputs trigger-release-publish.yml >}}
+
+## Permissions
+
+{{< wf-permissions trigger-release-publish.yml >}}

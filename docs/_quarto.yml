@@ -1,0 +1,58 @@
+project:
+  type: website
+  output-dir: _site
+
+shortcodes:
+  - _shortcodes/workflow.lua
+
+website:
+  title: "package-workflows"
+  description: "Reusable GitHub Actions workflows for R packages"
+  repo-url: https://github.com/FlorianSchw/package-workflows
+  repo-actions: [source, issue]
+  page-navigation: true
+  navbar:
+    right:
+      - icon: github
+        href: https://github.com/FlorianSchw/package-workflows
+        aria-label: GitHub repository
+  sidebar:
+    style: docked
+    search: true
+    contents:
+      - href: index.qmd
+        text: Home
+      - getting-started.qmd
+      - overview.qmd
+      - branch-protection.qmd
+      - section: "Pull request checks"
+        contents:
+          - r-cmd-check.qmd
+          - commitlint.qmd
+          - require-head-branch.qmd
+      - section: "Release"
+        contents:
+          - release.qmd
+          - package-release.qmd
+          - merge-pull-request.qmd
+          - create-issue.qmd
+          - trigger-release-publish.qmd
+      - section: "Bot suggestions"
+        contents:
+          - suggestions.qmd
+          - check-description-authors.qmd
+          - roxygen-suggest.qmd
+          - test-coverage-suggest.qmd
+          - claude-setup.qmd
+          - cleanup-suggestion-branch.qmd
+
+format:
+  html:
+    theme:
+      light: cosmo
+      dark: darkly
+    toc: true
+    code-copy: true
+    code-overflow: wrap
+    mermaid:
+      theme: neutral

@@ -58,14 +58,23 @@ the live caller used to validate changes before wider rollout.
   `check_description_authors.R` (env/config wiring + main loop only) and
   `R/functions/` (all logic, one function per file, loaded in bulk via
   `purrr::walk()`). No R inlined in workflow YAML.
-- `config/`, `prompts/`, `config.yml` — guidance, prompt templates and
+- `config/`, `prompts/` — guidance, prompt templates and
   Claude call settings for the suggestion workflows.
-- `docs/` — per-workflow design notes and status.
+- `dev-notes/` — internal design notes and status per suggestion workflow
+  (not published).
+- `docs/` — Quarto site, published to GitHub Pages by `publish-docs.yml`
+  (the only non-reusable workflow). One page per workflow, grouped in the
+  sidebar via `docs/_quarto.yml`. Inputs/secrets/permissions tables are
+  generated from the workflow YAML by `docs/_shortcodes/workflow.lua`
+  (`wf-inputs`, `wf-secrets`, `wf-permissions`); `example` includes a file
+  from `examples/` — generic caller files, `@main`. Adding or changing a
+  workflow: update its example and page prose too; the tables follow
+  automatically. Preview with `quarto preview docs`.
 
 ## SUGGESTION WORKFLOWS — shared mechanics
 
-Details per workflow: [docs/roxygen-suggest.md](docs/roxygen-suggest.md),
-[docs/test-coverage-suggest.md](docs/test-coverage-suggest.md).
+Details per workflow: [dev-notes/roxygen-suggest.md](dev-notes/roxygen-suggest.md),
+[dev-notes/test-coverage-suggest.md](dev-notes/test-coverage-suggest.md).
 
 - **Auth: WIF, no static API key.** The `anthropic-token` action exchanges
   the job's GitHub OIDC token for a short-lived Anthropic token. Nothing
@@ -79,7 +88,9 @@ Details per workflow: [docs/roxygen-suggest.md](docs/roxygen-suggest.md),
   a `claims` matcher on `job_workflow_ref`, targeting the repo's service
   account in that workflow's workspace). Because each workflow needs its
   own rule ID, callers map secrets explicitly — not `secrets: inherit`.
-- **Claude settings:** `config.yml`, one `default` profile plus one per
+- **Claude settings:** `config/claude.yml` (not a root `config.yml`: R
+  packages using the `config` package often have one, which would override
+  it), one `default` profile plus one per
   task (`roxygen-review`, `test-review`, `test-failure-classification`),
   read with `config::get()`. The workflow sets `R_CONFIG_ACTIVE` as an env
   var on the script step. Every Claude call goes through

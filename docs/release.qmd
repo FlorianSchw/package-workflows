@@ -1,0 +1,53 @@
+---
+title: "Release chain"
+description: "From a dev → main pull request to a drafted GitHub release, automatically."
+---
+
+A release needs two caller files. Together they turn a pull request from
+`dev` into `main` into a merged PR and a drafted release — the only manual
+step is opening the PR.
+
+```{mermaid}
+flowchart LR
+  pr(["PR: dev → main"]) --> check["R CMD check"]
+  check -- "success" --> merge["Merge PR"]
+  check -- "failure" --> issue["Issue for the PR author"]
+  merge --> trigger["Trigger release"]
+  trigger -. "repository_dispatch:<br/>release-publish" .-> publish["Publish release<br/>(second caller)"]
+```
+
+## 1. Release trigger
+
+Runs on the pull request into `main`. It checks the package, merges the PR
+if the check passes (or opens an issue if it fails), and then starts the
+release.
+
+{{< example release-trigger.yml >}}
+
+The `if: github.head_ref == 'dev'` guard skips everything for PRs from other
+branches; [Require head branch](require-head-branch.qmd) additionally blocks
+them from being merged.
+
+## 2. Publish release
+
+Listens for the `release-publish` event and runs
+[semantic-release](package-release.qmd) on `main`.
+
+{{< example release-publish.yml >}}
+
+## Why two files?
+
+semantic-release refuses to release from a run triggered by a pull
+request, and the first file has to be one — the checks and the merge belong
+to the PR. So after merging, it sends a `repository_dispatch` event, which
+starts the second file as a **new, independent run** on the merged `main`.
+
+This works with the default `GITHUB_TOKEN`: events it creates normally don't
+start new workflow runs, but `repository_dispatch` is an explicit exception.
+
+::: {.callout-tip}
+## Trying it out without releasing
+Set `dry-run: true` in the publish caller. The whole chain runs — including
+the merge — but the release step only reports the next version and the
+release notes in its log. Remove the line before your first real release.
+:::

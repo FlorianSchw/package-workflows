@@ -1,0 +1,74 @@
+---
+title: "Getting started"
+description: "Branch model, caller files, secrets and the GitHub App."
+---
+
+## Branch model
+
+The workflows assume a two-branch model:
+
+- **`dev`** — integration branch. Feature branches are merged here via pull
+  requests, which run the [checks](r-cmd-check.qmd) and the
+  [bot suggestions](suggestions.qmd).
+- **`main`** — release branch. Only `dev` is merged into `main`; that merge
+  is automated and triggers the [release](release.qmd).
+
+Most example callers use `branches: [dev]` or `branches: [main]` in their
+triggers. If your branches are named differently, adjust those triggers and
+the `allowed-head` / `sweep-base` inputs.
+
+## Caller files
+
+Every workflow page has an example caller to copy into
+`.github/workflows/` of your repository. A few rules apply to all of them:
+
+- **Reference `@main`.** Changes here reach your repository on its next run —
+  there is nothing to update on your side.
+- **Grant permissions on the calling job.** A reusable workflow can't have
+  more permissions than its caller grants. Each page lists what its workflow
+  needs under *Permissions*; the examples already include it.
+- **Pass secrets explicitly.** Each workflow declares the secrets it reads.
+  Map them one by one, as the examples do, rather than
+  `secrets: inherit` — two workflows may need different values under the
+  same name (see [Claude setup](claude-setup.qmd)).
+
+## Secrets
+
+The names on the left are what the examples use; you can choose your own,
+as long as the caller maps them to the workflow's secret names.
+
+| Repository secret | Used by | Purpose |
+|---|---|---|
+| `APP_ID`, `APP_PRIVATE_KEY` | release, bot suggestions | GitHub App for bot pushes and PRs — see below |
+| `CODECOV_TOKEN` | R CMD check | Coverage upload; required for private repositories |
+| `ANTHROPIC_ORG_ID` | roxygen / test suggestions | Anthropic organization ID — can be an organization-level secret |
+| `ANTHROPIC_SVAC_ID` | roxygen / test suggestions | Service account of this repository |
+| `ANTHROPIC_FDRL_ROXYGEN`, `ANTHROPIC_FDRL_TESTS` | roxygen / test suggestions | Federation rule per workflow |
+
+The three Anthropic IDs are set up in the Claude Console, see
+[Claude setup](claude-setup.qmd).
+
+## GitHub App {#github-app}
+
+Several workflows push commits or open pull requests. Doing that with the
+default `GITHUB_TOKEN` has two drawbacks:
+
+- **Pull requests opened with `GITHUB_TOKEN` don't trigger workflows**, so
+  required checks never run on a bot's suggestion PR and it can't be merged.
+- **Rulesets can't exempt it**: the release has to push a version commit
+  and tag to a protected `main`, which needs a *bypass actor*.
+
+A GitHub App solves both. The workflows use it automatically when
+`app-id` and `app-private-key` are passed, and fall back to a
+`commit-push-pat` secret or `GITHUB_TOKEN` otherwise.
+
+1. Create a GitHub App (in your organization's or your personal settings)
+   with repository permissions **Contents**, **Pull requests** and
+   **Issues** set to *Read and write*. No webhook is needed.
+2. Generate a private key for it.
+3. Install the App on the repositories that use these workflows.
+4. Store the App ID and the private key as the secrets `APP_ID` and
+   `APP_PRIVATE_KEY` — as organization secrets if several repositories
+   share the App.
+5. Add the App as a bypass actor in your `main` ruleset, see
+   [Branch protection](branch-protection.qmd).

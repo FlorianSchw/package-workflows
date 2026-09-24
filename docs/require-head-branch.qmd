@@ -1,0 +1,21 @@
+---
+title: "Require head branch"
+description: "Only lets pull requests into a branch come from one specific branch."
+---
+
+`require-head-branch.yml` fails a pull request whose source branch isn't
+`allowed-head`. Its job name is what you make a **required status check**
+on `main`, so that only `dev` can ever be merged there — see
+[Branch protection](branch-protection.qmd).
+
+## Example
+
+{{< example require-head-branch.yml >}}
+
+## Inputs
+
+{{< wf-inputs require-head-branch.yml >}}
+
+## Permissions
+
+{{< wf-permissions require-head-branch.yml >}}

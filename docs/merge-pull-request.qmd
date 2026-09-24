@@ -1,0 +1,34 @@
+---
+title: "Merge pull request"
+description: "Merges a pull request from a workflow."
+---
+
+`merge-pull-request.yml` merges the given pull request with a merge
+commit. In the [release chain](release.qmd) it merges the `dev` → `main`
+PR once R CMD check has passed.
+
+## Example
+
+It is used as a job inside the release trigger:
+
+```yaml
+  on-success:
+    needs: check
+    if: needs.check.result == 'success'
+    uses: FlorianSchw/package-workflows/.github/workflows/merge-pull-request.yml@main
+    with:
+      pr_number: ${{ github.event.pull_request.number }}
+```
+
+The full caller is on the [release chain](release.qmd) page.
+
+## Inputs
+
+{{< wf-inputs merge-pull-request.yml >}}
+
+## Permissions
+
+{{< wf-permissions merge-pull-request.yml >}}
+
+The merge only succeeds if your `main` ruleset allows merge commits and all
+required checks have passed — see [Branch protection](branch-protection.qmd).

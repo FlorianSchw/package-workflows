@@ -1,0 +1,15 @@
+name: R CMD Check
+
+on:
+  pull_request:
+    branches: [dev]
+    paths: ['R/**', 'tests/**', 'DESCRIPTION', 'NAMESPACE']
+  workflow_dispatch:
+
+jobs:
+  check:
+    uses: FlorianSchw/package-workflows/.github/workflows/R-CMD-Check.yml@main
+    with:
+      extra-r-packages: ''   # e.g. 'httptest, xml2'
+    secrets:
+      CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}

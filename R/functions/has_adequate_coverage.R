@@ -1,6 +1,6 @@
 # PLACEHOLDER pending real per-function coverage data from R-CMD-Check.yml
 # (covr::function_coverage() handoff — not wired yet, see
-# "Open questions" in docs/test-coverage-suggest.md). Until that exists,
+# "Open questions" in dev-notes/test-coverage-suggest.md). Until that exists,
 # this uses a coarse presence heuristic: a function counts as "adequately
 # tested" only if an existing test file already contains a test_that() call
 # whose description or body references the function name. Anything else

@@ -1,0 +1,56 @@
+---
+title: "Claude setup"
+description: "Keyless Claude API access for the roxygen and test suggestion workflows."
+---
+
+The [roxygen](roxygen-suggest.qmd) and [test](test-coverage-suggest.qmd)
+suggestion workflows call the Claude API **without a stored API key**. They
+use [Workload Identity Federation](https://platform.claude.com/docs/en/manage-claude/workload-identity-federation):
+the job proves its identity with GitHub's OIDC token and gets a
+short-lived Anthropic token in exchange. Nothing secret is stored — the
+three IDs below only say *which* rule to use.
+
+Each repository uses its **own** Anthropic organization and pays for its
+own usage.
+
+## Recommended layout
+
+| In the Claude Console | One per | Why |
+|---|---|---|
+| Workspace | workflow type — e.g. `suggest-docs`, `suggest-tests` | Separate usage and spend limits per workflow type |
+| Service account | repository | The *Cost* page can group by service account, i.e. by repository |
+| Federation rule | repository × workflow | Each rule only admits one workflow file of one repository |
+
+## Setting up a repository
+
+In the Claude Console under **Settings → Workload identity**:
+
+1. **Workspaces** — create the two workspaces once.
+2. **Service account** — create one for the repository and add it to both
+   workspaces.
+3. **Federation rules** — create one per workflow, with GitHub Actions as
+   the provider:
+   - *Subject prefix*: `repo:<owner>/<repo>:*`
+   - *Claim* `job_workflow_ref`:
+     `FlorianSchw/package-workflows/.github/workflows/roxygen-suggest.yml@refs/heads/main`
+     (or `test-coverage-suggest.yml` for the test rule)
+   - *Target*: the repository's service account, in the matching workspace
+4. **Secrets** — store in the repository:
+
+   | Secret | Value |
+   |---|---|
+   | `ANTHROPIC_ORG_ID` | Your organization ID — can be one organization-level secret |
+   | `ANTHROPIC_SVAC_ID` | The service account's `svac_...` ID |
+   | `ANTHROPIC_FDRL_ROXYGEN` | The roxygen rule's `fdrl_...` ID |
+   | `ANTHROPIC_FDRL_TESTS` | The test rule's `fdrl_...` ID |
+
+::: {.callout-warning}
+## Don't mix up the rule IDs
+Each rule only accepts its own workflow file. Passing the roxygen rule's ID
+to the test workflow (or the other way round) fails at the token exchange.
+This is also why the callers map secrets explicitly instead of using
+`secrets: inherit`.
+:::
+
+The caller job needs `id-token: write` to request the OIDC token; the
+example callers already include it.

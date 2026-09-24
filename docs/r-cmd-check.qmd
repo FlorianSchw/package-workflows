@@ -1,0 +1,35 @@
+---
+title: "R CMD check"
+description: "Runs R CMD check across a matrix of OSes and R versions, with optional Codecov upload."
+---
+
+`R-CMD-Check.yml` installs your package's dependencies, runs
+`R CMD check` for every combination of runner OS and R version, and
+uploads test coverage to [Codecov](https://codecov.io) from the first
+combination only.
+
+## Example
+
+{{< example r-cmd-check.yml >}}
+
+Extra system libraries go into `extra-apt-packages`; extra R packages that
+aren't in your `DESCRIPTION` (e.g. for tests) go into `extra-r-packages`,
+as plain names — the workflow adds the `any::` prefix itself.
+
+## Inputs
+
+{{< wf-inputs R-CMD-Check.yml >}}
+
+## Secrets
+
+{{< wf-secrets R-CMD-Check.yml >}}
+
+## Permissions
+
+{{< wf-permissions R-CMD-Check.yml >}}
+
+::: {.callout-tip}
+Use this workflow as a required status check on `dev`, and again inside the
+[release chain](release.qmd), where a passing check on the `dev` → `main`
+PR is what allows the automatic merge.
+:::

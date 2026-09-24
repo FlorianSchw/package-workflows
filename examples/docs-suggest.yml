@@ -1,0 +1,29 @@
+name: Roxygen Doc Suggestions
+
+on:
+  pull_request:
+    branches: [dev]
+    paths: ['R/**']
+  schedule:
+    - cron: '0 6 1 * *'   # monthly sweep of the whole package
+  workflow_dispatch:
+
+jobs:
+  suggest-docs:
+    permissions:
+      id-token: write
+      contents: write
+      pull-requests: write
+    uses: FlorianSchw/package-workflows/.github/workflows/roxygen-suggest.yml@main
+    with:
+      # PRs check only changed files; scheduled and manual runs sweep everything.
+      scan-mode: ${{ github.event_name == 'pull_request' && 'changed' || 'all' }}
+      # DataSHIELD packages only:
+      # datashield: true
+      # datashield-type: client   # or server
+    secrets:
+      anthropic-organization-id: ${{ secrets.ANTHROPIC_ORG_ID }}
+      anthropic-service-account-id: ${{ secrets.ANTHROPIC_SVAC_ID }}
+      anthropic-federation-rule-id: ${{ secrets.ANTHROPIC_FDRL_ROXYGEN }}
+      app-id: ${{ secrets.APP_ID }}
+      app-private-key: ${{ secrets.APP_PRIVATE_KEY }}

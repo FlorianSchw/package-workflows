@@ -1,0 +1,33 @@
+---
+title: "DESCRIPTION authors"
+description: "Suggests adding new contributors to DESCRIPTION."
+---
+
+`check-description-authors.yml` looks at every commit of the pull request
+and checks whether its author is credited in `DESCRIPTION`. Missing people
+are added with the role `aut` and proposed as a
+[suggestion PR](suggestions.qmd) into your branch.
+
+Authors are resolved to the **name on their GitHub profile**, not the name
+in their local git configuration, so a GitHub handle doesn't end up next to
+an existing "Real Name" entry. Commits without a linked GitHub account use
+the git author name. Bots such as `dependabot[bot]` or
+`github-actions[bot]` are skipped; the list lives in
+`config/bot-authors.json` and can be [overridden](suggestions.qmd#adjusting-the-guidance).
+
+::: {.callout-note}
+The full name is added as the given name. Split it into given and family
+name in the suggestion PR before merging if you need that.
+:::
+
+## Example
+
+{{< example check-description-authors.yml >}}
+
+## Secrets
+
+{{< wf-secrets check-description-authors.yml >}}
+
+## Permissions
+
+{{< wf-permissions check-description-authors.yml >}}
