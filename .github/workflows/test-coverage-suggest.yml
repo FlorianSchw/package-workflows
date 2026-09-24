@@ -8,6 +8,11 @@ on:
         required: false
         type: string
         default: 'changed'
+      sweep-base:
+        description: '"all" mode: branch to scan and to open the sweep PR against'
+        required: false
+        type: string
+        default: 'dev'
       datashield:
         description: 'Whether this repo is a DataSHIELD package'
         required: false
@@ -50,7 +55,7 @@ jobs:
     steps:
       - uses: actions/checkout@v7
         with:
-          ref: ${{ github.event.pull_request.head.ref || github.ref }}
+          ref: ${{ inputs.scan-mode == 'all' && inputs.sweep-base || github.event.pull_request.head.ref || github.ref }}
           fetch-depth: 0
 
       - name: Checkout shared scripts
@@ -126,6 +131,7 @@ jobs:
           sub-pr-title: 'Generated test coverage suggestions'
           sub-pr-body: 'Automated generated tests. Every included test already passed a real run before being committed — review and merge to include them.'
           origin-pr-number: ${{ github.event.pull_request.number }}
+          sweep-base: ${{ inputs.sweep-base }}
           sweep-branch-prefix: 'tests/coverage-sweep'
           sweep-commit-message: 'test: monthly test coverage sweep'
           sweep-pr-title: 'Monthly test coverage sweep'

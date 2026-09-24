@@ -97,9 +97,11 @@ Details per workflow: [docs/roxygen-suggest.md](docs/roxygen-suggest.md),
   opened as a sub-PR *back into the PR branch* — never committed onto it
   directly, so the PR author reviews every suggestion. When the sub-PR is
   newly created and `origin-pr-number` is set, a link comment is posted on
-  the originating PR. `all` mode: one commit on a dated sweep branch + PR
-  against `dev`. `resolve-push-token` provides an App token when
-  configured, so the bot's PRs trigger the caller's required checks
+  the originating PR. `all` mode: checks out and scans the `sweep-base`
+  input (default `dev` — a scheduled run would otherwise start on `main`),
+  one commit on a dated sweep branch + PR against `sweep-base`.
+  `resolve-push-token` provides an App token when configured, so the
+  bot's PRs trigger the caller's required checks
   (`GITHUB_TOKEN`-created ones don't). Merged/closed sub-PR branches are
   removed by `cleanup-suggestion-branch.yml`.
 
