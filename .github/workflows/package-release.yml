@@ -15,6 +15,11 @@ on:
         required: false
         type: string
         default: 'v1'
+      dry-run:
+        description: 'Only report the next version and release notes; release nothing'
+        required: false
+        type: boolean
+        default: false
     secrets:
       app-id:
         description: 'GitHub App ID; its token lets bot PRs trigger checks (optional).'
@@ -76,8 +81,7 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ steps.push_token.outputs.token || secrets.commit-push-pat || secrets.GITHUB_TOKEN }}
         run: |
-          if [ -f .releaserc.json ]; then
-            npx semantic-release
-          else
-            npx semantic-release --extends ./.shared-config/.releaserc.json
-          fi
+          ARGS=()
+          if [ "${{ inputs.dry-run }}" = "true" ]; then ARGS+=(--dry-run); fi
+          if [ ! -f .releaserc.json ]; then ARGS+=(--extends ./.shared-config/.releaserc.json); fi
+          npx semantic-release "${ARGS[@]}"
