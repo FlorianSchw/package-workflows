@@ -2,7 +2,7 @@
 # 3-way classification (bad_test / real_bug / env_misconfiguration) — a
 # judgment call made AFTER the test fails, using the actual failure output,
 # not guessed upfront. Uses its own "test-failure-classification"
-# config.yml profile, not "test-review".
+# config/claude.yml profile, not "test-review".
 ask_claude_to_classify_failure <- function(function_source, test_block, failure_message) {
   prompt <- fill_template(failure_classification_prompt_template, list(
     FUNCTION_SOURCE = function_source,

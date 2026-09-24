@@ -25,9 +25,9 @@ library(purrr)
 functions_dir <- if (dir.exists("R/functions")) "R/functions" else ".shared-workflows/R/functions"
 walk(list.files(functions_dir, pattern = "\\.R$", full.names = TRUE), source)
 
-# R_CONFIG_ACTIVE picks the active profile in config.yml ("roxygen-review")
+# R_CONFIG_ACTIVE picks the active profile in config/claude.yml ("roxygen-review")
 # — set as an env var on the calling workflow step.
-anthropic_config <- config::get(file = resolve_shared_path("config.yml"))$anthropic
+anthropic_config <- config::get(file = resolve_shared_path("config/claude.yml"))$anthropic
 
 api_key    <- Sys.getenv("ANTHROPIC_API_KEY")
 datashield <- as.logical(Sys.getenv("DATASHIELD", "false"))

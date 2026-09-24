@@ -10,9 +10,9 @@
 # silently discarded or silently kept.
 #
 # Sibling to R/suggest_roxygen.R — same conventions: orchestration only
-# here, logic in R/functions/, Claude call settings in config.yml,
+# here, logic in R/functions/, Claude call settings in config/claude.yml,
 # deterministic field-based assembly (Claude never writes final test_that()
-# syntax directly). See docs/test-coverage-suggest.md for the
+# syntax directly). See dev-notes/test-coverage-suggest.md for the
 # design reasoning, including which pieces are still placeholders
 # (per-function coverage data, in particular).
 
@@ -28,7 +28,7 @@ walk(list.files(functions_dir, pattern = "\\.R$", full.names = TRUE), source)
 # R_CONFIG_ACTIVE (an env var set by the calling workflow step) selects
 # "test-review" as the active profile; the failure classifier has its own
 # profile, fetched explicitly by name.
-config_path <- resolve_shared_path("config.yml")
+config_path <- resolve_shared_path("config/claude.yml")
 anthropic_config <- config::get(file = config_path)$anthropic
 failure_classification_config <- config::get(config = "test-failure-classification", file = config_path)$anthropic
 
