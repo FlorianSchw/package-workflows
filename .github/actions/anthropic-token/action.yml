@@ -4,8 +4,14 @@ description: >-
   access token via Workload Identity Federation. The calling job needs
   `permissions: id-token: write`.
 inputs:
+  organization-id:
+    description: 'Anthropic organization ID (UUID).'
+    required: true
+  service-account-id:
+    description: 'svac_... ID of the service account the token acts as.'
+    required: true
   federation-rule-id:
-    description: 'fdrl_... ID of the federation rule authorizing the calling repo.'
+    description: 'fdrl_... ID of the federation rule authorizing the calling workflow.'
     required: true
 outputs:
   access-token:
@@ -28,8 +34,8 @@ runs:
       env:
         ASSERTION: ${{ steps.oidc.outputs.github_token }}
         FEDERATION_RULE_ID: ${{ inputs.federation-rule-id }}
-        ANTHROPIC_ORG_ID: ab598c51-a4e1-4c60-943d-c04722aecf04
-        ANTHROPIC_SERVICE_ACCOUNT_ID: svac_018HwE11GfPMYQhCYUQPeDS7
+        ANTHROPIC_ORG_ID: ${{ inputs.organization-id }}
+        ANTHROPIC_SERVICE_ACCOUNT_ID: ${{ inputs.service-account-id }}
       run: |
         BODY=$(jq -n \
           --arg assertion "$ASSERTION" \

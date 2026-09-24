@@ -2,7 +2,7 @@
 
 Reusable workflow that finds under-tested functions in an R package, asks
 Claude to draft real testthat tests for them, **runs every generated test**,
-and commits only the ones that pass. Failing candidates are classified and
+and proposes only the ones that pass. Failing candidates are classified and
 surfaced for a human instead of being kept or discarded silently.
 
 Sibling of [roxygen-suggest.yml](roxygen-suggest.md); shares its auth,
@@ -35,8 +35,10 @@ Entry script: `R/suggest_tests.R`. Per function file in `files_to_check.txt`:
 9. Written files are listed in `updated_files.txt`; the
    `commit-updated-files` action commits them.
 
-Trigger modes: `changed` (PR — new/modified functions only, commits to the
-PR branch) and `all` (sweep — whole package, opens a PR against `dev`).
+Trigger modes: `changed` (PR — new/modified functions only; commits go to
+`bot-suggest/tests/<PR branch>`, opened as a sub-PR into the PR branch
+with a link comment on the originating PR) and `all` (sweep — whole
+package, opens a PR against `dev`).
 
 ## Design decisions
 
@@ -53,8 +55,8 @@ PR branch) and `all` (sweep — whole package, opens a PR against `dev`).
   issue because it outlives the PR.
 - **Only generated tests are judged.** Pre-existing tests in the same file
   are run too, but their failures are not classified.
-- **Passing tests are committed directly** to the PR branch, like roxygen
-  suggestions.
+- **Passing tests are proposed, not pushed** — via a sub-PR into the PR
+  branch, like roxygen suggestions, so the PR author has the final say.
 
 ## DataSHIELD client packages: DSLite
 
@@ -112,9 +114,10 @@ DSLite setup, pass + fail; all-fail cleanup; pre-existing failing test left
 alone; commit action in both modes. **Never run in real CI yet.**
 
 Caller requirements: `datashield`/`datashield-type` inputs, App secrets
-(so commits trigger required checks), `issues: write`, a federation rule
-that allows `test-coverage-suggest.yml`, and a shared `concurrency` group
-with `docs-suggest.yml` so the two don't push to the PR branch at once.
+(so the suggestion PR triggers required checks), `issues: write`, and the three
+`anthropic-*` secrets, with a federation rule for `test-coverage-suggest.yml`. No shared
+`concurrency` group with `roxygen-suggest.yml` is needed any more: each
+pushes to its own `bot-suggest/<kind>/…` branch, never the PR branch.
 
 ## Open questions
 

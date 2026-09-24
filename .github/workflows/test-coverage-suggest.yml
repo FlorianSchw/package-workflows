@@ -8,10 +8,6 @@ on:
         required: false
         type: string
         default: 'changed'
-      anthropic-federation-rule-id:
-        description: 'fdrl_... ID of the federation rule authorizing this repo'
-        required: true
-        type: string
       datashield:
         description: 'Whether this repo is a DataSHIELD package'
         required: false
@@ -23,6 +19,15 @@ on:
         type: string
         default: ''
     secrets:
+      anthropic-organization-id:
+        description: 'Anthropic organization ID.'
+        required: true
+      anthropic-service-account-id:
+        description: 'svac_... ID of the service account for this repo.'
+        required: true
+      anthropic-federation-rule-id:
+        description: 'fdrl_... ID of the federation rule for this repo and workflow.'
+        required: true
       app-id:
         description: 'GitHub App ID — to create a short-lived App token. Optional'
         required: false
@@ -87,7 +92,9 @@ jobs:
         if: steps.files.outputs.count != '0'
         uses: FlorianSchw/package-workflows/.github/actions/anthropic-token@main
         with:
-          federation-rule-id: ${{ inputs.anthropic-federation-rule-id }}
+          organization-id: ${{ secrets.anthropic-organization-id }}
+          service-account-id: ${{ secrets.anthropic-service-account-id }}
+          federation-rule-id: ${{ secrets.anthropic-federation-rule-id }}
 
       - name: Create .Renviron file
         if: steps.files.outputs.count != '0'

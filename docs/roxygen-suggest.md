@@ -1,8 +1,8 @@
 # roxygen-suggest.yml
 
 Reusable workflow that reviews each function's roxygen2 documentation for
-completeness and accuracy with Claude, rewrites the block, and commits the
-result. Shares auth, config and R conventions with
+completeness and accuracy with Claude, rewrites the block, and proposes the
+result as a suggestion PR. Shares auth, config and R conventions with
 [test-coverage-suggest.yml](test-coverage-suggest.md) (see `CLAUDE.md`).
 
 ## How it works
@@ -20,7 +20,10 @@ Entry script: `R/suggest_roxygen.R`. Per file in `files_to_check.txt`:
 4. `build_roxygen_block()` assembles the block deterministically in
    `tag_order`; `write_in_place()` swaps it into the file.
 5. Rewritten files are listed in `updated_files.txt`; the
-   `commit-updated-files` action commits them.
+   `commit-updated-files` action commits them — in `changed` mode onto
+   `bot-suggest/docs/<PR branch>`, opened as a sub-PR into the PR branch
+   (with a link comment on the originating PR), in `all` mode as a sweep
+   PR against `dev`.
 
 For DataSHIELD packages, `role_guidance()` adds client/server guidance from
 `config/datashield-role-guidance.json`. For client packages matching a
@@ -58,6 +61,8 @@ example to use in `@examples`.
 
 ## Status
 
-`changed` mode confirmed end to end on dsSupportClient PR #4. `all` mode
+`changed` mode confirmed end to end on dsSupportClient PR #4 — but that
+predates the switch from committing onto the PR branch to the
+`bot-suggest/` sub-PR flow, which has not been confirmed in CI. `all` mode
 (monthly sweep) has not run in CI yet; its commit/PR logic was verified
 locally.
