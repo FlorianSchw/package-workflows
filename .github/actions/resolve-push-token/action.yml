@@ -1,5 +1,5 @@
 name: 'Resolve Push Token'
-description: 'Resolves a GitHub App installation token. If app-id is not supplied, resolves to an empty string'
+description: 'GitHub App installation token, so bot pushes and PRs trigger workflows (GITHUB_TOKEN ones do not). Empty if app-id is unset.'
 inputs:
   app-id:
     description: 'GitHub App ID.'

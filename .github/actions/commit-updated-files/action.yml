@@ -1,18 +1,11 @@
 name: 'Commit Updated Files'
 description: >-
-  Commits exactly the files listed in a manifest (one path per line, written
-  by the suggestion script) — never anything else in the working tree, so
-  the workflow's own scratch files (.Renviron, files_to_check.txt, the
-  .shared-workflows checkout) can't be picked up. scan-mode "changed": one
-  commit per file, on a new sub-branch derived from the current branch,
-  pushed and opened as a PR *back into the current branch* — never
-  committed directly onto it, so nothing triggers downstream workflow
-  approval gates and the original branch's own author gets final review.
-  If origin-pr-number is given and a new sub-PR is created (not just
-  updated), a one-line comment linking to it is posted on that PR. scan-mode
-  "all": one commit on a new dated sweep branch, pushed, with a PR opened
-  against sweep-base. Does nothing if the manifest is missing, empty, or
-  lists only files with no actual changes.
+  Commits exactly the files listed in the manifest — never other working
+  tree files such as files_to_check.txt or the .shared-workflows checkout —
+  and proposes them as a PR. "changed": per-file commits on a sub-branch,
+  PR back into the current branch, so its author reviews them. "all": one
+  commit on a dated sweep branch, PR against sweep-base. No-op when nothing
+  actually changed.
 inputs:
   scan-mode:
     description: '"changed" or "all".'
@@ -21,7 +14,7 @@ inputs:
     description: 'Token used to push (and to open the PR).'
     required: true
   manifest:
-    description: 'Path to the manifest file.'
+    description: 'Manifest file, one path per line.'
     required: false
     default: 'updated_files.txt'
   commit-prefix:
@@ -37,11 +30,7 @@ inputs:
     description: '"changed" mode: sub-PR body.'
     required: false
   origin-pr-number:
-    description: >
-      "changed" mode, optional. The PR number that triggered this workflow
-      (e.g. github.event.pull_request.number). If given, a one-line comment
-      linking to the new sub-PR is posted here — only when the sub-PR is
-      newly created, not on later updates.
+    description: '"changed" mode: PR to notify with a link when a new sub-PR is opened (optional).'
     required: false
   sweep-branch-prefix:
     description: '"all" mode: branch name prefix; "-YYYY-MM" is appended.'

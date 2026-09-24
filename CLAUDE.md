@@ -43,7 +43,8 @@ the live caller used to validate changes before wider rollout.
   - `check-description-authors.yml` — resolves each PR commit's author to
     their GitHub profile name and suggests adding missing ones to
     `DESCRIPTION` (`aut`) via a `bot-suggest/authors` sub-PR. Bots are
-    skipped per `config/bot-authors.json` (caller-root override allowed).
+    skipped per `config/bot-authors.json` (overridable, see
+    `resolve_shared_path()` below).
   - `roxygen-suggest.yml`, `test-coverage-suggest.yml` — LLM-assisted
     suggestion workflows; see below.
   - `cleanup-suggestion-branch.yml` — on PR close, deletes a `bot-suggest/*`
@@ -53,9 +54,10 @@ the live caller used to validate changes before wider rollout.
 - `.github/actions/` — composite actions: `anthropic-token` (suggestion
   workflows), `resolve-push-token` (also `package-release.yml`),
   `commit-updated-files` (also `check-description-authors.yml`).
-- `R/` — `suggest_roxygen.R`, `suggest_tests.R` (entry scripts: env/config
-  wiring + main loop only) and `R/functions/` (all logic, one function per
-  file, loaded in bulk via `purrr::walk()`).
+- `R/` — entry scripts `suggest_roxygen.R`, `suggest_tests.R`,
+  `check_description_authors.R` (env/config wiring + main loop only) and
+  `R/functions/` (all logic, one function per file, loaded in bulk via
+  `purrr::walk()`). No R inlined in workflow YAML.
 - `config/`, `prompts/`, `config.yml` — guidance, prompt templates and
   Claude call settings for the suggestion workflows.
 - `docs/` — per-workflow design notes and status.
@@ -79,8 +81,8 @@ Details per workflow: [docs/roxygen-suggest.md](docs/roxygen-suggest.md),
   own rule ID, callers map secrets explicitly — not `secrets: inherit`.
 - **Claude settings:** `config.yml`, one `default` profile plus one per
   task (`roxygen-review`, `test-review`, `test-failure-classification`),
-  read with `config::get()`. The workflow writes `R_CONFIG_ACTIVE` to
-  `.Renviron` before the script runs. Every Claude call goes through
+  read with `config::get()`. The workflow sets `R_CONFIG_ACTIVE` as an env
+  var on the script step. Every Claude call goes through
   `call_claude_tool()` (forced tool call; it sets the tool name from config).
 - **Claude returns fields, R assembles the output.** Never trust prompt
   wording where a structural constraint (schema field, `maxItems`, enum)

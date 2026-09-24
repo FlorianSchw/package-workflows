@@ -3,16 +3,20 @@ on:
   workflow_call:
     inputs:
       pr_author:
+        description: 'GitHub login to assign the issue to'
         required: true
         type: string
       run_url:
+        description: 'URL of the failed run, linked in the issue'
         required: true
         type: string
       template:
+        description: 'Issue template path in this repo'
         required: false
         type: string
         default: .github/pr-issue-template.md
       extra_assignees:
+        description: 'Comma-separated additional assignees'
         required: false
         type: string
         default: ''

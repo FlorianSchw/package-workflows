@@ -25,7 +25,7 @@ library(purrr)
 functions_dir <- if (dir.exists("R/functions")) "R/functions" else ".shared-workflows/R/functions"
 walk(list.files(functions_dir, pattern = "\\.R$", full.names = TRUE), source)
 
-# R_CONFIG_ACTIVE (set via .Renviron by the calling workflow) selects
+# R_CONFIG_ACTIVE (an env var set by the calling workflow step) selects
 # "test-review" as the active profile; the failure classifier has its own
 # profile, fetched explicitly by name.
 config_path <- resolve_shared_path("config.yml")
