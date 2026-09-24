@@ -24,13 +24,13 @@ jobs:
       pull-requests: write
 
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
         with:
           ref: ${{ github.event.pull_request.head.ref }}
           fetch-depth: 0
 
       - name: Checkout shared config
-        uses: actions/checkout@v6
+        uses: actions/checkout@v7
         with:
           repository: FlorianSchw/package-workflows
           ref: main
