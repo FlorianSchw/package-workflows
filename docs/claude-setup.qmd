@@ -10,8 +10,18 @@ the job proves its identity with GitHub's OIDC token and gets a
 short-lived Anthropic token in exchange. Nothing secret is stored — the
 three IDs below only say *which* rule to use.
 
-Each repository uses its **own** Anthropic organization and pays for its
-own usage.
+The workflows don't come with Claude access: you connect your repositories
+to an Anthropic organization of your own, which is billed for their usage.
+One organization can serve any number of repositories — the layout below
+shows usage per repository.
+
+::: {.callout-tip}
+## Want to try it first?
+If you'd like to see the suggestions on one of your packages before
+setting up an Anthropic organization, send me an e-mail. A trial can run
+on an existing organization, with your repository's usage tracked
+separately.
+:::
 
 ## Recommended layout
 
