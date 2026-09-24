@@ -1,6 +1,7 @@
 #### GitHub Action to increment the public-facing version based on semantic versioning v2
 
 name: Release
+
 on:
   workflow_call:
     inputs:
@@ -14,11 +15,28 @@ on:
         required: false
         type: string
         default: 'v1'
+    secrets:
+      app-id:
+        description: 'Optional. See resolve-push-token action for details.'
+        required: false
+      app-private-key:
+        description: 'Optional. See resolve-push-token action for details.'
+        required: false
+      commit-push-pat:
+        description: >
+          Optional. A classic or fine-grained PAT with write access to this
+          repo's contents — used as a fallback if app-id is not supplied.
+        required: false
 
 jobs:
   release:
     name: Release
     runs-on: ubuntu-latest
+    permissions:
+      id-token: write
+      contents: write
+      issues: write
+      pull-requests: write
     steps:
       - name: Checkout
         uses: actions/checkout@v6
@@ -53,13 +71,19 @@ jobs:
       - name: Install more dependencies
         run: npm install @semantic-release/git @semantic-release/changelog @semantic-release/exec -D
 
+      - name: Resolve push token
+        id: push_token
+        uses: FlorianSchw/package-workflows/.github/actions/resolve-push-token@main
+        with:
+          app-id: ${{ secrets.app-id }}
+          app-private-key: ${{ secrets.app-private-key }}
+
       - name: Release
         env:
-          GITHUB_TOKEN: ${{ secrets.GitHub_TOKEN }}
+          GITHUB_TOKEN: ${{ steps.push_token.outputs.token || secrets.commit-push-pat || secrets.GITHUB_TOKEN }}
         run: |
           if [ -f .releaserc.json ]; then
             npx semantic-release
           else
             npx semantic-release --extends ./.shared-config/.releaserc.json
           fi
-
