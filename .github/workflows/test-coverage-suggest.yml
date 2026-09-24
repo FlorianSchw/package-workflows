@@ -134,7 +134,7 @@ jobs:
           sub-pr-body: 'Automated generated tests. Every included test already passed a real run before being committed — review and merge to include them.'
           origin-pr-number: ${{ github.event.pull_request.number }}
           sweep-base: ${{ inputs.sweep-base }}
-          sweep-pr-body-file: 'sweep_failures.md'
+          pr-body-file: 'suggestion_report.md'
           sweep-branch-prefix: 'bot-suggest/tests-sweep'
           sweep-commit-message: 'test: monthly test coverage sweep'
           sweep-pr-title: 'Monthly test coverage sweep'

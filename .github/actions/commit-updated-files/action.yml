@@ -17,6 +17,9 @@ inputs:
     description: 'Manifest file, one path per line.'
     required: false
     default: 'updated_files.txt'
+  pr-body-file:
+    description: 'File appended to the sub-PR or sweep PR body if it exists (optional).'
+    required: false
   commit-prefix:
     description: '"changed" mode: per-file commit message prefix; the file path is appended.'
     required: false
@@ -44,9 +47,6 @@ inputs:
   sweep-pr-body:
     description: '"all" mode: PR body.'
     required: false
-  sweep-pr-body-file:
-    description: '"all" mode: file appended to the PR body if it exists (optional).'
-    required: false
   sweep-base:
     description: '"all" mode: PR base branch.'
     required: false
@@ -60,6 +60,7 @@ runs:
         GH_TOKEN: ${{ inputs.token }}
         SCAN_MODE: ${{ inputs.scan-mode }}
         MANIFEST: ${{ inputs.manifest }}
+        PR_BODY_FILE: ${{ inputs.pr-body-file }}
         COMMIT_PREFIX: ${{ inputs.commit-prefix }}
         SUB_BRANCH_PREFIX: ${{ inputs.sub-branch-prefix }}
         SUB_PR_TITLE: ${{ inputs.sub-pr-title }}
@@ -69,7 +70,6 @@ runs:
         SWEEP_COMMIT_MESSAGE: ${{ inputs.sweep-commit-message }}
         SWEEP_PR_TITLE: ${{ inputs.sweep-pr-title }}
         SWEEP_PR_BODY: ${{ inputs.sweep-pr-body }}
-        SWEEP_PR_BODY_FILE: ${{ inputs.sweep-pr-body-file }}
         SWEEP_BASE: ${{ inputs.sweep-base }}
       run: |
         if [ ! -s "$MANIFEST" ]; then
@@ -80,6 +80,16 @@ runs:
         git config user.name "github-actions[bot]"
         git config user.email "github-actions[bot]@users.noreply.github.com"
         git remote set-url origin "https://x-access-token:${GH_TOKEN}@github.com/${{ github.repository }}.git"
+
+        # PR body: the given text, plus the pr-body-file content if present.
+        write_body() {
+          BODY_FILE="$(mktemp)"
+          printf '%s\n' "$1" > "$BODY_FILE"
+          if [ -n "$PR_BODY_FILE" ] && [ -s "$PR_BODY_FILE" ]; then
+            printf '\n' >> "$BODY_FILE"
+            cat "$PR_BODY_FILE" >> "$BODY_FILE"
+          fi
+        }
 
         if [ "$SCAN_MODE" = "all" ]; then
           while IFS= read -r f; do
@@ -95,12 +105,7 @@ runs:
           # Force: a re-run in the same month replaces that month's branch.
           git push --force origin "$BRANCH"
 
-          BODY_FILE="$(mktemp)"
-          printf '%s\n' "$SWEEP_PR_BODY" > "$BODY_FILE"
-          if [ -n "$SWEEP_PR_BODY_FILE" ] && [ -s "$SWEEP_PR_BODY_FILE" ]; then
-            printf '\n' >> "$BODY_FILE"
-            cat "$SWEEP_PR_BODY_FILE" >> "$BODY_FILE"
-          fi
+          write_body "$SWEEP_PR_BODY"
 
           # Only an OPEN PR counts, as in "changed" mode: update it rather
           # than opening a duplicate; after a merge or close, open a new one.
@@ -138,13 +143,20 @@ runs:
 
           git push --force origin "$SUB_BRANCH"
 
+          write_body "$SUB_PR_BODY"
+
           # Only an OPEN PR counts: the sub-branch name is reused per source
           # branch, and gh pr view would also match an earlier merged one.
-          if [ "$(gh pr list --head "$SUB_BRANCH" --state open --json number --jq 'length')" = "0" ]; then
-            PR_URL=$(gh pr create --base "$ORIGINAL_BRANCH" --head "$SUB_BRANCH" --title "$SUB_PR_TITLE" --body "$SUB_PR_BODY")
+          OPEN_PR="$(gh pr list --head "$SUB_BRANCH" --state open --json number --jq '.[0].number // empty')"
+          if [ -z "$OPEN_PR" ]; then
+            PR_URL=$(gh pr create --base "$ORIGINAL_BRANCH" --head "$SUB_BRANCH" --title "$SUB_PR_TITLE" --body-file "$BODY_FILE")
             if [ -n "$ORIGIN_PR_NUMBER" ]; then
               COMMENT="**${SUB_PR_TITLE}** opened: ${PR_URL} (into \`${ORIGINAL_BRANCH}\`)"$'\n\n'"${COMMITTED_FILES}"
               gh pr comment "$ORIGIN_PR_NUMBER" --body "$COMMENT" || echo "::warning::Failed to post notification comment on PR #$ORIGIN_PR_NUMBER"
             fi
+          elif [ -n "$PR_BODY_FILE" ] && [ -s "$PR_BODY_FILE" ]; then
+            # Refresh the report of an existing sub-PR; without a report,
+            # leave its body alone in case someone edited it.
+            gh pr edit "$OPEN_PR" --body-file "$BODY_FILE"
           fi
         fi

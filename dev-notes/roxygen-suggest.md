@@ -16,10 +16,16 @@ Entry script: `R/suggest_roxygen.R`. Per file in `files_to_check.txt`:
 3. `ask_claude_for_review()` (profile `roxygen-review`, prompt
    `prompts/roxygen-review-prompt.md`) returns prose **fields** — title,
    description, details, return, examples, one entry per param — via a
-   forced tool call. Never `#'` markers or tag labels.
-4. `build_roxygen_block()` assembles the block deterministically in
-   `tag_order`; `write_in_place()` swaps it into the file.
-5. Rewritten files are listed in `updated_files.txt`; the
+   forced tool call, plus `changes`: each changed field with a reason.
+   Never `#'` markers or tag labels.
+4. `accepted_roxygen_fields()` applies the threshold (accepted reasons,
+   more than a whitespace/punctuation/case difference — see
+   [suggestion-thresholds.md](suggestion-thresholds.md)); nothing accepted
+   → the file is skipped.
+5. `build_roxygen_block()` assembles the block deterministically in
+   `tag_order`, taking Claude's text only for accepted fields and the
+   original lines for all others; `write_in_place()` swaps it into the file.
+6. Rewritten files are listed in `updated_files.txt`; the
    `commit-updated-files` action commits them — in `changed` mode onto
    `bot-suggest/docs/<PR branch>`, opened as a sub-PR into the PR branch
    (with a link comment on the originating PR), in `all` mode as a sweep

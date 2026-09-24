@@ -27,7 +27,9 @@ walk(list.files(functions_dir, pattern = "\\.R$", full.names = TRUE), source)
 
 # R_CONFIG_ACTIVE picks the active profile in config/claude.yml ("roxygen-review")
 # — set as an env var on the calling workflow step.
-anthropic_config <- config::get(file = resolve_shared_path("config/claude.yml"))$anthropic
+roxygen_review_settings <- config::get(file = resolve_shared_path("config/claude.yml"))
+anthropic_config <- roxygen_review_settings$anthropic
+accept_reasons <- unlist(roxygen_review_settings$accept_reasons)
 
 api_key    <- Sys.getenv("ANTHROPIC_API_KEY")
 datashield <- as.logical(Sys.getenv("DATASHIELD", "false"))
@@ -82,13 +84,19 @@ for (f in files) {
     next
   }
 
-  new_block <- tryCatch(build_roxygen_block(result, parsed, f), error = function(e) {
+  accepted <- accepted_roxygen_fields(result, parsed, accept_reasons, f)
+  if (length(accepted) == 0) {
+    message(sprintf("%s: no change above the threshold, skipping.", f))
+    next
+  }
+
+  new_block <- tryCatch(build_roxygen_block(result, parsed, f, accepted), error = function(e) {
     message(sprintf("Failed to assemble roxygen block for %s: %s", f, conditionMessage(e)))
     NULL
   })
   if (is.null(new_block)) next
 
-  message(sprintf("%s: updating %s.", f, paste(unlist(result$changed_tags), collapse = ", ")))
+  message(sprintf("%s: updating %s.", f, paste(accepted, collapse = ", ")))
 
   write_in_place(f, parsed, new_block)
   updated_files <- c(updated_files, f)

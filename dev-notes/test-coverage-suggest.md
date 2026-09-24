@@ -14,15 +14,19 @@ Entry script: `R/suggest_tests.R`. Per function file in `files_to_check.txt`:
 
 1. `parse_r_file()` → function name + source; `find_existing_test_file()`
    looks for `tests/testthat/test-<function>.R`.
-2. `has_adequate_coverage()` skips functions that already look tested
-   (placeholder heuristic, see open questions).
+2. Every function is reviewed, tested or not (the old "test file mentions
+   the function → skip" heuristic is gone, see
+   [suggestion-thresholds.md](suggestion-thresholds.md)).
 3. For DataSHIELD client packages, `detect_dslite_setup()` checks for an
    existing DSLite `tests/testthat/setup.R`.
 4. `ask_claude_for_tests()` (profile `test-review`, prompt
    `prompts/test-review-prompt.md`, guidance `config/test-role-guidance.json`)
-   returns up to 5 tests as fields — description, setup code, assertions —
-   never assembled `test_that()` code.
-5. `assemble_test_block()` builds the blocks; if a fresh DSLite setup is
+   returns up to 5 tests as fields — description, reason, setup code,
+   assertions — never assembled `test_that()` code, plus existing tests
+   that could be deleted (`obsolete_tests`, reported via
+   `format_obsolete_tests()`, never applied).
+5. `filter_generated_tests()` applies the threshold (accepted reasons,
+   no verbatim duplicates). `assemble_test_block()` builds the blocks; if a fresh DSLite setup is
    needed, `ensure_dslite_setup_file()` writes `setup.R` for the dataset
    Claude picked.
 6. `write_test_blocks()` + `run_test_blocks()` write all candidates and run
@@ -126,10 +130,12 @@ pushes to its own `bot-suggest/<kind>/…` branch, never the PR branch.
 
 ## Open questions
 
-- **Real coverage data.** `has_adequate_coverage()` only checks whether an
-  existing test file mentions the function name. Preferred replacement:
-  per-function coverage (`covr::function_coverage()`) captured by
-  `R-CMD-Check.yml` and handed over, instead of a second install + test run.
+- **Real coverage data.** Every function is now reviewed and Claude decides
+  whether tests add value (see [suggestion-thresholds.md](suggestion-thresholds.md)).
+  Per-function coverage (`covr::function_coverage()`) captured by
+  `R-CMD-Check.yml` and handed over, instead of a second install + test run,
+  would still help: as the coverage gain per generated test, and as a hint
+  to Claude about uncovered lines.
   Handoff mechanism not designed yet.
 - **Changed-function detection.** `changed` mode reuses roxygen's
   `git diff` of `R/*.R` against the PR base — confirm that's the right

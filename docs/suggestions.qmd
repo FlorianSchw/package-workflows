@@ -42,6 +42,23 @@ The example callers switch mode by trigger, so one file handles both:
       scan-mode: ${{ github.event_name == 'pull_request' && 'changed' || 'all' }}
 ```
 
+## What gets proposed {#what-gets-proposed}
+
+A suggestion should be a real improvement, not a reworded sentence or an
+extra test for its own sake. So Claude has to state a **reason** for every
+change, from a fixed list, and only some reasons lead to a proposal:
+
+| Workflow | Proposed | Dropped |
+|---|---|---|
+| Roxygen | `missing`, `inaccurate`, `incomplete` | `clarity`, `style` |
+| Tests | `uncovered_branch`, `error_handling`, `edge_case`, `regression` | `other` |
+
+On top of that, the workflows drop documentation changes that differ only
+in whitespace, punctuation or case, and tests whose assertions already
+exist. The lists are set as `accept_reasons` in `config/claude.yml` and can
+be [changed per repository](#adjusting-the-guidance). They are a first
+setting, likely to be tuned.
+
 ## Housekeeping
 
 - The bot never reviews its own pull requests: the suggestion workflows skip
@@ -61,7 +78,7 @@ path** in your repository — it is used instead of the shared one:
 | File | Controls |
 |---|---|
 | `config/bot-authors.json` | Accounts never added to `DESCRIPTION` |
-| `config/claude.yml` | Claude model and request settings |
+| `config/claude.yml` | Claude model, request settings and `accept_reasons` |
 | `config/roxygen-style.json` | Roxygen tag order and per-tag guidance |
 | `config/test-role-guidance.json` | Testing strategy given to Claude |
 | `prompts/*.md` | The full prompts sent to Claude |

@@ -3,19 +3,31 @@ title: "Test coverage suggestions"
 description: "Claude writes testthat tests; only tests that pass are proposed."
 ---
 
-`test-coverage-suggest.yml` finds functions without tests, has Claude
-write real `testthat` tests for them, **runs every generated test**, and
-proposes only the ones that pass as a [suggestion PR](suggestions.qmd).
+`test-coverage-suggest.yml` has Claude review each function together with
+its existing tests and write new `testthat` tests where they add value. It
+**runs every generated test** and proposes only the ones that pass as a
+[suggestion PR](suggestions.qmd).
 
 ## What it does
 
-- **Which functions**: a function counts as tested if
-  `tests/testthat/test-<function>.R` exists and mentions it. Others get up
-  to five new tests. One function per file is assumed.
+- **Every function is reviewed** — changed ones in a PR, all of them in a
+  [sweep](suggestions.qmd#sweeps) — whether it already has tests or not.
+- **Up to five new tests per function, only if they add value.** Claude
+  names the value of each test — an uncovered code path, error handling,
+  an edge case, or a likely regression — and tests without such a reason
+  are dropped, as are copies of existing tests. See
+  [what gets proposed](suggestions.qmd#what-gets-proposed).
 - **Existing tests are never changed** — new tests are only appended, or
-  the test file is created.
+  the test file is created. One function per file is assumed.
 - **Every test is run** with your package loaded from source before it is
   proposed.
+
+## Tests that could be deleted
+
+Claude also points out existing tests that look redundant, test behaviour
+the function no longer has, or assert nothing meaningful — with a reason.
+Nothing is deleted: the list appears in the suggestion PR's description,
+or as a comment on your PR if no new tests were proposed.
 
 ## Failing tests
 

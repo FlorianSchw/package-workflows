@@ -21,6 +21,12 @@ improved block as a [suggestion PR](suggestions.qmd).
 - **One function per file** is assumed: only the first function of a file
   is reviewed.
 
+- **Only real improvements**: Claude gives a reason for every change.
+  Changes that only make correct text clearer or restyle it are dropped,
+  as are changes in whitespace, punctuation or case only — those parts
+  keep your original lines. See
+  [what gets proposed](suggestions.qmd#what-gets-proposed).
+
 If a block is already adequate, nothing is proposed.
 
 ## DataSHIELD packages

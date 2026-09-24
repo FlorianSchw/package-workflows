@@ -7,13 +7,19 @@ default:
       type: disabled
     tool_choice_type: tool
 
+# accept_reasons: which of Claude's stated reasons lead to a proposed
+# change (full lists in R/functions/suggestion_reasons.R). A revisable
+# decision — see dev-notes/suggestion-thresholds.md.
+
 roxygen-review:
   anthropic:
     tool_name: submit_review
+  accept_reasons: [missing, inaccurate, incomplete]   # not: clarity, style
 
 test-review:
   anthropic:
     tool_name: submit_tests
+  accept_reasons: [uncovered_branch, error_handling, edge_case, regression]   # not: other
 
 test-failure-classification:
   anthropic:

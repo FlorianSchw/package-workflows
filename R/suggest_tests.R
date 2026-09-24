@@ -1,8 +1,10 @@
 #!/usr/bin/env Rscript
 # Reads files_to_check.txt (produced by the calling workflow), and for each
-# function's (first) file: checks whether existing test coverage looks
-# adequate, and if not, asks Claude to draft real, runnable test_that()
-# blocks. Every candidate test is actually run before being trusted — a
+# function's (first) file asks Claude whether new, real, runnable
+# test_that() blocks would add value next to the existing tests — and
+# which existing tests could be deleted (reported, never applied). New
+# tests pass filter_generated_tests() first, then every candidate is
+# actually run before being trusted — a
 # passing test gets appended to tests/testthat/test-<function>.R (never
 # touching existing tests) and listed in updated_files.txt for the workflow
 # to commit; a failing candidate is classified (bad_test / real_bug /
@@ -29,7 +31,9 @@ walk(list.files(functions_dir, pattern = "\\.R$", full.names = TRUE), source)
 # "test-review" as the active profile; the failure classifier has its own
 # profile, fetched explicitly by name.
 config_path <- resolve_shared_path("config/claude.yml")
-anthropic_config <- config::get(file = config_path)$anthropic
+test_review_settings <- config::get(file = config_path)
+anthropic_config <- test_review_settings$anthropic
+accept_reasons <- unlist(test_review_settings$accept_reasons)
 failure_classification_config <- config::get(config = "test-failure-classification", file = config_path)$anthropic
 
 api_key    <- Sys.getenv("ANTHROPIC_API_KEY")
@@ -58,6 +62,7 @@ files <- files[nzchar(files)]
 
 updated_files <- character(0)
 sweep_failures <- character(0)
+obsolete_notes <- character(0)
 
 for (f in files) {
   parsed <- tryCatch(parse_r_file(f), error = function(e) {
@@ -67,12 +72,9 @@ for (f in files) {
   if (is.null(parsed)) next
 
   function_name <- parsed$fn_name
+  # Every function is reviewed, tested or not: Claude decides whether new
+  # tests add value, filter_generated_tests() applies the threshold.
   existing_test_file <- find_existing_test_file(function_name)
-
-  if (has_adequate_coverage(function_name, existing_test_file)) {
-    message(sprintf("%s: existing test coverage looks adequate, skipping.", function_name))
-    next
-  }
 
   # Re-checked per function: a setup.R generated for an earlier function
   # in this run is reused by later ones.
@@ -89,8 +91,13 @@ for (f in files) {
   )
   if (is.null(result)) next
 
+  # Deletion suggestions stand on their own — collected even when no new
+  # test is proposed.
+  obsolete_notes <- c(obsolete_notes, format_obsolete_tests(result$obsolete_tests, existing_test_file$content, function_name))
+
+  result$tests <- filter_generated_tests(result$tests, existing_test_file$content, accept_reasons, function_name)
   if (!isTRUE(result$needs_tests) || length(result$tests) == 0) {
-    message(sprintf("%s: Claude judged existing coverage already adequate, skipping.", function_name))
+    message(sprintf("%s: no new tests that add value, skipping.", function_name))
     next
   }
 
@@ -160,6 +167,19 @@ for (f in files) {
 
 writeLines(updated_files, "updated_files.txt")
 
+report <- character(0)
 if (length(sweep_failures) > 0) {
-  report_sweep_failures(sweep_failures, has_sweep_pr = length(updated_files) > 0)
+  report <- c(report, paste(c("## Generated tests that failed", "", paste(sweep_failures, collapse = "\n\n---\n\n")), collapse = "\n"))
+}
+if (length(obsolete_notes) > 0) {
+  report <- c(report, paste(c(
+    "## Existing tests that could be deleted",
+    "",
+    "Suggested by Claude, not applied — check each before deleting anything.",
+    "",
+    obsolete_notes
+  ), collapse = "\n"))
+}
+if (length(report) > 0) {
+  publish_test_report(report, has_pr = length(updated_files) > 0)
 }

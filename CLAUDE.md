@@ -27,8 +27,11 @@ the live caller used to validate changes before wider rollout.
     `extra-r-packages` (plain names, `any::` added internally).
   - `package-release.yml` — semantic-release. Uses a caller-root
     `.releaserc.json` if present, else this repo's `.releaserc.json`
-    fetched at `config-ref` (default: tag `v1`). Pushes with the
+    fetched at `config-ref` (default: `main`). Pushes with the
     `resolve-push-token` App token → `commit-push-pat` → `GITHUB_TOKEN`.
+    The shared config drafts the release and turns off the GitHub
+    plugin's comments, labels and failure issue, so the App needs no
+    Issues permission.
   - `trigger-release-publish.yml` — sends a `repository_dispatch`
     (`event_type: release-publish`) to the caller repo; the caller's own
     workflow listens for it and runs the release.
@@ -98,6 +101,12 @@ Details per workflow: [dev-notes/roxygen-suggest.md](dev-notes/roxygen-suggest.m
 - **Claude returns fields, R assembles the output.** Never trust prompt
   wording where a structural constraint (schema field, `maxItems`, enum)
   is possible.
+- **Threshold for what gets proposed:** Claude states a reason per change
+  from a fixed enum (`suggestion_reasons()`), R keeps only the
+  `accept_reasons` of `config/claude.yml` and adds mechanical filters.
+  A revisable decision, recorded in
+  [dev-notes/suggestion-thresholds.md](dev-notes/suggestion-thresholds.md)
+  — update that note when changing it.
 - **Where shared files come from:** callers get this repo checked out into
   `.shared-workflows/`. `resolve_shared_path("config/x.json")` uses the
   caller's own file at that same relative path if it exists (an override),
@@ -122,9 +131,10 @@ Details per workflow: [dev-notes/roxygen-suggest.md](dev-notes/roxygen-suggest.m
 
 ## STILL OPEN
 
-- The suggestion workflows are referenced `@main` by callers; `v1` exists but
-  only `package-release.yml` uses it (for its release config). Decide on
-  versioning once the suggestion workflows stabilise.
+- Versioning: all workflows are referenced `@main`, and `package-release.yml`
+  reads its release config from `main` too. The old `v1` tag is unused.
+  Decide after the internal feedback round (inputs may still change) and
+  once it's clear how to test versioned refs.
 - Federation rules for the other two accounts, before rolling out beyond
   dsSupportClient.
 - Not yet confirmed in real CI: `all` mode of both suggestion workflows;
@@ -135,4 +145,21 @@ Details per workflow: [dev-notes/roxygen-suggest.md](dev-notes/roxygen-suggest.m
   release trigger, `package-release.yml`) ran on dsSupportClient PR #20,
   but in `dry-run` mode, which skips `prepare`. dsSupportClient's release
   caller sets `dry-run: true` until its first real release.
+- Release config (`.releaserc.json`, `@semantic-release/github`), undecided:
+  - `draftRelease`: keep drafts (manual publish after a final look) or
+    publish directly?
+  - Release comments on issues/PRs: useful as a record that a bug was
+    fixed in version X. Currently off. If turned on: plain text such as
+    `"Included in version ${nextRelease.version}."` (the default links to
+    the release, dead for most readers while it is a draft); only issues
+    referenced by commits (`closes #12`) get it; requires **Issues: Read
+    and write** on the GitHub App (dsSupportClient's App lacks it) and on
+    `docs/getting-started.qmd`, otherwise the first real release fails at
+    the comment step, after tag and release exist.
+  - `released` label and failure issue: currently off.
+- Suggestion thresholds: current accept lists are a first guess. Tune from
+  data (log reasons vs. merged/closed suggestion PRs); ideas in
+  [dev-notes/suggestion-thresholds.md](dev-notes/suggestion-thresholds.md).
+  None of the new behaviour (reasons, deletion notes, reviewing tested
+  functions) has run in real CI yet.
 - Shared caching for `R-CMD-Check.yml` — flagged, not started.

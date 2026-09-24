@@ -27,8 +27,13 @@ For each field: if existing content is already accurate and meets the
 guidance, return that same content essentially unchanged (do not reword
 something already correct). Treat placeholder or lazy content (e.g.
 "XXXXX", "TODO", "tbd") and stale content (e.g. an outdated example
-server) as inadequate and rewrite it. List every field you actually
-changed in changed_tags.
+server) as inadequate and rewrite it.
+
+List every field you actually changed in `changes`, with the reason that
+honestly fits: missing, inaccurate, incomplete, clarity (correct and
+complete, but could be clearer) or style (formatting or wording only).
+Not every reason leads to a proposed change, so don't upgrade a clarity
+or style change to a stronger reason.
 
 Do not include export or import directives anywhere in your answer —
 those are handled entirely outside this review and are not part of any
