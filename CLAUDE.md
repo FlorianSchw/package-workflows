@@ -134,7 +134,21 @@ Details per workflow: [dev-notes/roxygen-suggest.md](dev-notes/roxygen-suggest.m
 - Versioning: all workflows are referenced `@main`, and `package-release.yml`
   reads its release config from `main` too. The old `v1` tag is unused.
   Decide after the internal feedback round (inputs may still change) and
-  once it's clear how to test versioned refs.
+  once it's clear how to test versioned refs. Proposed shape (not decided):
+  - **Branches:** trunk-based — `main` + short-lived feature branches via
+    PR, `main` protected (commitlint, `actionlint`). No `dev`: here a
+    release is a tag, not a merge into `main`.
+  - **Releases:** semantic-release tags `vX.Y.Z` and moves the major tag
+    `vX`; callers pin `@v1`; breaking changes (`feat!:`) become `v2`.
+  - **Testing:** dsSupportClient points a caller at `@<feature-branch>`.
+  - **Prerequisite:** all internal references are hard-coded to `main`
+    (`uses: …/actions/…@main`, `.shared-workflows` checkout `ref: main`),
+    so a caller on `@v1` or a branch still gets `main`'s actions, scripts
+    and prompts. Check out the shared repo at `github.job_workflow_sha`
+    and use the composite actions via local path
+    (`uses: ./.shared-workflows/.github/actions/…`).
+  - **Federation rules** match `job_workflow_ref` exactly (incl.
+    `@refs/heads/main`); tags need a prefix/condition match.
 - Federation rules for the other two accounts, before rolling out beyond
   dsSupportClient.
 - Not yet confirmed in real CI: `all` mode of both suggestion workflows;
