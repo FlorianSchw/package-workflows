@@ -114,7 +114,10 @@ Details per workflow: [docs/roxygen-suggest.md](docs/roxygen-suggest.md),
   dsSupportClient.
 - Not yet confirmed in real CI: `all` mode of both suggestion workflows;
   `test-coverage-suggest.yml` actually generating, running and proposing
-  tests (it has run on dsSupportClient PR #18, but nothing was needed).
-  `package-release.yml` and
-  `merge-pull-request.yml` haven't run since the refactor.
+  tests (it has run on dsSupportClient PR #18, but nothing was needed);
+  the version write (`desc_set_version()` in the `prepare` step) — the
+  `dev` → `main` chain (head-branch check, `merge-pull-request.yml`,
+  release trigger, `package-release.yml`) ran on dsSupportClient PR #20,
+  but in `dry-run` mode, which skips `prepare`. dsSupportClient's release
+  caller sets `dry-run: true` until its first real release.
 - Shared caching for `R-CMD-Check.yml` — flagged, not started.
