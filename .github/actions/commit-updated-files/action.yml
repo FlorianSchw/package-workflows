@@ -8,9 +8,11 @@ description: >-
   pushed and opened as a PR *back into the current branch* — never
   committed directly onto it, so nothing triggers downstream workflow
   approval gates and the original branch's own author gets final review.
-  scan-mode "all": one commit on a new dated sweep branch, pushed, with a
-  PR opened against sweep-base. Does nothing if the manifest is missing,
-  empty, or lists only files with no actual changes.
+  If origin-pr-number is given and a new sub-PR is created (not just
+  updated), a one-line comment linking to it is posted on that PR. scan-mode
+  "all": one commit on a new dated sweep branch, pushed, with a PR opened
+  against sweep-base. Does nothing if the manifest is missing, empty, or
+  lists only files with no actual changes.
 inputs:
   scan-mode:
     description: '"changed" or "all".'
@@ -33,6 +35,13 @@ inputs:
     required: false
   sub-pr-body:
     description: '"changed" mode: sub-PR body.'
+    required: false
+  origin-pr-number:
+    description: >
+      "changed" mode, optional. The PR number that triggered this workflow
+      (e.g. github.event.pull_request.number). If given, a one-line comment
+      linking to the new sub-PR is posted here — only when the sub-PR is
+      newly created, not on later updates.
     required: false
   sweep-branch-prefix:
     description: '"all" mode: branch name prefix; "-YYYY-MM" is appended.'
@@ -63,6 +72,7 @@ runs:
         SUB_BRANCH_PREFIX: ${{ inputs.sub-branch-prefix }}
         SUB_PR_TITLE: ${{ inputs.sub-pr-title }}
         SUB_PR_BODY: ${{ inputs.sub-pr-body }}
+        ORIGIN_PR_NUMBER: ${{ inputs.origin-pr-number }}
         SWEEP_BRANCH_PREFIX: ${{ inputs.sweep-branch-prefix }}
         SWEEP_COMMIT_MESSAGE: ${{ inputs.sweep-commit-message }}
         SWEEP_PR_TITLE: ${{ inputs.sweep-pr-title }}
@@ -120,6 +130,9 @@ runs:
           git push --force origin "$SUB_BRANCH"
 
           if ! gh pr view "$SUB_BRANCH" --json number >/dev/null 2>&1; then
-            gh pr create --base "$ORIGINAL_BRANCH" --head "$SUB_BRANCH" --title "$SUB_PR_TITLE" --body "$SUB_PR_BODY"
+            PR_URL=$(gh pr create --base "$ORIGINAL_BRANCH" --head "$SUB_BRANCH" --title "$SUB_PR_TITLE" --body "$SUB_PR_BODY")
+            if [ -n "$ORIGIN_PR_NUMBER" ]; then
+              gh pr comment "$ORIGIN_PR_NUMBER" --body "New suggestion opened: $PR_URL" || echo "::warning::Failed to post notification comment on PR #$ORIGIN_PR_NUMBER"
+            fi
           fi
         fi
