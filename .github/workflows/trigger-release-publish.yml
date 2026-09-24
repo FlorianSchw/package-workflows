@@ -1,0 +1,15 @@
+name: Trigger Release Publish
+
+on:
+  workflow_call:
+
+jobs:
+  dispatch:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - name: Dispatch release-publish
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: gh api repos/${{ github.repository }}/dispatches -f event_type=release-publish
