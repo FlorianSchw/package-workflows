@@ -131,6 +131,12 @@ Details per workflow: [dev-notes/roxygen-suggest.md](dev-notes/roxygen-suggest.m
 
 ## STILL OPEN
 
+The user-facing subset of this list is published in `docs/roadmap.qmd`
+(no internal details: other accounts, dsSupportClient, App specifics).
+Update it when an item here is added, changed or done. Feedback channel:
+issues for now (may change — it is named only in `docs/roadmap.qmd#feedback`
+and `CONTRIBUTING.md`); no PRs until a branch model and rules exist.
+
 - Versioning: all workflows are referenced `@main`, and `package-release.yml`
   reads its release config from `main` too. The old `v1` tag is unused.
   Decide after the internal feedback round (inputs may still change) and

@@ -1,0 +1,75 @@
+---
+title: "Roadmap and open questions"
+description: "What is still undecided or unproven — and where feedback helps most."
+---
+
+These workflows are in active use but still settling. This page lists what
+is already known to be open, so you don't have to ask — and where your
+experience would help decide.
+
+## How to give feedback {#feedback}
+
+For now, open an [issue](https://github.com/FlorianSchw/package-workflows/issues):
+a missing input, a behaviour that doesn't fit your package, an idea, or a
+point from the list below.
+
+::: {.callout-note}
+## Please no pull requests for now
+The repository has no branch model or review rules yet, so pull requests
+can't be handled properly. Please open an issue instead — pull requests
+may be closed without review until this is set up.
+:::
+
+## Open questions
+
+### Versioning
+
+All workflows are referenced at `@main`, so every change reaches every
+caller on its next run. Versioned releases (`@v1`, with breaking changes
+in `@v2`) will follow once the inputs have settled.
+
+*Feedback wanted:* inputs you miss, or ones you never need.
+
+### Suggestion thresholds
+
+Bot suggestions are only proposed for [certain reasons](suggestions.qmd#what-gets-proposed):
+documentation that is missing, inaccurate or incomplete, and tests that
+cover a new code path, an error, an edge case or a likely regression.
+These lists are a first setting.
+
+*Feedback wanted:* suggestion PRs that weren't worth it, or improvements
+you expected but didn't get.
+
+### Model per task
+
+All suggestion workflows currently use the same Claude model. Tests
+arguably deserve a stronger one, since deciding which tests add value — or
+could be deleted — needs more careful reasoning than documentation.
+
+### Release options
+
+Releases are currently created as drafts, to be published by hand, and
+don't comment on the issues and pull requests they include. A comment such
+as "Included in version 1.2.0" on fixed issues would be a useful record,
+but needs an additional GitHub App permission.
+
+*Feedback wanted:* drafts or direct publishing? Comments on released
+issues?
+
+## Not yet proven in real use
+
+- **Monthly sweeps** of the whole package — the first scheduled run is
+  still ahead.
+- **Test coverage suggestions at scale**: generating, running and
+  proposing tests, and suggestions for deleting existing ones.
+- **The first real release** with the version written to `DESCRIPTION` —
+  the release chain has so far only run as a dry run.
+
+## Planned
+
+- **Keepalive for scheduled workflows.** GitHub disables scheduled
+  workflows after 60 days without repository activity; a shared workflow
+  will keep them running without each repository adding its own fix.
+- **Caching for R CMD check**, to speed up repeated runs.
+- **Real coverage data** for the test suggestions, e.g. how much each
+  proposed test adds.

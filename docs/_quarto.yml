@@ -22,6 +22,7 @@ website:
     contents:
       - href: index.qmd
         text: Home
+      - roadmap.qmd
       - getting-started.qmd
       - overview.qmd
       - branch-protection.qmd

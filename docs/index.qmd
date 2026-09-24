@@ -22,7 +22,7 @@ jobs:
 ## Work in progress
 These workflows are referenced at `@main` and still evolving. Versioned
 releases will follow once the inputs have settled — feedback on what you
-need is very welcome, via [issues](https://github.com/FlorianSchw/package-workflows/issues).
+need is very welcome, see [Roadmap and open questions](roadmap.qmd).
 :::
 
 ## Workflows
