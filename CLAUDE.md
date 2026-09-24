@@ -176,6 +176,14 @@ Details per workflow: [dev-notes/roxygen-suggest.md](dev-notes/roxygen-suggest.m
   [dev-notes/suggestion-thresholds.md](dev-notes/suggestion-thresholds.md).
   None of the new behaviour (reasons, deletion notes, reviewing tested
   functions) has run in real CI yet.
+- Model per task: all profiles in `config/claude.yml` use the `default`
+  model (`claude-sonnet-5`). Tests likely deserve a stronger model than
+  roxygen — they matter more, and the add/delete judgment needs better
+  reasoning. `config::get()` already merges per profile, so it's a
+  `model:` under `test-review` (and possibly `test-failure-classification`).
+  Consider enabling thinking there too — it's `disabled` by default
+  because it once used up the whole `max_tokens` budget, so it needs a
+  larger `max_tokens`. Watch cost per run on the Cost page.
 - Shared caching for `R-CMD-Check.yml` — flagged, not started.
 - Reusable workflow keepalive: GitHub disables scheduled workflows after
   60 days without repository activity. Callers with cron jobs (monthly
