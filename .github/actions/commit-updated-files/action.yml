@@ -118,7 +118,9 @@ runs:
 
           git push --force origin "$SUB_BRANCH"
 
-          if ! gh pr view "$SUB_BRANCH" --json number >/dev/null 2>&1; then
+          # Only an OPEN PR counts: the sub-branch name is reused per source
+          # branch, and gh pr view would also match an earlier merged one.
+          if [ "$(gh pr list --head "$SUB_BRANCH" --state open --json number --jq 'length')" = "0" ]; then
             PR_URL=$(gh pr create --base "$ORIGINAL_BRANCH" --head "$SUB_BRANCH" --title "$SUB_PR_TITLE" --body "$SUB_PR_BODY")
             if [ -n "$ORIGIN_PR_NUMBER" ]; then
               gh pr comment "$ORIGIN_PR_NUMBER" --body "New suggestion opened: $PR_URL" || echo "::warning::Failed to post notification comment on PR #$ORIGIN_PR_NUMBER"
