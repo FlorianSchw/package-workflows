@@ -61,8 +61,10 @@ example to use in `@examples`.
 
 ## Status
 
-`changed` mode confirmed end to end on dsSupportClient PR #4 — but that
-predates the switch from committing onto the PR branch to the
-`bot-suggest/` sub-PR flow, which has not been confirmed in CI. `all` mode
+`changed` mode confirmed end to end on dsSupportClient: the `bot-suggest/`
+sub-PR flow via PR #12, the caller-secret WIF auth on PR #18. On PR #18
+the suggestion was pushed but no sub-PR opened, because the existence
+check also matched the merged PR #12 on the same sub-branch name — fixed
+to check open PRs only, not yet re-confirmed. `all` mode
 (monthly sweep) has not run in CI yet; its commit/PR logic was verified
 locally.

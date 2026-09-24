@@ -110,8 +110,10 @@ Details per workflow: [docs/roxygen-suggest.md](docs/roxygen-suggest.md),
   versioning once the suggestion workflows stabilise.
 - Federation rules for the other two accounts, before rolling out beyond
   dsSupportClient.
-- `all` mode of both suggestion workflows and all of
-  `test-coverage-suggest.yml` have never run in real CI. The `changed`-mode
-  sub-PR flow (incl. the origin-PR comment and branch cleanup) is newer
-  than the last confirmed roxygen run (dsSupportClient PR #4).
+- Not yet confirmed in real CI: `all` mode of both suggestion workflows;
+  `test-coverage-suggest.yml` actually generating, running and proposing
+  tests (it has run on dsSupportClient PR #18, but nothing was needed);
+  the origin-PR link comment; `cleanup-suggestion-branch.yml` (PR #12's
+  branch survived its merge). `package-release.yml` and
+  `merge-pull-request.yml` haven't run since the refactor.
 - Shared caching for `R-CMD-Check.yml` — flagged, not started.

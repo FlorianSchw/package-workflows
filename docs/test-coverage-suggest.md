@@ -111,7 +111,10 @@ Pitfalls found while building this:
 Verified locally (real entry script, only the Anthropic/GitHub APIs mocked):
 plain package; DataSHIELD client package that is not installed, fresh
 DSLite setup, pass + fail; all-fail cleanup; pre-existing failing test left
-alone; commit action in both modes. **Never run in real CI yet.**
+alone; commit action in both modes. First real CI run on dsSupportClient
+PR #18 (`changed` mode): auth and the full job ran, but no tests were
+generated, so test execution, failure classification and the sub-PR are
+still unconfirmed in CI.
 
 Caller requirements: `datashield`/`datashield-type` inputs, App secrets
 (so the suggestion PR triggers required checks), `issues: write`, and the three
