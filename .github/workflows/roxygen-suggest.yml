@@ -116,6 +116,7 @@ jobs:
           sub-branch-prefix: 'bot-suggest/docs'
           sub-pr-title: 'Roxygen documentation suggestions'
           sub-pr-body: 'Automated roxygen2 documentation suggestions. Review and merge to include them.'
+          origin-pr-number: ${{ github.event.pull_request.number }}
           sweep-branch-prefix: 'docs/roxygen-sweep'
           sweep-commit-message: 'docs: monthly roxygen suggestion sweep'
           sweep-pr-title: 'Monthly roxygen documentation sweep'

@@ -123,6 +123,7 @@ jobs:
           sub-branch-prefix: 'bot-suggest/tests'
           sub-pr-title: 'Generated test coverage suggestions'
           sub-pr-body: 'Automated generated tests. Every included test already passed a real run before being committed — review and merge to include them.'
+          origin-pr-number: ${{ github.event.pull_request.number }}
           sweep-branch-prefix: 'tests/coverage-sweep'
           sweep-commit-message: 'test: monthly test coverage sweep'
           sweep-pr-title: 'Monthly test coverage sweep'
