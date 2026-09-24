@@ -100,7 +100,7 @@ runs:
 
           git checkout -b "$SUB_BRANCH"
 
-          COMMITTED=false
+          COMMITTED_FILES=""
           while IFS= read -r f; do
             git add -- "$f"
             if git diff --cached --quiet -- "$f"; then
@@ -108,10 +108,10 @@ runs:
               continue
             fi
             git commit -m "$COMMIT_PREFIX $f"
-            COMMITTED=true
+            COMMITTED_FILES="${COMMITTED_FILES}- \`$f\`"$'\n'
           done < "$MANIFEST"
 
-          if [ "$COMMITTED" != "true" ]; then
+          if [ -z "$COMMITTED_FILES" ]; then
             echo "No files actually changed — skipping sub-branch push."
             exit 0
           fi
@@ -123,7 +123,8 @@ runs:
           if [ "$(gh pr list --head "$SUB_BRANCH" --state open --json number --jq 'length')" = "0" ]; then
             PR_URL=$(gh pr create --base "$ORIGINAL_BRANCH" --head "$SUB_BRANCH" --title "$SUB_PR_TITLE" --body "$SUB_PR_BODY")
             if [ -n "$ORIGIN_PR_NUMBER" ]; then
-              gh pr comment "$ORIGIN_PR_NUMBER" --body "New suggestion opened: $PR_URL" || echo "::warning::Failed to post notification comment on PR #$ORIGIN_PR_NUMBER"
+              COMMENT="**${SUB_PR_TITLE}** opened: ${PR_URL} (into \`${ORIGINAL_BRANCH}\`)"$'\n\n'"${COMMITTED_FILES}"
+              gh pr comment "$ORIGIN_PR_NUMBER" --body "$COMMENT" || echo "::warning::Failed to post notification comment on PR #$ORIGIN_PR_NUMBER"
             fi
           fi
         fi
