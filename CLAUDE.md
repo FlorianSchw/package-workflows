@@ -99,11 +99,15 @@ Details per workflow: [docs/roxygen-suggest.md](docs/roxygen-suggest.md),
   newly created and `origin-pr-number` is set, a link comment is posted on
   the originating PR. `all` mode: checks out and scans the `sweep-base`
   input (default `dev` — a scheduled run would otherwise start on `main`),
-  one commit on a dated sweep branch + PR against `sweep-base`.
-  `resolve-push-token` provides an App token when configured, so the
-  bot's PRs trigger the caller's required checks
-  (`GITHUB_TOKEN`-created ones don't). Merged/closed sub-PR branches are
-  removed by `cleanup-suggestion-branch.yml`.
+  one commit on `bot-suggest/<kind>-sweep-YYYY-MM`, force-pushed, + PR
+  against `sweep-base`; a re-run in the same month updates that month's
+  open PR instead of failing or duplicating it. In both modes only an
+  *open* PR counts as existing. `resolve-push-token` provides an App
+  token when configured, so the bot's PRs trigger the caller's required
+  checks (`GITHUB_TOKEN`-created ones don't) — which is why the
+  suggestion jobs skip `bot-suggest/*` head branches, so the bot never
+  reviews its own PRs. All `bot-suggest/*` branches are removed by
+  `cleanup-suggestion-branch.yml` once their PR is merged or closed.
 
 ## STILL OPEN
 

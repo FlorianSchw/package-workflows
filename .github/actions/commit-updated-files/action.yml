@@ -44,6 +44,9 @@ inputs:
   sweep-pr-body:
     description: '"all" mode: PR body.'
     required: false
+  sweep-pr-body-file:
+    description: '"all" mode: file appended to the PR body if it exists (optional).'
+    required: false
   sweep-base:
     description: '"all" mode: PR base branch.'
     required: false
@@ -66,6 +69,7 @@ runs:
         SWEEP_COMMIT_MESSAGE: ${{ inputs.sweep-commit-message }}
         SWEEP_PR_TITLE: ${{ inputs.sweep-pr-title }}
         SWEEP_PR_BODY: ${{ inputs.sweep-pr-body }}
+        SWEEP_PR_BODY_FILE: ${{ inputs.sweep-pr-body-file }}
         SWEEP_BASE: ${{ inputs.sweep-base }}
       run: |
         if [ ! -s "$MANIFEST" ]; then
@@ -88,8 +92,24 @@ runs:
           BRANCH="${SWEEP_BRANCH_PREFIX}-$(date +%Y-%m)"
           git checkout -b "$BRANCH"
           git commit -m "$SWEEP_COMMIT_MESSAGE"
-          git push origin "$BRANCH"
-          gh pr create --base "$SWEEP_BASE" --head "$BRANCH" --title "$SWEEP_PR_TITLE" --body "$SWEEP_PR_BODY"
+          # Force: a re-run in the same month replaces that month's branch.
+          git push --force origin "$BRANCH"
+
+          BODY_FILE="$(mktemp)"
+          printf '%s\n' "$SWEEP_PR_BODY" > "$BODY_FILE"
+          if [ -n "$SWEEP_PR_BODY_FILE" ] && [ -s "$SWEEP_PR_BODY_FILE" ]; then
+            printf '\n' >> "$BODY_FILE"
+            cat "$SWEEP_PR_BODY_FILE" >> "$BODY_FILE"
+          fi
+
+          # Only an OPEN PR counts, as in "changed" mode: update it rather
+          # than opening a duplicate; after a merge or close, open a new one.
+          OPEN_PR="$(gh pr list --head "$BRANCH" --state open --json number --jq '.[0].number // empty')"
+          if [ -n "$OPEN_PR" ]; then
+            gh pr edit "$OPEN_PR" --title "$SWEEP_PR_TITLE" --body-file "$BODY_FILE"
+          else
+            gh pr create --base "$SWEEP_BASE" --head "$BRANCH" --title "$SWEEP_PR_TITLE" --body-file "$BODY_FILE"
+          fi
         else
           ORIGINAL_BRANCH="$(git rev-parse --abbrev-ref HEAD)"
           if [ "$ORIGINAL_BRANCH" = "HEAD" ]; then

@@ -36,6 +36,7 @@ api_key    <- Sys.getenv("ANTHROPIC_API_KEY")
 gh_token   <- Sys.getenv("GH_TOKEN")
 repo       <- Sys.getenv("GITHUB_REPOSITORY")
 pr_number  <- Sys.getenv("PR_NUMBER")
+is_sweep   <- !nzchar(pr_number)  # no PR to comment on (all mode)
 datashield <- as.logical(Sys.getenv("DATASHIELD", "false"))
 ds_type    <- Sys.getenv("DATASHIELD_TYPE", "")
 is_client  <- isTRUE(datashield) && identical(ds_type, "client")
@@ -56,6 +57,7 @@ files <- files[nzchar(files)]
 # --- Main loop ---------------------------------------------------------------
 
 updated_files <- character(0)
+sweep_failures <- character(0)
 
 for (f in files) {
   parsed <- tryCatch(parse_r_file(f), error = function(e) {
@@ -148,6 +150,8 @@ for (f in files) {
 
     if (identical(classification$category, "real_bug")) {
       create_bug_issue(function_name, block_text, fail$message, classification)
+    } else if (is_sweep) {
+      sweep_failures <- c(sweep_failures, format_test_failure(function_name, block_text, fail$message, classification))
     } else {
       post_test_failure_comment(function_name, block_text, fail$message, classification)
     }
@@ -155,3 +159,7 @@ for (f in files) {
 }
 
 writeLines(updated_files, "updated_files.txt")
+
+if (length(sweep_failures) > 0) {
+  report_sweep_failures(sweep_failures, has_sweep_pr = length(updated_files) > 0)
+}

@@ -31,7 +31,9 @@ Entry script: `R/suggest_tests.R`. Per function file in `files_to_check.txt`:
    generated `setup.R` is kept only if at least one test passed.
 8. Each failing **generated** test goes to `ask_claude_to_classify_failure()`
    (profile `test-failure-classification`):
-   `bad_test` / `env_misconfiguration` → PR comment; `real_bug` → GitHub issue.
+   `real_bug` → GitHub issue; `bad_test` / `env_misconfiguration` → PR
+   comment, or in a sweep (no PR) one report appended to the sweep PR body
+   — a single issue instead if no test passed and so no sweep PR opens.
 9. Written files are listed in `updated_files.txt`; the
    `commit-updated-files` action commits them.
 

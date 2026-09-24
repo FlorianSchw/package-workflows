@@ -45,6 +45,8 @@ on:
 
 jobs:
   suggest-docs:
+    # Never review the bot's own suggestion or sweep PRs.
+    if: ${{ !startsWith(github.head_ref, 'bot-suggest/') }}
     runs-on: ubuntu-latest
     permissions:
       id-token: write
@@ -125,7 +127,7 @@ jobs:
           sub-pr-body: 'Automated roxygen2 documentation suggestions. Review and merge to include them.'
           origin-pr-number: ${{ github.event.pull_request.number }}
           sweep-base: ${{ inputs.sweep-base }}
-          sweep-branch-prefix: 'docs/roxygen-sweep'
+          sweep-branch-prefix: 'bot-suggest/docs-sweep'
           sweep-commit-message: 'docs: monthly roxygen suggestion sweep'
           sweep-pr-title: 'Monthly roxygen documentation sweep'
           sweep-pr-body: 'Automated suggestions from the roxygen doc-assist workflow. Review before merging.'

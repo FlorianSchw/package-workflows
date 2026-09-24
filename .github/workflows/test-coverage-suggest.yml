@@ -45,6 +45,8 @@ on:
 
 jobs:
   suggest-tests:
+    # Never review the bot's own suggestion or sweep PRs.
+    if: ${{ !startsWith(github.head_ref, 'bot-suggest/') }}
     runs-on: ubuntu-latest
     permissions:
       id-token: write
@@ -132,7 +134,8 @@ jobs:
           sub-pr-body: 'Automated generated tests. Every included test already passed a real run before being committed — review and merge to include them.'
           origin-pr-number: ${{ github.event.pull_request.number }}
           sweep-base: ${{ inputs.sweep-base }}
-          sweep-branch-prefix: 'tests/coverage-sweep'
+          sweep-pr-body-file: 'sweep_failures.md'
+          sweep-branch-prefix: 'bot-suggest/tests-sweep'
           sweep-commit-message: 'test: monthly test coverage sweep'
           sweep-pr-title: 'Monthly test coverage sweep'
           sweep-pr-body: 'Automated generated tests from the test-coverage-suggest workflow. Every included test already passed a real run before being committed — review before merging.'
