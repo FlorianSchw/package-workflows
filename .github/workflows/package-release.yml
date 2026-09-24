@@ -14,7 +14,7 @@ on:
         description: 'Ref of config-repo to read .releaserc.json from'
         required: false
         type: string
-        default: 'v1'
+        default: 'main'
       dry-run:
         description: 'Only report the next version and release notes; release nothing'
         required: false

@@ -15,6 +15,10 @@ release it
 4. drafts a GitHub release with generated release notes — publish it
    yourself after a final look.
 
+It doesn't comment on or label the issues and pull requests in the release,
+and doesn't open an issue when a release fails — the failure shows in the
+Actions tab.
+
 It is normally started by the [release chain](release.qmd), not directly.
 
 ## Example

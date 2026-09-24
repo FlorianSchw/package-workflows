@@ -20,7 +20,11 @@
     [
       "@semantic-release/github",
       {
-        "draftRelease": true
+        "draftRelease": true,
+        "successComment": false,
+        "failComment": false,
+        "failTitle": false,
+        "releasedLabels": false
       }
     ]
   ]
