@@ -177,3 +177,9 @@ Details per workflow: [dev-notes/roxygen-suggest.md](dev-notes/roxygen-suggest.m
   None of the new behaviour (reasons, deletion notes, reviewing tested
   functions) has run in real CI yet.
 - Shared caching for `R-CMD-Check.yml` — flagged, not started.
+- Reusable workflow keepalive: GitHub disables scheduled workflows after
+  60 days without repository activity. Callers with cron jobs (monthly
+  sweeps, scheduled R CMD check, …) currently each add their own
+  `liskin/gh-workflow-keepalive@v1` job (dsSupportClient's R-CMD-Check
+  caller does, with `actions: write`). Wanted: one centrally maintained
+  reusable workflow for it, plus a docs page and example.
