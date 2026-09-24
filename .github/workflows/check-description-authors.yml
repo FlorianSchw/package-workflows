@@ -154,6 +154,6 @@ jobs:
           scan-mode: 'changed'
           token: ${{ steps.push_token.outputs.token || secrets.commit-push-pat || secrets.GITHUB_TOKEN }}
           commit-prefix: 'chore: add contributor(s) to'
-          sub-branch-prefix: 'authors-suggest'
+          sub-branch-prefix: 'bot-suggest/authors'
           sub-pr-title: 'Add contributor(s) to DESCRIPTION'
           sub-pr-body: 'Adds commit author(s) not yet credited in DESCRIPTION. Review the name(s) before merging.'

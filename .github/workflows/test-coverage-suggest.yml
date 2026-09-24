@@ -120,7 +120,7 @@ jobs:
           scan-mode: ${{ inputs.scan-mode }}
           token: ${{ steps.push_token.outputs.token || secrets.commit-push-pat || secrets.GITHUB_TOKEN }}
           commit-prefix: 'test: add generated test for'
-          sub-branch-prefix: 'test-suggest'
+          sub-branch-prefix: 'bot-suggest/tests'
           sub-pr-title: 'Generated test coverage suggestions'
           sub-pr-body: 'Automated generated tests. Every included test already passed a real run before being committed — review and merge to include them.'
           sweep-branch-prefix: 'tests/coverage-sweep'
