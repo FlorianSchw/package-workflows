@@ -1,0 +1,25 @@
+name: Cleanup Suggestion Branch
+
+on:
+  workflow_call:
+
+jobs:
+  cleanup:
+    if: startsWith(github.event.pull_request.head.ref, 'bot-suggest/')
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      pull-requests: read
+    steps:
+      - name: Delete the suggestion branch
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          BRANCH="${{ github.event.pull_request.head.ref }}"
+
+          if [ "$(gh pr list --repo ${{ github.repository }} --head "$BRANCH" --state open --json number --jq 'length')" != "0" ]; then
+            echo "Another open PR still references $BRANCH — leaving it."
+            exit 0
+          fi
+
+          gh api -X DELETE "repos/${{ github.repository }}/git/refs/heads/$BRANCH" || echo "Branch already gone."
