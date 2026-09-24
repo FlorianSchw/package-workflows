@@ -61,10 +61,10 @@ example to use in `@examples`.
 
 ## Status
 
-`changed` mode confirmed end to end on dsSupportClient: the `bot-suggest/`
-sub-PR flow via PR #12, the caller-secret WIF auth on PR #18. On PR #18
-the suggestion was pushed but no sub-PR opened, because the existence
-check also matched the merged PR #12 on the same sub-branch name — fixed
-to check open PRs only, not yet re-confirmed. `all` mode
+`changed` mode confirmed end to end on dsSupportClient PR #18: caller-secret
+WIF auth, sub-PR #19 into the PR branch (opened although merged PR #12
+used the same sub-branch name — the existence check only counts open PRs),
+and the link comment on #18, posted with the App token; the sub-branch was
+deleted by `cleanup-suggestion-branch.yml` once #19 was merged. `all` mode
 (monthly sweep) has not run in CI yet; its commit/PR logic was verified
 locally.
