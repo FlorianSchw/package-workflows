@@ -1,0 +1,20 @@
+name: Require Head Branch
+
+on:
+  workflow_call:
+    inputs:
+      allowed-head:
+        description: 'The only branch name a PR into the target branch may come from.'
+        required: true
+        type: string
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Verify PR source branch
+        run: |
+          if [ "${{ github.event.pull_request.head.ref }}" != "${{ inputs.allowed-head }}" ]; then
+            echo "::error::PRs into this branch must come from '${{ inputs.allowed-head }}', not '${{ github.event.pull_request.head.ref }}'."
+            exit 1
+          fi
