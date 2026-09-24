@@ -9,7 +9,7 @@ on:
         type: string
 
 jobs:
-  check:
+  verify-source-branch:
     runs-on: ubuntu-latest
     steps:
       - name: Verify PR source branch
