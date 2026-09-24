@@ -4,7 +4,7 @@ on:
   workflow_call:
     inputs:
       os-list:
-        description: 'JSON array of runner OSes to test on'
+        description: 'JSON array of runner OSes'
         required: false
         type: string
         default: '["ubuntu-latest"]'
@@ -14,23 +14,23 @@ on:
         type: string
         default: '["release", "oldrel-1", "oldrel-2"]'
       run-codecov:
-        description: 'Upload coverage to Codecov (runs once, on the first matrix cell)'
+        description: 'Upload coverage to Codecov (first matrix cell only)'
         required: false
         type: boolean
         default: true
       extra-apt-packages:
-        description: 'Space-separated apt packages to install before check (e.g. "r-cran-curl"), leave empty if none needed'
+        description: 'Space-separated apt packages, e.g. "libcurl4-openssl-dev"'
         required: false
         type: string
         default: ''
       extra-r-packages:
-        description: 'Additional R packages needed for check/tests, comma-separated (e.g. "httptest, xml2")'
+        description: 'Comma-separated extra R packages, e.g. "httptest, xml2"'
         required: false
         type: string
         default: ''
     secrets:
       CODECOV_TOKEN:
-        description: 'Required for private repos; optional for public repos'
+        description: 'Codecov token (required for private repos).'
         required: false
 
 jobs:
@@ -60,7 +60,7 @@ jobs:
 
       - name: Install extra apt packages
         if: ${{ inputs.extra-apt-packages != '' }}
-        run: sudo apt install ${{ inputs.extra-apt-packages }}
+        run: sudo apt-get update && sudo apt-get install -y ${{ inputs.extra-apt-packages }}
 
       - name: Format extra R package list
         id: extra_r_packages

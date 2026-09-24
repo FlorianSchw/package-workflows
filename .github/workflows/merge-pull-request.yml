@@ -1,7 +1,10 @@
+name: Merge Pull Request
+
 on:
   workflow_call:
     inputs:
       pr_number:
+        description: 'Number of the PR to merge'
         required: true
         type: string
 
@@ -13,9 +16,7 @@ jobs:
   merge:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v7
-
       - name: Merge PR
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: gh pr merge ${{ inputs.pr_number }} --merge
+        run: gh pr merge ${{ inputs.pr_number }} --merge --repo ${{ github.repository }}

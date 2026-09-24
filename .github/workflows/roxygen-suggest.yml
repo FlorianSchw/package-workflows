@@ -4,7 +4,7 @@ on:
   workflow_call:
     inputs:
       scan-mode:
-        description: '"changed" (diff against PR base) or "all" (every R/*.R file)'
+        description: '"changed" (R/ files changed in this PR) or "all" (every R/*.R file)'
         required: false
         type: string
         default: 'changed'
@@ -29,13 +29,13 @@ on:
         description: 'fdrl_... ID of the federation rule for this repo and workflow.'
         required: true
       app-id:
-        description: 'GitHub App ID — to create a short-lived App token. Optional'
+        description: 'GitHub App ID; its token lets bot PRs trigger checks (optional).'
         required: false
       app-private-key:
-        description: 'GitHub App private key — to create a short-lived App token. Optional'
+        description: 'Private key of that GitHub App (required with app-id).'
         required: false
       commit-push-pat:
-        description: 'A classic or fine-grained PAT. Optional.'
+        description: 'PAT with contents write, fallback if no App is set (optional).'
         required: false
 
 jobs:
@@ -91,15 +91,10 @@ jobs:
           service-account-id: ${{ secrets.anthropic-service-account-id }}
           federation-rule-id: ${{ secrets.anthropic-federation-rule-id }}
 
-      - name: Create .Renviron file
-        if: steps.files.outputs.count != '0'
-        run: |
-          echo R_CONFIG_ACTIVE = "roxygen-review" >> .Renviron
-        shell: bash
-
       - name: Run roxygen suggestion script
         if: steps.files.outputs.count != '0'
         env:
+          R_CONFIG_ACTIVE: roxygen-review
           ANTHROPIC_API_KEY: ${{ steps.anthropic_auth.outputs.access-token }}
           DATASHIELD: ${{ inputs.datashield }}
           DATASHIELD_TYPE: ${{ inputs.datashield-type }}

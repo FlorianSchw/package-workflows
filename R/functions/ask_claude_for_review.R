@@ -8,7 +8,7 @@ ask_claude_for_review <- function(parsed, profile, role_text) {
     "(none — no roxygen block exists for this function yet)"
   }
 
-  prompt <- fill_template(prompt_template, list(
+  prompt <- fill_template(roxygen_review_prompt_template, list(
     STYLE_GUIDANCE  = build_guidance_text(profile),
     ROLE_GUIDANCE   = role_text,
     EXISTING_BLOCK  = existing_block,

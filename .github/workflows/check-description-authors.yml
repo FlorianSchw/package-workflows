@@ -4,22 +4,19 @@ on:
   workflow_call:
     secrets:
       app-id:
-        description: 'Optional. See resolve-push-token action for details.'
+        description: 'GitHub App ID; its token lets bot PRs trigger checks (optional).'
         required: false
       app-private-key:
-        description: 'Optional. See resolve-push-token action for details.'
+        description: 'Private key of that GitHub App (required with app-id).'
         required: false
       commit-push-pat:
-        description: >
-          Optional. A classic or fine-grained PAT with write access to this
-          repo's contents — used as a fallback if app-id is not supplied.
+        description: 'PAT with contents write, fallback if no App is set (optional).'
         required: false
 
 jobs:
   check-authors:
     runs-on: ubuntu-latest
     permissions:
-      id-token: write
       contents: write
       pull-requests: write
 
@@ -29,7 +26,7 @@ jobs:
           ref: ${{ github.event.pull_request.head.ref }}
           fetch-depth: 0
 
-      - name: Checkout shared config
+      - name: Checkout shared scripts
         uses: actions/checkout@v7
         with:
           repository: FlorianSchw/package-workflows
@@ -40,104 +37,17 @@ jobs:
         with:
           use-public-rspm: true
 
+      # Only the script's own packages — the package's dependencies aren't
+      # needed to read and edit DESCRIPTION.
       - uses: r-lib/actions/setup-r-dependencies@v2
         with:
-          extra-packages: any::desc, any::jsonlite, any::httr2
-          needs: check
+          packages: any::desc, any::jsonlite, any::httr2, any::purrr
 
-      # Resolves each commit to its GitHub account's profile display name
-      # (via the commits API + users API), not just the free-text git
-      # config name a contributor happened to set locally — avoids
-      # false positives like a GitHub handle not matching an existing
-      # "Real Name" entry in DESCRIPTION. Falls back to the raw git commit
-      # author name when a commit isn't linked to any GitHub account, or
-      # when that account's profile name field is left blank.
       - name: Find and add missing contributors
-        id: authors
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: |
-          Rscript -e '
-            library(httr2)
-
-            repo <- Sys.getenv("GITHUB_REPOSITORY")
-            gh_token <- Sys.getenv("GH_TOKEN")
-
-            config_path <- if (file.exists("bot-authors.json")) {
-              "bot-authors.json"
-            } else {
-              ".shared-workflows/config/bot-authors.json"
-            }
-            bot_names <- jsonlite::fromJSON(config_path)$bot_names
-
-            gh_get <- function(path) {
-              resp <- request(paste0("https://api.github.com", path)) |>
-                req_headers(
-                  "Authorization" = paste("Bearer", gh_token),
-                  "Accept" = "application/vnd.github+json"
-                ) |>
-                req_error(is_error = function(resp) FALSE) |>
-                req_perform()
-              if (resp_status(resp) >= 400) return(NULL)
-              resp_body_json(resp)
-            }
-
-            shas <- unique(system2(
-              "git", c("log", "origin/${{ github.event.pull_request.base.ref }}...HEAD", "--format=%H"),
-              stdout = TRUE
-            ))
-
-            resolved_names <- character(0)
-            seen_logins <- character(0)
-
-            for (sha in shas) {
-              commit_data <- gh_get(sprintf("/repos/%s/commits/%s", repo, sha))
-              if (is.null(commit_data)) next
-
-              git_author_name <- commit_data$commit$author$name
-              gh_author <- commit_data$author
-
-              if (is.null(gh_author)) {
-                if (!is.null(git_author_name) && !git_author_name %in% bot_names) {
-                  resolved_names <- c(resolved_names, git_author_name)
-                }
-                next
-              }
-
-              login <- gh_author$login
-              if (login %in% bot_names || login %in% seen_logins) next
-              seen_logins <- c(seen_logins, login)
-
-              user_data <- gh_get(sprintf("/users/%s", login))
-              profile_name <- if (!is.null(user_data) && !is.null(user_data$name) && nzchar(user_data$name)) {
-                user_data$name
-              } else {
-                git_author_name
-              }
-
-              if (!is.null(profile_name)) {
-                resolved_names <- c(resolved_names, profile_name)
-              }
-            }
-
-            commit_authors <- unique(resolved_names)
-
-            d <- desc::description$new("DESCRIPTION")
-            existing <- format(d$get_authors())
-
-            new_people <- Filter(
-              function(name) !any(grepl(name, existing, fixed = TRUE)),
-              commit_authors
-            )
-
-            if (length(new_people) > 0) {
-              for (name in new_people) {
-                d$add_author(given = name, role = "aut")
-              }
-              d$write("DESCRIPTION")
-              writeLines("DESCRIPTION", "updated_files.txt")
-            }
-          '
+          BASE_REF: ${{ github.event.pull_request.base.ref }}
+        run: Rscript .shared-workflows/R/check_description_authors.R
 
       - name: Resolve push token
         id: push_token

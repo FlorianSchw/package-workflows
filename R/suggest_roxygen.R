@@ -26,7 +26,7 @@ functions_dir <- if (dir.exists("R/functions")) "R/functions" else ".shared-work
 walk(list.files(functions_dir, pattern = "\\.R$", full.names = TRUE), source)
 
 # R_CONFIG_ACTIVE picks the active profile in config.yml ("roxygen-review")
-# — set via a workflow step that writes .Renviron before this script runs.
+# — set as an env var on the calling workflow step.
 anthropic_config <- config::get(file = resolve_shared_path("config.yml"))$anthropic
 
 api_key    <- Sys.getenv("ANTHROPIC_API_KEY")
@@ -38,7 +38,7 @@ if (isTRUE(datashield) && !ds_type %in% c("client", "server")) {
 }
 
 style           <- read_json_config("config/roxygen-style.json", required = TRUE)
-prompt_template <- read_text_file("prompts/roxygen-review-prompt.md")
+roxygen_review_prompt_template <- read_text_file("prompts/roxygen-review-prompt.md")
 package_name    <- read_package_name()
 
 # Role guidance depends only on the package, not the file — built once.
