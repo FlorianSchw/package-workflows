@@ -52,7 +52,14 @@ the live caller used to validate changes before wider rollout.
     caller trigger on all PRs (no `paths` filter), or tests/docs-only
     contributors are never seen. Bots are skipped per
     `config/bot-authors.json` (overridable, see `resolve_shared_path()`
-    below). Name matching (`find_author()`) is a placeholder text match.
+    below). New people: name split by `split_person_name()` (last word +
+    particles like `van`/`de` = family; one-word names flagged). Matching
+    (`find_author()`): commit e-mail (noreply ignored; e-mails are never
+    written) or name ignoring case/accents/punctuation/order; same family +
+    initial is only reported as "may already be listed" — in the sub-PR
+    body, or via `comment_once()` on the PR if nothing else changed.
+    `desc` writes `Authors@R` in its standard (tidyverse) format — a
+    hand-formatted field is normalized once; deliberately not customized.
   - `roxygen-suggest.yml`, `test-coverage-suggest.yml` — LLM-assisted
     suggestion workflows; see below.
   - `cleanup-suggestion-branch.yml` — on PR close, deletes a `bot-suggest/*`
@@ -152,8 +159,11 @@ and `CONTRIBUTING.md`); no PRs until a branch model and rules exist.
 
 - Docs pending (for the next batched docs pass):
   - `check-description-authors.qmd`: the `aut`/`ctb` rule, upgrades, merge
-    commits skipped, reasons in the suggestion PR; note about full name as
-    given name may change with the naming step.
+    commits skipped, reasons in the suggestion PR; replace the "full name
+    as given name" callout with: name split (and its limits, e.g. two-part
+    Spanish surnames), how existing entries are recognised, "may already
+    be listed" notes, and the one-time normalization to the tidyverse
+    `Authors@R` format.
   - `examples/check-description-authors.yml`: drop the `paths` filter
     (all PRs into `dev`), and say why on the page.
   - `suggestions.qmd`: the example comment/title for authors is now
@@ -180,8 +190,10 @@ and `CONTRIBUTING.md`); no PRs until a branch model and rules exist.
 - Federation rules for the other two accounts, before rolling out beyond
   dsSupportClient.
 - Not yet confirmed in real CI: `all` mode of both suggestion workflows;
-  `test-coverage-suggest.yml` actually generating, running and proposing
-  tests (it has run on dsSupportClient PR #18, but nothing was needed);
+  ~~`test-coverage-suggest.yml` actually generating, running and proposing
+  tests~~ confirmed on dsSupportClient PR #21 → sub-PR #24 (tests for an
+  already-tested function, `bad_test` classification comment, sub-PR
+  updated instead of duplicated); deletion notes not yet seen;
   the version write (`desc_set_version()` in the `prepare` step) — the
   `dev` → `main` chain (head-branch check, `merge-pull-request.yml`,
   release trigger, `package-release.yml`) ran on dsSupportClient PR #20,
@@ -202,8 +214,9 @@ and `CONTRIBUTING.md`); no PRs until a branch model and rules exist.
 - Suggestion thresholds: current accept lists are a first guess. Tune from
   data (log reasons vs. merged/closed suggestion PRs); ideas in
   [dev-notes/suggestion-thresholds.md](dev-notes/suggestion-thresholds.md).
-  None of the new behaviour (reasons, deletion notes, reviewing tested
-  functions) has run in real CI yet.
+  Ran in real CI on dsSupportClient PR #21 (reviewing tested functions
+  confirmed); whether reasons dropped anything is only in the job logs,
+  and no deletion notes were produced yet.
 - Model per task: all profiles in `config/claude.yml` use the `default`
   model (`claude-sonnet-5`). Tests likely deserve a stronger model than
   roxygen — they matter more, and the add/delete judgment needs better
@@ -222,10 +235,13 @@ and `CONTRIBUTING.md`); no PRs until a branch model and rules exist.
     per sweep is needed.
   - **Author contributions in `DESCRIPTION`:** ~~`aut` vs `ctb`~~ done
     (`R/` changes → `aut`, otherwise `ctb`, upgrade only; tested locally
-    with a mocked GitHub API, not yet in CI). Still open: **names** — the
-    full name is added as given name, and `find_author()` matches by plain
-    text; needs given/family split and proper matching (also for the
-    upgrade). Later option: a minimum change size for `aut`, and
+    with a mocked GitHub API, not yet in CI). ~~**Names** — the full name
+    is added as given name, and `find_author()` matches by plain text~~
+    done (given/family split, e-mail/normalized-name matching, possible
+    matches reported; replayed PR #21 locally). Decided against for now:
+    a per-repo login → name mapping file (`config/authors.json`) —
+    revisit only if wrongly split or differing profile names become a
+    real problem. Later option: a minimum change size for `aut`, and
     `Co-authored-by:` trailers.
   - **README update workflow:** a new workflow that keeps a package's
     README up to date — scope to be clarified.

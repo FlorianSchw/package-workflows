@@ -20,15 +20,16 @@ library(purrr)
 functions_dir <- if (dir.exists("R/functions")) "R/functions" else ".shared-workflows/R/functions"
 walk(list.files(functions_dir, pattern = "\\.R$", full.names = TRUE), source)
 
-gh_token <- Sys.getenv("GH_TOKEN")
-repo     <- Sys.getenv("GITHUB_REPOSITORY")
-base_ref <- Sys.getenv("BASE_REF")
+gh_token  <- Sys.getenv("GH_TOKEN")
+repo      <- Sys.getenv("GITHUB_REPOSITORY")
+base_ref  <- Sys.getenv("BASE_REF")
+pr_number <- Sys.getenv("PR_NUMBER")
 
 bot_names <- unlist(read_json_config("config/bot-authors.json", required = TRUE)$bot_names)
 
 shas <- unique(system2("git", c("log", "--no-merges", sprintf("origin/%s...HEAD", base_ref), "--format=%H"), stdout = TRUE))
 
-contributors <- list()  # resolved name -> files under R/ they changed
+contributors <- list()  # resolved name -> list(r_files, emails); e-mails only for matching
 login_names <- list()   # GitHub login -> resolved name, one users API call each
 
 for (sha in shas) {
@@ -56,14 +57,27 @@ for (sha in shas) {
   }
   if (is.null(name)) next
 
-  contributors[[name]] <- union(contributors[[name]], changed_r_files(sha))
+  entry <- contributors[[name]]
+  contributors[[name]] <- list(
+    r_files = union(entry$r_files, changed_r_files(sha)),
+    emails = union(entry$emails, commit_data$commit$author$email)
+  )
 }
 
 d <- desc::description$new("DESCRIPTION")
-report <- unlist(lapply(names(contributors), function(name) credit_contributor(d, name, contributors[[name]])))
+results <- Filter(Negate(is.null), lapply(names(contributors), function(name) {
+  credit_contributor(d, name, contributors[[name]]$r_files, contributors[[name]]$emails)
+}))
+lines <- vapply(results, function(r) r$line, character(1))
 
-if (length(report) > 0) {
+if (any(vapply(results, function(r) r$changed, logical(1)))) {
+  # desc writes Authors@R in its standard format (the one the tidyverse
+  # uses), so a hand-formatted field is normalized once.
   d$write("DESCRIPTION")
   writeLines("DESCRIPTION", "updated_files.txt")
-  writeLines(c("## Changes", "", report), "suggestion_report.md")
+  writeLines(c("## Changes", "", lines), "suggestion_report.md")
+} else if (length(lines) > 0 && nzchar(pr_number)) {
+  # Only notes (possible matches), no change: no suggestion PR to carry
+  # them, so they go on the PR itself — once, not on every push.
+  comment_once(pr_number, paste(c("**DESCRIPTION authors** — nothing changed, but please check:", "", lines), collapse = "\n"), "author notes")
 }

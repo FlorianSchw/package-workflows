@@ -119,8 +119,12 @@ plain package; DataSHIELD client package that is not installed, fresh
 DSLite setup, pass + fail; all-fail cleanup; pre-existing failing test left
 alone; commit action in both modes. First real CI run on dsSupportClient
 PR #18 (`changed` mode): auth and the full job ran, but no tests were
-generated, so test execution, failure classification and the sub-PR are
-still unconfirmed in CI.
+generated. ~~Test execution, failure classification and the sub-PR are
+still unconfirmed in CI.~~ Confirmed on PR #21 (with the threshold code):
+passing tests for `ds.wrapper` (already tested) and `ds.tableBatch`
+proposed in sub-PR #24, a failing one classified `bad_test` and commented
+on #21, and a later push updated #24 instead of opening a second PR. Not
+yet seen: deletion notes, `real_bug` issues, sweeps.
 
 Caller requirements: `datashield`/`datashield-type` inputs, App secrets
 (so the suggestion PR triggers required checks), `issues: write`, and the three
