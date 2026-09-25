@@ -43,11 +43,14 @@ on:
       anthropic-federation-rule-id:
         description: 'fdrl_... ID of the federation rule for this repo and workflow.'
         required: true
+      app-client-id:
+        description: 'GitHub App Client ID (Iv23li...); its token lets bot PRs trigger checks (optional).'
+        required: false
       app-id:
-        description: 'GitHub App ID; its token lets bot PRs trigger checks (optional).'
+        description: 'Deprecated: numeric GitHub App ID, used only without app-client-id.'
         required: false
       app-private-key:
-        description: 'Private key of that GitHub App (required with app-id).'
+        description: 'Private key of that GitHub App (required with app-client-id or app-id).'
         required: false
       commit-push-pat:
         description: 'PAT with contents write, fallback if no App is set (optional).'
@@ -142,6 +145,7 @@ jobs:
         if: steps.files.outputs.count != '0'
         uses: FlorianSchw/package-workflows/.github/actions/resolve-push-token@main
         with:
+          client-id: ${{ secrets.app-client-id }}
           app-id: ${{ secrets.app-id }}
           app-private-key: ${{ secrets.app-private-key }}
 

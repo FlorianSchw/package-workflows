@@ -201,6 +201,10 @@ and `CONTRIBUTING.md`); no PRs until a branch model and rules exist.
     (revisable after feedback). Claude also gets the structure of
     the test data (rows, columns, types, missing values, factor level
     counts — the level counts are the only data values shared; mention it).
+  - GitHub App Client ID: `getting-started.qmd` (secrets table, App setup
+    steps: store the Client ID as `APP_CLIENT_ID`; `APP_ID` deprecated)
+    and the four examples passing `app-id` (`app-client-id: ${{
+    secrets.APP_CLIENT_ID }}` instead).
 
 - Versioning: all workflows are referenced `@main`, and `package-release.yml`
   reads its release config from `main` too. The old `v1` tag is unused.
@@ -287,14 +291,15 @@ and `CONTRIBUTING.md`); no PRs until a branch model and rules exist.
   part of the policy file (`config/suggestion-policy.yml`, see "rules
   partly only in code"). Constraint: an issue needs `issues: write`,
   which roxygen callers don't grant.
-- **GitHub App `client-id` (soon, user wants it possibly today):**
+- ~~**GitHub App `client-id`:**~~ Done:
   `actions/create-github-app-token@v3` deprecates `app-id` in favour of
   `client-id` — a *different value* (the App's Client ID, `Iv23li…`, not
-  the numeric App ID). Plan: `resolve-push-token` and the workflows accept
-  an additional `app-client-id` secret and prefer it; `app-id` keeps
-  working (with the warning) during transition; callers add a secret
-  `APP_CLIENT_ID`. Remove `app-id` later, together with the workflow
-  renaming (both need caller changes).
+  the numeric App ID). `resolve-push-token` takes `client-id` and falls
+  back to `app-id` in a separate step (passing `app-id` at all triggers
+  the deprecation warning); the four workflows using it accept an
+  `app-client-id` secret. Still open: confirm in CI on dsSupportClient,
+  then remove `app-id` together with the workflow renaming (both need
+  caller changes).
 - **Ubuntu 26 on `ubuntu-latest` from 2026-10-19:** P3M binaries
   (`use-public-rspm`) may lag for a new Ubuntu → source builds, slow or
   failing. Plan: pin all workflows (and R-CMD-Check's `os-list` default)
