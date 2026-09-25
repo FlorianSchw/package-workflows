@@ -1,6 +1,9 @@
 #!/usr/bin/env Rscript
-# Adds every PR commit author not yet credited in DESCRIPTION (role "aut")
-# and lists DESCRIPTION in updated_files.txt for the workflow to commit.
+# Credits every PR commit author in DESCRIPTION — `aut` if any of their
+# commits changed files under R/, `ctb` otherwise (credit_contributor()) —
+# and lists DESCRIPTION in updated_files.txt for the workflow to commit,
+# with the changes and their reasons in suggestion_report.md for the
+# suggestion PR's description. Merge commits don't count as contributions.
 #
 # Each commit is resolved to its GitHub account's profile display name
 # (commits API + users API), not the free-text git author name a
@@ -23,10 +26,10 @@ base_ref <- Sys.getenv("BASE_REF")
 
 bot_names <- unlist(read_json_config("config/bot-authors.json", required = TRUE)$bot_names)
 
-shas <- unique(system2("git", c("log", sprintf("origin/%s...HEAD", base_ref), "--format=%H"), stdout = TRUE))
+shas <- unique(system2("git", c("log", "--no-merges", sprintf("origin/%s...HEAD", base_ref), "--format=%H"), stdout = TRUE))
 
-resolved_names <- character(0)
-seen_logins <- character(0)
+contributors <- list()  # resolved name -> files under R/ they changed
+login_names <- list()   # GitHub login -> resolved name, one users API call each
 
 for (sha in shas) {
   commit_data <- get_github_json(sprintf("/repos/%s/commits/%s", repo, sha))
@@ -36,40 +39,31 @@ for (sha in shas) {
   gh_author <- commit_data$author
 
   if (is.null(gh_author)) {
-    if (!is.null(git_author_name) && !git_author_name %in% bot_names) {
-      resolved_names <- c(resolved_names, git_author_name)
-    }
-    next
-  }
-
-  login <- gh_author$login
-  if (login %in% bot_names || login %in% seen_logins) next
-  seen_logins <- c(seen_logins, login)
-
-  user_data <- get_github_json(sprintf("/users/%s", login))
-  profile_name <- if (!is.null(user_data) && !is.null(user_data$name) && nzchar(user_data$name)) {
-    user_data$name
+    if (is.null(git_author_name) || git_author_name %in% bot_names) next
+    name <- git_author_name
   } else {
-    git_author_name
+    login <- gh_author$login
+    if (login %in% bot_names) next
+    if (is.null(login_names[[login]])) {
+      user_data <- get_github_json(sprintf("/users/%s", login))
+      login_names[[login]] <- if (!is.null(user_data) && !is.null(user_data$name) && nzchar(user_data$name)) {
+        user_data$name
+      } else {
+        git_author_name
+      }
+    }
+    name <- login_names[[login]]
   }
+  if (is.null(name)) next
 
-  if (!is.null(profile_name)) {
-    resolved_names <- c(resolved_names, profile_name)
-  }
+  contributors[[name]] <- union(contributors[[name]], changed_r_files(sha))
 }
 
 d <- desc::description$new("DESCRIPTION")
-existing <- format(d$get_authors())
+report <- unlist(lapply(names(contributors), function(name) credit_contributor(d, name, contributors[[name]])))
 
-new_people <- Filter(
-  function(name) !any(grepl(name, existing, fixed = TRUE)),
-  unique(resolved_names)
-)
-
-if (length(new_people) > 0) {
-  for (name in new_people) {
-    d$add_author(given = name, role = "aut")
-  }
+if (length(report) > 0) {
   d$write("DESCRIPTION")
   writeLines("DESCRIPTION", "updated_files.txt")
+  writeLines(c("## Changes", "", report), "suggestion_report.md")
 }

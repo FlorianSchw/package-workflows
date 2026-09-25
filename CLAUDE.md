@@ -44,10 +44,15 @@ the live caller used to validate changes before wider rollout.
   - `commitlint.yml` — conventional-commit lint using
     `config/commitlint-config.mjs`.
   - `check-description-authors.yml` — resolves each PR commit's author to
-    their GitHub profile name and suggests adding missing ones to
-    `DESCRIPTION` (`aut`) via a `bot-suggest/authors` sub-PR. Bots are
-    skipped per `config/bot-authors.json` (overridable, see
-    `resolve_shared_path()` below).
+    their GitHub profile name and credits them in `DESCRIPTION` via a
+    `bot-suggest/authors` sub-PR: `aut` if any of their commits changed
+    `R/*.R`, else `ctb`; an existing `ctb` is upgraded to `aut`, nobody is
+    downgraded or removed, other roles stay. Merge commits don't count.
+    Reasons go into the sub-PR body (`suggestion_report.md`). Needs a
+    caller trigger on all PRs (no `paths` filter), or tests/docs-only
+    contributors are never seen. Bots are skipped per
+    `config/bot-authors.json` (overridable, see `resolve_shared_path()`
+    below). Name matching (`find_author()`) is a placeholder text match.
   - `roxygen-suggest.yml`, `test-coverage-suggest.yml` — LLM-assisted
     suggestion workflows; see below.
   - `cleanup-suggestion-branch.yml` — on PR close, deletes a `bot-suggest/*`
@@ -76,9 +81,11 @@ the live caller used to validate changes before wider rollout.
   sidebar via `docs/_quarto.yml`. Inputs/secrets/permissions tables are
   generated from the workflow YAML by `docs/_shortcodes/workflow.lua`
   (`wf-inputs`, `wf-secrets`, `wf-permissions`); `example` includes a file
-  from `examples/` — generic caller files, `@main`. Adding or changing a
-  workflow: update its example and page prose too; the tables follow
-  automatically. Preview with `quarto preview docs`.
+  from `examples/` — generic caller files, `@main`. The tables follow
+  workflow changes automatically; page prose, examples and
+  `docs/roadmap.qmd` are updated in a batched docs pass when the user asks
+  — until then, note what's needed under "Docs pending" in STILL OPEN.
+  Preview with `quarto preview docs`.
 
 ## SUGGESTION WORKFLOWS — shared mechanics
 
@@ -143,6 +150,15 @@ Update it when an item here is added, changed or done. Feedback channel:
 issues for now (may change — it is named only in `docs/roadmap.qmd#feedback`
 and `CONTRIBUTING.md`); no PRs until a branch model and rules exist.
 
+- Docs pending (for the next batched docs pass):
+  - `check-description-authors.qmd`: the `aut`/`ctb` rule, upgrades, merge
+    commits skipped, reasons in the suggestion PR; note about full name as
+    given name may change with the naming step.
+  - `examples/check-description-authors.yml`: drop the `paths` filter
+    (all PRs into `dev`), and say why on the page.
+  - `suggestions.qmd`: the example comment/title for authors is now
+    "Update contributors in DESCRIPTION".
+
 - Versioning: all workflows are referenced `@main`, and `package-release.yml`
   reads its release config from `main` too. The old `v1` tag is unused.
   Decide after the internal feedback round (inputs may still change) and
@@ -204,10 +220,13 @@ and `CONTRIBUTING.md`); no PRs until a branch model and rules exist.
   - **Max number of test suggestions:** currently 5 per function and run
     (schema `maxItems`). Revisit the number, and whether a cap per run or
     per sweep is needed.
-  - **Author contributions in `DESCRIPTION`:** `check-description-authors`
-    adds everyone as `aut` with the full name as given name. Refine how
-    contributions are specified (e.g. `aut` vs `ctb`, given/family split)
-    — details to be clarified.
+  - **Author contributions in `DESCRIPTION`:** ~~`aut` vs `ctb`~~ done
+    (`R/` changes → `aut`, otherwise `ctb`, upgrade only; tested locally
+    with a mocked GitHub API, not yet in CI). Still open: **names** — the
+    full name is added as given name, and `find_author()` matches by plain
+    text; needs given/family split and proper matching (also for the
+    upgrade). Later option: a minimum change size for `aut`, and
+    `Co-authored-by:` trailers.
   - **README update workflow:** a new workflow that keeps a package's
     README up to date — scope to be clarified.
 - ~~Reusable workflow keepalive: GitHub disables scheduled workflows after
