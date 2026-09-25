@@ -1,11 +1,10 @@
 name: 'Commit Updated Files'
 description: >-
-  Commits exactly the files listed in the manifest — never other working
-  tree files such as files_to_check.txt or the .shared-workflows checkout —
-  and proposes them as a PR. "changed": per-file commits on a sub-branch,
-  PR back into the current branch, so its author reviews them. "all": one
-  commit on a dated sweep branch, PR against sweep-base. No-op when nothing
-  actually changed. The logic is in commit-updated-files.sh next to this file.
+  Commits exactly the files listed in the manifest and proposes them as a PR.
+  "changed": per-file commits on a sub-branch, PR back into the current branch,
+  so its author reviews them. "all": one commit on a dated sweep branch,
+  PR against sweep-base. No-op when nothing actually changed. The logic is in
+  commit-updated-files.sh next to this file.
 inputs:
   scan-mode:
     description: '"changed" or "all".'
