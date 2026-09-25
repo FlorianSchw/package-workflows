@@ -3,7 +3,7 @@
 # "DataSHIELD client packages: DSLite" in dev-notes/test-coverage-suggest.md).
 # `guidance` is config/test-role-guidance.json. dslite_datasets is the
 # config/dslite-canned-datasets.json$datasets list, only needed when a
-# fresh setup.R will be generated: Claude picks one via the dslite_dataset
+# fresh DSLite setup will be generated: Claude picks one via the dslite_dataset
 # tool field, this function just presents the options.
 build_test_role_guidance <- function(datashield, ds_type, has_existing_setup, dslite_datasets, guidance) {
   join <- function(x) paste(unlist(x), collapse = " ")

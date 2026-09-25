@@ -14,6 +14,15 @@ Function source:
 Existing test file for this function ("(none yet)" means there is none):
 {{EXISTING_TEST_FILE}}
 
+Test setup and helper files, run by testthat before every test file.
+Use exactly the objects, data symbols and helper functions they define —
+don't invent your own:
+{{TEST_SUPPORT_FILES}}
+
+Structure of the test data those files create (rows, columns, types,
+missing values, factor level counts) — use it for concrete assertions:
+{{TEST_DATA}}
+
 Current results of the existing tests, before any change:
 {{EXISTING_TEST_RESULTS}}
 

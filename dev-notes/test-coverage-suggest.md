@@ -23,8 +23,16 @@ Entry script: `R/suggest_tests.R`. Per function file in `files_to_check.txt`:
    `build_test_evidence()` collects the history: last change of function
    and test file, which changed later, and in a PR whether the PR changed
    the function without its test, plus the function's diff.
+   Once per run, `summarize_test_data()` runs the setup/helper files in a
+   separate R process (`collect_test_data()`: package loaded from source,
+   files sourced from `tests/testthat/` like testthat does) and describes
+   the data tables they create — tables inside any DSLite server (read via
+   a temporary DSLite session), else plain data frames: rows, columns,
+   types, missing values, factor level counts. No other values. A file
+   failing partway still yields the tables created before, with a note.
 4. For DataSHIELD client packages, `detect_dslite_setup()` checks for an
-   existing DSLite `tests/testthat/setup.R`.
+   existing DSLite setup in any `tests/testthat/setup*.R` / `helper*.R`;
+   those files go to Claude verbatim (objects, symbols, helpers).
 5. `ask_claude_for_tests()` (profile `test-review`: Opus 5 with adaptive
    thinking; prompt `prompts/test-review-prompt.md`, guidance
    `config/test-role-guidance.json`) returns fields only, never assembled
@@ -34,14 +42,17 @@ Entry script: `R/suggest_tests.R`. Per function file in `files_to_check.txt`:
 6. `filter_generated_tests()` applies the threshold to new tests,
    `review_existing_tests()` the safeguards to the decisions (see Design
    decisions). `assemble_test_block()` builds the blocks; if a fresh DSLite
-   setup is needed, `ensure_dslite_setup_file()` writes `setup.R`.
+   setup is needed, `ensure_dslite_setup_file()` writes `setup.R` — or
+   `setup-dslite.R` if a `setup.R` without DSLite already exists, so that
+   file is never touched. *Revisable (2026-09-25):* `setup.R` first to
+   avoid cluttering packages with files; revisit after feedback.
 7. `rewrite_test_content()` builds a candidate file (updates in place,
    deletions, new tests appended; everything else line for line),
    `write_test_file()` writes it and `run_test_blocks()` runs it with the
    package loaded from source.
 8. The file is rewritten from the *original* with only what passed: failed
    new tests are left out, a failed update keeps the original test and is
-   reported. A generated `setup.R` is kept only if a new test passed.
+   reported. A generated DSLite setup is kept only if a new test passed.
 9. Each failing **new** test goes to `ask_claude_to_classify_failure()`
    (profile `test-failure-classification`):
    `real_bug` → GitHub issue; `bad_test` / `env_misconfiguration` → PR
@@ -112,7 +123,7 @@ conns <- DSI::datashield.login(logins = logindata, assign = TRUE)
 # tests use `conns`; the dataset is assigned on every study as "D"
 ```
 
-**Dataset selection:** an existing DSLite `setup.R` is always reused as-is
+**Dataset selection:** an existing DSLite setup (any `setup*.R` / `helper*.R`) is always reused as-is
 (e.g. from `DSFunctionCreator::init.dsTest()`). Otherwise Claude picks one
 of DSLite's five bundled datasets, listed with descriptions in
 `config/dslite-canned-datasets.json`:

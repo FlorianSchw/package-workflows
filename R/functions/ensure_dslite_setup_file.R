@@ -1,13 +1,19 @@
-# Lazily creates tests/testthat/setup.R once per package when a client-side
-# function needs DSLite and no existing setup.R was found by
-# detect_dslite_setup(). Safe to call once per processed function — only
-# writes on the first call that actually needs it, since a second call
-# would find the file already exists.
+# Lazily creates a DSLite test setup once per package when a client-side
+# function needs DSLite and detect_dslite_setup() found no DSLite setup in
+# any setup*/helper* file. Writes tests/testthat/setup.R if there is none
+# (fewest files, the usual convention); if a setup.R exists without
+# DSLite (e.g. other fixtures), writes setup-dslite.R instead, so that
+# file is never touched — testthat runs every setup*.R (a name must start
+# with "setup"). Revisable, see dev-notes/test-coverage-suggest.md. Safe to
+# call once per processed function: after the first write,
+# detect_dslite_setup() finds it and this isn't called again.
 ensure_dslite_setup_file <- function(dataset_choice, package_name) {
-  path <- file.path("tests", "testthat", "setup.R")
+  dir <- file.path("tests", "testthat")
+  path <- file.path(dir, "setup.R")
+  if (file.exists(path)) path <- file.path(dir, "setup-dslite.R")
   if (file.exists(path)) return(invisible(NULL))
 
-  dir.create(dirname(path), recursive = TRUE, showWarnings = FALSE)
+  dir.create(dir, recursive = TRUE, showWarnings = FALSE)
   snippet <- build_dslite_test_snippet(dataset_choice, package_name)
   writeLines(snippet, path)
   invisible(path)

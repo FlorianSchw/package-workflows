@@ -63,6 +63,11 @@ dslite_datasets <- if (is_client) read_json_config("config/dslite-canned-dataset
 files <- readLines("files_to_check.txt")
 files <- files[nzchar(files)]
 
+# Structure of the test data the package's setup/helper files create —
+# once per run, in a separate R process.
+test_data <- summarize_test_data(test_support_files(), functions_dir)
+message("Test data:\n", test_data)
+
 run_quietly <- function(path, what) {
   tryCatch(run_test_blocks(path, package_name), error = function(e) {
     message(sprintf("Running %s failed: %s", what, conditionMessage(e)))
@@ -95,14 +100,14 @@ for (f in files) {
   baseline <- if (existing_test_file$exists) run_quietly(existing_test_file$path, sprintf("existing tests for %s", function_name)) else list()
   evidence <- build_test_evidence(f, existing_test_file$path, base_ref)
 
-  # Re-checked per function: a setup.R generated for an earlier function
+  # Re-checked per function: a DSLite setup generated for an earlier function
   # in this run is reused by later ones.
   has_existing_setup <- is_client && detect_dslite_setup()
   offered_datasets <- if (is_client && !has_existing_setup) dslite_datasets else NULL
   role_text <- build_test_role_guidance(datashield, ds_type, has_existing_setup, offered_datasets, test_role_guidance)
 
   result <- tryCatch(
-    ask_claude_for_tests(parsed, existing_test_file, role_text, offered_datasets, format_test_results(baseline), evidence, max_new_tests),
+    ask_claude_for_tests(parsed, existing_test_file, role_text, offered_datasets, format_test_results(baseline), evidence, max_new_tests, test_data),
     error = function(e) {
       message(sprintf("Claude call failed for %s: %s", function_name, conditionMessage(e)))
       NULL
@@ -167,7 +172,7 @@ for (f in files) {
 
   # Rewrite from the ORIGINAL content with only what passed — a failing
   # candidate is never left in the proposed file. A freshly generated
-  # setup.R is only kept alongside at least one passing new test.
+  # DSLite setup is only kept alongside at least one passing new test.
   final <- rewrite_test_content(existing_test_file$content, blocks, kept_updates, review$deletes, test_blocks[passing_new])
   kept_path <- write_test_file(existing_test_file, final)
   if (!is.null(kept_path)) {

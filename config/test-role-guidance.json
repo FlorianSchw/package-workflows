@@ -5,25 +5,26 @@
     "and assert on its actual return value, not a mock."
   ],
   "client_existing_setup": [
-    "This is a DataSHIELD CLIENT-side function. tests/testthat/setup.R",
-    "already establishes a DSLite connection (assume a `conns` object is",
-    "available exactly as that file defines it) — do NOT write your own",
-    "login/connection code, and do NOT assume any specific table/dataset",
-    "beyond what setup.R already assigns. Leave dslite_dataset empty —",
-    "it is not used when reusing an existing setup."
+    "This is a DataSHIELD CLIENT-side function. The package's test setup",
+    "and helper files (shown further below) already establish a DSLite",
+    "connection. Use exactly the connection object, data symbol, tables",
+    "and helper functions they define, under the names they use — do NOT",
+    "write your own login/connection code, and do NOT assume data beyond",
+    "what those files assign. Leave dslite_dataset empty — it is not used",
+    "when reusing an existing setup."
   ],
   "client_new_setup": {
     "intro": [
       "This is a DataSHIELD CLIENT-side function, tested against DSLite (an",
       "in-process, serverless implementation of the DataSHIELD server",
       "interface) — real execution and real assertions, not mocking. No",
-      "tests/testthat/setup.R exists yet for this package, so one will be",
+      "DSLite test setup exists yet for this package, so one will be",
       "generated using one of DSLite's built-in canned datasets. Pick the",
       "single best-fitting option and return its name as dslite_dataset",
       "(exactly as written below, e.g. \"CNSIM\"):"
     ],
     "outro": [
-      "The generated setup.R logs in and defines `conns` (the DSLite",
+      "The generated setup file logs in and defines `conns` (the DSLite",
       "connections to pass as `datasources`), with the chosen dataset",
       "already assigned on every study under the symbol `D` — so refer to",
       "it as \"D\" (and its columns as e.g. \"D$LAB_TSC\"), and do NOT write",

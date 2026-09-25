@@ -1,5 +1,5 @@
 # Builds the DSLite login/connection preamble for a NEW client-side test
-# file (no existing tests/testthat/setup.R). Uses DSLite's own built-in
+# (setup.R, or setup-dslite.R next to an existing setup.R). Uses DSLite's own built-in
 # canned datasets (config/dslite-canned-datasets.json lists the options) —
 # no external server, no credentials, no per-package config needed.
 #

@@ -180,6 +180,13 @@ and `CONTRIBUTING.md`); no PRs until a branch model and rules exist.
     note in Getting started that the test workflow needs no prior setup;
     the link comment and PR description start with a one-line statistic.
   - `suggestions.qmd`: example link comment now includes the statistic line.
+  - `test-coverage-suggest.qmd` DataSHIELD section: an existing DSLite
+    setup is found in any `setup*.R` / `helper*.R` and shown to Claude
+    (own names and helpers are used); a generated setup goes to
+    `setup.R`, or `setup-dslite.R` if a `setup.R` without DSLite exists
+    (revisable after feedback). Claude also gets the structure of
+    the test data (rows, columns, types, missing values, factor level
+    counts — the level counts are the only data values shared; mention it).
 
 - Versioning: all workflows are referenced `@main`, and `package-release.yml`
   reads its release config from `main` too. The old `v1` tag is unused.
@@ -241,6 +248,10 @@ and `CONTRIBUTING.md`); no PRs until a branch model and rules exist.
   Claude API; they would 400 on Opus 5.5 / Fable 5.1 (use `auto` then).
 - Shared caching for `R-CMD-Check.yml` — flagged, not started.
 - Internal only — keep these off `docs/roadmap.qmd` (user's decision):
+  - **Name of a generated DSLite setup file:** `setup.R` if none exists,
+    else `setup-dslite.R` (must start with `setup` for testthat to run
+    it). Chosen to avoid cluttering packages with files; revisit after
+    colleagues' feedback.
   - ~~**Changing existing tests:** the test workflow currently never
     modifies existing tests~~ Done: existing tests are updated / deleted /
     reported under the safeguards in `dev-notes/suggestion-thresholds.md`,
