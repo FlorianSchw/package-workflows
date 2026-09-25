@@ -65,6 +65,7 @@ files <- files[nzchar(files)]
 # --- Main loop ---------------------------------------------------------------
 
 updated_files <- character(0)
+report_files <- list()  # per file: applied and dropped changes, for the PR description
 
 for (f in files) {
   parsed <- tryCatch(parse_r_file(f), error = function(e) {
@@ -84,8 +85,11 @@ for (f in files) {
     next
   }
 
-  accepted <- accepted_roxygen_fields(result, parsed, accept_reasons, f)
+  review <- accepted_roxygen_fields(result, parsed, accept_reasons, f)
+  accepted <- review$accepted
+  report_files[[length(report_files) + 1]] <- list(path = f, applied = review$applied, dropped = review$dropped)
   if (length(accepted) == 0) {
+    report_files[[length(report_files)]]$applied <- list()
     message(sprintf("%s: no change above the threshold, skipping.", f))
     next
   }
@@ -94,7 +98,10 @@ for (f in files) {
     message(sprintf("Failed to assemble roxygen block for %s: %s", f, conditionMessage(e)))
     NULL
   })
-  if (is.null(new_block)) next
+  if (is.null(new_block)) {
+    report_files[[length(report_files)]]$applied <- list()
+    next
+  }
 
   message(sprintf("%s: updating %s.", f, paste(accepted, collapse = ", ")))
 
@@ -103,3 +110,9 @@ for (f in files) {
 }
 
 writeLines(updated_files, "updated_files.txt")
+
+# Applied and not-applied changes go into the suggestion PR's description —
+# only when there is a PR at all, so notes alone never open one.
+if (length(updated_files) > 0) {
+  writeLines(format_roxygen_report(report_files), "suggestion_report.md")
+}

@@ -2,16 +2,24 @@
 # a field Claude changed is accepted only if its stated reason is in
 # accept_reasons AND its text differs from the existing one by more than
 # whitespace, punctuation or case. Fields Claude changed without listing
-# them aren't accepted either. Returns the accepted field keys; every
-# dropped change is logged with why.
+# them aren't accepted either. Returns `accepted` (field keys), plus
+# `applied` and `dropped` change records (field, reason, explanation,
+# proposed text, and for dropped ones why) for the PR description; every
+# dropped change is also logged.
 accepted_roxygen_fields <- function(result, parsed, accept_reasons, path) {
   normalize <- function(x) trimws(gsub("[[:space:][:punct:]]+", " ", tolower(paste(x, collapse = " "))))
-  accepted <- character(0)
+  record <- function(change, why = NULL) {
+    explanation <- if (is.null(change$explanation)) "" else change$explanation
+    list(field = change$field, reason = change$reason, explanation = explanation,
+         proposed = roxygen_field_text(result, change$field), why = why)
+  }
+  out <- list(accepted = character(0), applied = list(), dropped = list())
 
   for (change in result$changes) {
     key <- change$field
     if (!isTRUE(change$reason %in% accept_reasons)) {
       message(sprintf("%s: dropping change to '%s' — reason '%s' is not accepted.", path, key, change$reason))
+      out$dropped[[length(out$dropped) + 1]] <- record(change, sprintf("reason `%s` is not accepted", change$reason))
       next
     }
     original <- original_roxygen_field(parsed, key)
@@ -19,7 +27,10 @@ accepted_roxygen_fields <- function(result, parsed, accept_reasons, path) {
       message(sprintf("%s: dropping change to '%s' — only whitespace, punctuation or case differ.", path, key))
       next
     }
-    accepted <- c(accepted, key)
+    if (!key %in% out$accepted) {
+      out$accepted <- c(out$accepted, key)
+      out$applied[[length(out$applied) + 1]] <- record(change)
+    }
   }
-  unique(accepted)
+  out
 }

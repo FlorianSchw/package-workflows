@@ -23,6 +23,12 @@ Function source:
 
 Function parameters, in order: {{PARAMS}}
 
+First check every claim in the existing block against the function
+source: defaults and what happens when an argument is left out, argument
+types (e.g. a data frame vs. the *name* of a server-side data frame),
+what is returned and in which shape, side effects. A claim the code
+doesn't support is inaccurate, however small the wording fix.
+
 For each field: if existing content is already accurate and meets the
 guidance, return that same content essentially unchanged (do not reword
 something already correct). Treat placeholder or lazy content (e.g.
@@ -30,10 +36,16 @@ something already correct). Treat placeholder or lazy content (e.g.
 server) as inadequate and rewrite it.
 
 List every field you actually changed in `changes`, with the reason that
-honestly fits: missing, inaccurate, incomplete, clarity (correct and
-complete, but could be clearer) or style (formatting or wording only).
+honestly fits and a one-sentence explanation:
+- missing: the field is absent or a placeholder;
+- inaccurate: the existing text states something the code doesn't do —
+  even if the fix is a small wording change;
+- incomplete: it leaves out something the code does;
+- clarity: correct and complete, but could be clearer;
+- style: formatting or wording only.
 Not every reason leads to a proposed change, so don't upgrade a clarity
-or style change to a stronger reason.
+or style change to a stronger reason — and don't downgrade a correction
+of a false statement to clarity or style.
 
 Do not include export or import directives anywhere in your answer —
 those are handled entirely outside this review and are not part of any

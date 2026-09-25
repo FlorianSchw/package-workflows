@@ -36,7 +36,24 @@ in whitespace, punctuation or case is dropped. A field Claude changed
 without listing it in `changes` is not applied either. Rejected fields
 keep their **original lines byte for byte**; a file is only rewritten if at
 least one change is accepted. (`accepted_roxygen_fields()`,
-`build_roxygen_block()`.)
+`build_roxygen_block()`.) An untagged title/description (roxygen's
+implicit first paragraphs) counts as existing too and is kept with its
+text unchanged, made explicit as `@title`/`@description` — before this
+fix a dropped title change was applied anyway (dsSupportClient PR #25).
+
+Every change carries a one-sentence explanation. The suggestion PR's
+description lists the applied changes with reason and explanation, and —
+collapsed — the changes that were *not* applied, with Claude's proposed
+text, so a reviewer can adopt one by hand. Only written when there is a
+PR; notes alone never open one.
+
+*First real sweep (2026-09-25, dsSupportClient #52 → PR #25):* 12 of 17
+changes were dropped as `clarity`/`style` — including one correcting a
+false claim (a documented default the function doesn't have) that Claude
+labelled `style`. So the prompt now requires checking every claim against
+the code and defines `inaccurate` to include small-wording fixes of false
+statements. `clarity` stays off; decide on it from the "Not applied"
+sections of the next runs.
 
 ### Tests (`test-review`)
 

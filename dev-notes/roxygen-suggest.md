@@ -21,7 +21,9 @@ Entry script: `R/suggest_roxygen.R`. Per file in `files_to_check.txt`:
 4. `accepted_roxygen_fields()` applies the threshold (accepted reasons,
    more than a whitespace/punctuation/case difference — see
    [suggestion-thresholds.md](suggestion-thresholds.md)); nothing accepted
-   → the file is skipped.
+   → the file is skipped. Applied and dropped changes (with reason,
+   explanation and proposed text) go to `format_roxygen_report()` →
+   `suggestion_report.md` → the suggestion PR's description.
 5. `build_roxygen_block()` assembles the block deterministically in
    `tag_order`, taking Claude's text only for accepted fields and the
    original lines for all others; `write_in_place()` swaps it into the file.

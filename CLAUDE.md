@@ -180,6 +180,9 @@ and `CONTRIBUTING.md`); no PRs until a branch model and rules exist.
     note in Getting started that the test workflow needs no prior setup;
     the link comment and PR description start with a one-line statistic.
   - `suggestions.qmd`: example link comment now includes the statistic line.
+  - `roxygen-suggest.qmd`: the PR description lists applied changes with
+    reason and explanation, and a collapsed "Not applied" section with
+    Claude's proposed text; untagged titles/descriptions are kept.
   - `test-coverage-suggest.qmd` DataSHIELD section: an existing DSLite
     setup is found in any `setup*.R` / `helper*.R` and shown to Claude
     (own names and helpers are used); a generated setup goes to
@@ -247,6 +250,19 @@ and `CONTRIBUTING.md`); no PRs until a branch model and rules exist.
   selected function with Opus). Forced tool calls with thinking work on the
   Claude API; they would 400 on Opus 5.5 / Fable 5.1 (use `auto` then).
 - Shared caching for `R-CMD-Check.yml` — flagged, not started.
+- **GitHub App `client-id` (soon, user wants it possibly today):**
+  `actions/create-github-app-token@v3` deprecates `app-id` in favour of
+  `client-id` — a *different value* (the App's Client ID, `Iv23li…`, not
+  the numeric App ID). Plan: `resolve-push-token` and the workflows accept
+  an additional `app-client-id` secret and prefer it; `app-id` keeps
+  working (with the warning) during transition; callers add a secret
+  `APP_CLIENT_ID`. Remove `app-id` later, together with the workflow
+  renaming (both need caller changes).
+- **Ubuntu 26 on `ubuntu-latest` from 2026-10-19:** P3M binaries
+  (`use-public-rspm`) may lag for a new Ubuntu → source builds, slow or
+  failing. Plan: pin all workflows (and R-CMD-Check's `os-list` default)
+  to `ubuntu-24.04` before then; move to 26.04 deliberately once P3M
+  serves binaries for it, tested on dsSupportClient first.
 - Internal only — keep these off `docs/roadmap.qmd` (user's decision):
   - **Name of a generated DSLite setup file:** `setup.R` if none exists,
     else `setup-dslite.R` (must start with `setup` for testthat to run
