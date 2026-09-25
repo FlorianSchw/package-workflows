@@ -191,6 +191,19 @@ and `CONTRIBUTING.md`); no PRs until a branch model and rules exist.
   because it once used up the whole `max_tokens` budget, so it needs a
   larger `max_tokens`. Watch cost per run on the Cost page.
 - Shared caching for `R-CMD-Check.yml` — flagged, not started.
+- Internal only — keep these off `docs/roadmap.qmd` (user's decision):
+  - **Changing existing tests:** the test workflow currently never
+    modifies existing tests (it only appends, and reports deletion
+    candidates). Revisit whether it may propose changes to them.
+  - **Max number of test suggestions:** currently 5 per function and run
+    (schema `maxItems`). Revisit the number, and whether a cap per run or
+    per sweep is needed.
+  - **Author contributions in `DESCRIPTION`:** `check-description-authors`
+    adds everyone as `aut` with the full name as given name. Refine how
+    contributions are specified (e.g. `aut` vs `ctb`, given/family split)
+    — details to be clarified.
+  - **README update workflow:** a new workflow that keeps a package's
+    README up to date — scope to be clarified.
 - Reusable workflow keepalive: GitHub disables scheduled workflows after
   60 days without repository activity. Callers with cron jobs (monthly
   sweeps, scheduled R CMD check, …) currently each add their own
