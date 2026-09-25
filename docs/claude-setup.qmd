@@ -43,7 +43,7 @@ In the Claude Console under **Settings → Workload identity**:
    - *Subject prefix*: `repo:<owner>/<repo>:*`
    - *Claim* `job_workflow_ref`:
      `FlorianSchw/package-workflows/.github/workflows/roxygen-suggest.yml@refs/heads/main`
-     (or `test-coverage-suggest.yml` for the test rule)
+     (or `test-suggest.yml` for the test rule)
    - *Target*: the repository's service account, in the matching workspace
 4. **Secrets** — store in the repository:
 

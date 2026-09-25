@@ -1,4 +1,4 @@
-# test-coverage-suggest.yml
+# test-suggest.yml
 
 Reusable workflow that finds under-tested functions in an R package, asks
 Claude to draft real testthat tests for them, **runs every generated test**,
@@ -173,7 +173,7 @@ yet seen: deletion notes, `real_bug` issues, sweeps.
 
 Caller requirements: `datashield`/`datashield-type` inputs, App secrets
 (so the suggestion PR triggers required checks), `issues: write`, and the three
-`anthropic-*` secrets, with a federation rule for `test-coverage-suggest.yml`. No shared
+`anthropic-*` secrets, with a federation rule for `test-suggest.yml`. No shared
 `concurrency` group with `roxygen-suggest.yml` is needed any more: each
 pushes to its own `bot-suggest/<kind>/…` branch, never the PR branch.
 

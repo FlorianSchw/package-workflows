@@ -3,7 +3,7 @@ title: "Test coverage suggestions"
 description: "Claude writes testthat tests; only tests that pass are proposed."
 ---
 
-`test-coverage-suggest.yml` has Claude review each function together with
+`test-suggest.yml` has Claude review each function together with
 its existing tests and write new `testthat` tests where they add value. It
 **runs every generated test** and proposes only the ones that pass as a
 [suggestion PR](suggestions.qmd).
@@ -68,12 +68,12 @@ come from the [Claude setup](claude-setup.qmd).
 
 ## Inputs
 
-{{< wf-inputs test-coverage-suggest.yml >}}
+{{< wf-inputs test-suggest.yml >}}
 
 ## Secrets
 
-{{< wf-secrets test-coverage-suggest.yml >}}
+{{< wf-secrets test-suggest.yml >}}
 
 ## Permissions
 
-{{< wf-permissions test-coverage-suggest.yml >}}
+{{< wf-permissions test-suggest.yml >}}

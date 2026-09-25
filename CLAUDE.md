@@ -60,7 +60,7 @@ the live caller used to validate changes before wider rollout.
     body, or via `comment_once()` on the PR if nothing else changed.
     `desc` writes `Authors@R` in its standard (tidyverse) format — a
     hand-formatted field is normalized once; deliberately not customized.
-  - `roxygen-suggest.yml`, `test-coverage-suggest.yml` — LLM-assisted
+  - `roxygen-suggest.yml`, `test-suggest.yml` — LLM-assisted
     suggestion workflows; see below.
   - `cleanup-suggestion-branch.yml` — on PR close, deletes a `bot-suggest/*`
     head branch unless another open PR still uses it.
@@ -190,7 +190,10 @@ and `CONTRIBUTING.md`); no PRs until a branch model and rules exist.
     per file and "No changes applied (n)" per reason, with Claude's
     proposed text; untagged titles/descriptions are kept; possible code
     bugs are reported in the suggestion PR (fallback: comment on the PR);
-    the link comment shows a statistic line.
+    the link comment shows a statistic line; the layout (heading levels,
+    spacing) is adjustable in `config/report-style.yml`.
+  - Page names: `test-coverage-suggest.qmd` (and its dev-note) still
+    carry the old workflow name; the file is now `test-suggest.yml`.
   - `test-coverage-suggest.qmd` DataSHIELD section: an existing DSLite
     setup is found in any `setup*.R` / `helper*.R` and shown to Claude
     (own names and helpers are used); a generated setup goes to
@@ -220,7 +223,7 @@ and `CONTRIBUTING.md`); no PRs until a branch model and rules exist.
 - Federation rules for the other two accounts, before rolling out beyond
   dsSupportClient.
 - Not yet confirmed in real CI: `all` mode of both suggestion workflows;
-  ~~`test-coverage-suggest.yml` actually generating, running and proposing
+  ~~`test-suggest.yml` actually generating, running and proposing
   tests~~ confirmed on dsSupportClient PR #21 → sub-PR #24 (tests for an
   already-tested function, `bad_test` classification comment, sub-PR
   updated instead of duplicated); deletion notes not yet seen;
@@ -259,8 +262,9 @@ and `CONTRIBUTING.md`); no PRs until a branch model and rules exist.
   Claude API; they would 400 on Opus 5.5 / Fable 5.1 (use `auto` then).
 - Shared caching for `R-CMD-Check.yml` — flagged, not started.
 - **Rename the workflows before rolling out to more repos:** names are
-  mixed and partly outdated (`test-coverage-suggest` now also updates and
-  deletes tests). Proposal (not decided): prefixes by group — `check-*`
+  mixed and partly outdated. ~~`test-coverage-suggest`~~ already renamed
+  to `test-suggest.yml` (caller and federation rule updated on
+  dsSupportClient). Proposal (not decided): prefixes by group — `check-*`
   (`check-r-package`, `check-commit-messages`, `check-pr-source-branch`),
   `release-*` (`release-package`, `release-trigger`, `release-merge-pr`,
   `release-failure-issue`), `suggest-*` (`suggest-roxygen-docs`,
@@ -310,7 +314,7 @@ and `CONTRIBUTING.md`); no PRs until a branch model and rules exist.
   - ~~**Max number of test suggestions:** currently 5~~ Done:
     `max_new_tests` (10) in `config/claude.yml`. Sweep cost is handled by
     scope instead: `sweep-lookback-days` / `sweep-rotation-months` in
-    `test-coverage-suggest.yml` (recently changed + rotating share; tested
+    `test-suggest.yml` (recently changed + rotating share; tested
     locally). A cheaper sweep model was considered and not done — the
     existing-test diagnosis needs the strong model.
   - **Author contributions in `DESCRIPTION`:** ~~`aut` vs `ctb`~~ done
