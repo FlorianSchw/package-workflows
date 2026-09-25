@@ -148,6 +148,12 @@ Details per workflow: [dev-notes/roxygen-suggest.md](dev-notes/roxygen-suggest.m
   suggestion jobs skip `bot-suggest/*` head branches, so the bot never
   reviews its own PRs. All `bot-suggest/*` branches are removed by
   `cleanup-suggestion-branch.yml` once their PR is merged or closed.
+  **Pitfall:** `actions/checkout` stores `GITHUB_TOKEN` as an extra HTTP
+  header (`persist-credentials`) that wins over a token in the remote URL.
+  Pushes must reset it (`git -c "http.https://github.com/.extraheader="
+  push`, `git_push_with_token()` in `commit-updated-files.sh`), otherwise they go
+  out as `github-actions` and the PR's workflows need approval / don't
+  run (seen on the force push to dsSupportClient PR #25).
 
 ## STILL OPEN
 

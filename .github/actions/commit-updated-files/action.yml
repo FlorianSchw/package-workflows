@@ -5,7 +5,7 @@ description: >-
   and proposes them as a PR. "changed": per-file commits on a sub-branch,
   PR back into the current branch, so its author reviews them. "all": one
   commit on a dated sweep branch, PR against sweep-base. No-op when nothing
-  actually changed.
+  actually changed. The logic is in commit-updated-files.sh next to this file.
 inputs:
   scan-mode:
     description: '"changed" or "all".'
@@ -75,96 +75,4 @@ runs:
         SWEEP_PR_TITLE: ${{ inputs.sweep-pr-title }}
         SWEEP_PR_BODY: ${{ inputs.sweep-pr-body }}
         SWEEP_BASE: ${{ inputs.sweep-base }}
-      run: |
-        if [ ! -s "$MANIFEST" ]; then
-          echo "No updated files — nothing to commit."
-          exit 0
-        fi
-
-        git config user.name "github-actions[bot]"
-        git config user.email "github-actions[bot]@users.noreply.github.com"
-        git remote set-url origin "https://x-access-token:${GH_TOKEN}@github.com/${{ github.repository }}.git"
-
-        # PR body: the given text, plus the pr-body-file content if present.
-        write_body() {
-          BODY_FILE="$(mktemp)"
-          printf '%s\n' "$1" > "$BODY_FILE"
-          if [ -n "$PR_BODY_FILE" ] && [ -s "$PR_BODY_FILE" ]; then
-            printf '\n' >> "$BODY_FILE"
-            cat "$PR_BODY_FILE" >> "$BODY_FILE"
-          fi
-        }
-
-        if [ "$SCAN_MODE" = "all" ]; then
-          while IFS= read -r f; do
-            git add -- "$f"
-          done < "$MANIFEST"
-          if git diff --cached --quiet; then
-            echo "Manifest files have no actual changes — skipping sweep PR."
-            exit 0
-          fi
-          BRANCH="${SWEEP_BRANCH_PREFIX}-$(date +%Y-%m)"
-          git checkout -b "$BRANCH"
-          git commit -m "$SWEEP_COMMIT_MESSAGE"
-          # Force: a re-run in the same month replaces that month's branch.
-          git push --force origin "$BRANCH"
-
-          write_body "$SWEEP_PR_BODY"
-
-          # Only an OPEN PR counts, as in "changed" mode: update it rather
-          # than opening a duplicate; after a merge or close, open a new one.
-          OPEN_PR="$(gh pr list --head "$BRANCH" --state open --json number --jq '.[0].number // empty')"
-          if [ -n "$OPEN_PR" ]; then
-            gh pr edit "$OPEN_PR" --title "$SWEEP_PR_TITLE" --body-file "$BODY_FILE"
-          else
-            gh pr create --base "$SWEEP_BASE" --head "$BRANCH" --title "$SWEEP_PR_TITLE" --body-file "$BODY_FILE"
-          fi
-        else
-          ORIGINAL_BRANCH="$(git rev-parse --abbrev-ref HEAD)"
-          if [ "$ORIGINAL_BRANCH" = "HEAD" ]; then
-            echo "::error::Detached HEAD — expected a named branch to be checked out. Aborting."
-            exit 1
-          fi
-          SUB_BRANCH="${SUB_BRANCH_PREFIX}/$(echo "$ORIGINAL_BRANCH" | tr '/' '-')"
-
-          git checkout -b "$SUB_BRANCH"
-
-          COMMITTED_FILES=""
-          while IFS= read -r f; do
-            git add -- "$f"
-            if git diff --cached --quiet -- "$f"; then
-              echo "No actual change for $f — skipping commit."
-              continue
-            fi
-            git commit -m "$COMMIT_PREFIX $f"
-            COMMITTED_FILES="${COMMITTED_FILES}- \`$f\`"$'\n'
-          done < "$MANIFEST"
-
-          if [ -z "$COMMITTED_FILES" ]; then
-            echo "No files actually changed — skipping sub-branch push."
-            exit 0
-          fi
-
-          git push --force origin "$SUB_BRANCH"
-
-          write_body "$SUB_PR_BODY"
-
-          # Only an OPEN PR counts: the sub-branch name is reused per source
-          # branch, and gh pr view would also match an earlier merged one.
-          OPEN_PR="$(gh pr list --head "$SUB_BRANCH" --state open --json number --jq '.[0].number // empty')"
-          if [ -z "$OPEN_PR" ]; then
-            PR_URL=$(gh pr create --base "$ORIGINAL_BRANCH" --head "$SUB_BRANCH" --title "$SUB_PR_TITLE" --body-file "$BODY_FILE")
-            if [ -n "$ORIGIN_PR_NUMBER" ]; then
-              COMMENT="**${SUB_PR_TITLE}** opened: ${PR_URL} (into \`${ORIGINAL_BRANCH}\`)"
-              if [ -n "$COMMENT_SUMMARY_FILE" ] && [ -s "$COMMENT_SUMMARY_FILE" ]; then
-                COMMENT="${COMMENT}"$'\n\n'"$(cat "$COMMENT_SUMMARY_FILE")"
-              fi
-              COMMENT="${COMMENT}"$'\n\n'"${COMMITTED_FILES}"
-              gh pr comment "$ORIGIN_PR_NUMBER" --body "$COMMENT" || echo "::warning::Failed to post notification comment on PR #$ORIGIN_PR_NUMBER"
-            fi
-          elif [ -n "$PR_BODY_FILE" ] && [ -s "$PR_BODY_FILE" ]; then
-            # Refresh the report of an existing sub-PR; without a report,
-            # leave its body alone in case someone edited it.
-            gh pr edit "$OPEN_PR" --body-file "$BODY_FILE"
-          fi
-        fi
+      run: bash "$GITHUB_ACTION_PATH/commit-updated-files.sh"
