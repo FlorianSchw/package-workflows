@@ -180,9 +180,10 @@ and `CONTRIBUTING.md`); no PRs until a branch model and rules exist.
     note in Getting started that the test workflow needs no prior setup;
     the link comment and PR description start with a one-line statistic.
   - `suggestions.qmd`: example link comment now includes the statistic line.
-  - `roxygen-suggest.qmd`: the PR description lists applied changes with
-    reason and explanation, and a collapsed "Not applied" section with
-    Claude's proposed text; untagged titles/descriptions are kept.
+  - `roxygen-suggest.qmd`: the PR description groups "Applied changes (n)"
+    per file and "No changes applied (n)" per reason, with Claude's
+    proposed text; untagged titles/descriptions are kept; possible code
+    bugs are reported (PR comment / sweep PR section).
   - `test-coverage-suggest.qmd` DataSHIELD section: an existing DSLite
     setup is found in any `setup*.R` / `helper*.R` and shown to Claude
     (own names and helpers are used); a generated setup goes to
@@ -250,6 +251,31 @@ and `CONTRIBUTING.md`); no PRs until a branch model and rules exist.
   selected function with Opus). Forced tool calls with thinking work on the
   Claude API; they would 400 on Opus 5.5 / Fable 5.1 (use `auto` then).
 - Shared caching for `R-CMD-Check.yml` — flagged, not started.
+- **Rename the workflows before rolling out to more repos:** names are
+  mixed and partly outdated (`test-coverage-suggest` now also updates and
+  deletes tests). Proposal (not decided): prefixes by group — `check-*`
+  (`check-r-package`, `check-commit-messages`, `check-pr-source-branch`),
+  `release-*` (`release-package`, `release-trigger`, `release-merge-pr`,
+  `release-failure-issue`), `suggest-*` (`suggest-roxygen-docs`,
+  `suggest-tests`, `suggest-authors`, `suggest-cleanup-branches`),
+  `maintain-keepalive`. Breaking: every caller's `uses:` path and the
+  federation rules' `job_workflow_ref` claims change; docs/examples too.
+  Combine with removing `app-id` (both need caller changes).
+- **Policy file for the bot's rules** (`config/suggestion-policy.yml`):
+  today reasons, action↔reason mapping, the `aut`/`ctb` rule, name
+  particles and report routing live partly only in R code. Move the
+  tunable policy to one readable file that R and the tool schemas read
+  (schema descriptions from the same source); keep safety invariants
+  (never adapt a test to possibly buggy output, only failing tests are
+  updated, nothing without a suggestion PR) in code, documented in the
+  decision record. Overridable per repo like the other config files.
+- **Report routing is code, not config:** where test failures, possible
+  bugs, deletion notes and code issues go (PR comment, PR description,
+  issue, log) is decided in R (`publish_test_report()`,
+  `suggest_roxygen.R`). The user expects it to be configurable — do it as
+  part of the policy file (`config/suggestion-policy.yml`, see "rules
+  partly only in code"). Constraint: an issue needs `issues: write`,
+  which roxygen callers don't grant.
 - **GitHub App `client-id` (soon, user wants it possibly today):**
   `actions/create-github-app-token@v3` deprecates `app-id` in favour of
   `client-id` — a *different value* (the App's Client ID, `Iv23li…`, not

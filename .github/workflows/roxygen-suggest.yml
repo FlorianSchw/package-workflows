@@ -103,6 +103,8 @@ jobs:
         env:
           R_CONFIG_ACTIVE: roxygen-review
           ANTHROPIC_API_KEY: ${{ steps.anthropic_auth.outputs.access-token }}
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          PR_NUMBER: ${{ github.event.pull_request.number }}
           DATASHIELD: ${{ inputs.datashield }}
           DATASHIELD_TYPE: ${{ inputs.datashield-type }}
         run: Rscript .shared-workflows/R/suggest_roxygen.R

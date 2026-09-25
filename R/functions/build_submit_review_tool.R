@@ -52,13 +52,25 @@ build_submit_review_tool <- function(parsed, profile) {
     details = list(type = "string", description = sprintf("Plain-text details prose, empty string if not applicable. %s", profile$details$guidance)),
     return_doc = list(type = "string", description = sprintf("Plain-text description of the return value. %s", profile$return$guidance)),
     examples_body = list(type = "string", description = sprintf("Raw runnable example code only, no comment markers, no tag label, no wrapper syntax, empty string if not required. %s", profile$examples$guidance)),
-    params = params_schema
+    params = params_schema,
+    code_issues = list(
+      type = "array",
+      description = "Likely defects in the function's code noticed during the review — not documentation problems, not style. Empty array if none.",
+      items = list(
+        type = "object",
+        properties = list(
+          summary = list(type = "string", description = "One sentence: what the code does wrong."),
+          explanation = list(type = "string", description = "Why, citing the relevant code and the effect it has.")
+        ),
+        required = list("summary", "explanation")
+      )
+    )
   )
 
   input_schema <- list(
     type = "object",
     properties = top_level_properties,
-    required = list("needs_changes", "changes", "title", "description", "return_doc", "params")
+    required = list("needs_changes", "changes", "title", "description", "return_doc", "params", "code_issues")
   )
 
   list(

@@ -32,6 +32,9 @@ anthropic_config <- roxygen_review_settings$anthropic
 accept_reasons <- unlist(roxygen_review_settings$accept_reasons)
 
 api_key    <- Sys.getenv("ANTHROPIC_API_KEY")
+gh_token   <- Sys.getenv("GH_TOKEN")
+repo       <- Sys.getenv("GITHUB_REPOSITORY")
+pr_number  <- Sys.getenv("PR_NUMBER")  # empty in a sweep
 datashield <- as.logical(Sys.getenv("DATASHIELD", "false"))
 ds_type    <- Sys.getenv("DATASHIELD_TYPE", "")
 
@@ -66,6 +69,7 @@ files <- files[nzchar(files)]
 
 updated_files <- character(0)
 report_files <- list()  # per file: applied and dropped changes, for the PR description
+code_issue_files <- list()  # per file: likely code defects Claude noticed
 
 for (f in files) {
   parsed <- tryCatch(parse_r_file(f), error = function(e) {
@@ -79,6 +83,12 @@ for (f in files) {
     NULL
   })
   if (is.null(result)) next
+
+  # Code defects are reported whether or not the documentation changes.
+  if (length(result$code_issues) > 0) {
+    code_issue_files[[length(code_issue_files) + 1]] <- list(path = f, issues = result$code_issues)
+    message(sprintf("%s: %d possible code issue(s) noted.", f, length(result$code_issues)))
+  }
 
   if (!isTRUE(result$needs_changes)) {
     message(sprintf("%s: documentation already adequate, skipping.", f))
@@ -113,6 +123,16 @@ writeLines(updated_files, "updated_files.txt")
 
 # Applied and not-applied changes go into the suggestion PR's description —
 # only when there is a PR at all, so notes alone never open one.
+# Possible code bugs: in a PR run a comment on that PR (the author's code;
+# posted once), in a sweep a section of the sweep PR's description, and
+# without a sweep PR only the log (an issue would need `issues: write`,
+# which roxygen callers don't grant).
+is_sweep <- !nzchar(pr_number)
 if (length(updated_files) > 0) {
-  writeLines(format_roxygen_report(report_files), "suggestion_report.md")
+  writeLines(format_roxygen_report(report_files, if (is_sweep) code_issue_files else list()), "suggestion_report.md")
+}
+if (length(code_issue_files) > 0 && !is_sweep) {
+  comment_once(pr_number, paste(format_code_issues(code_issue_files), collapse = "\n"), "possible code bugs")
+} else if (length(code_issue_files) > 0 && length(updated_files) == 0) {
+  message("Possible code bugs (no sweep PR to report them in):\n", paste(format_code_issues(code_issue_files), collapse = "\n"))
 }
