@@ -55,7 +55,6 @@ on:
 
 jobs:
   suggest-tests:
-    # Never review the bot's own suggestion or sweep PRs.
     if: ${{ !startsWith(github.head_ref, 'bot-suggest/') }}
     runs-on: ubuntu-latest
     permissions:
@@ -77,11 +76,6 @@ jobs:
           ref: main
           path: .shared-workflows
 
-      # A sweep reviews what changed recently (function file or its test
-      # file within sweep-lookback-days) plus a rotating share of the rest,
-      # so every function comes up at least once per sweep-rotation-months —
-      # fewer Claude calls than all functions every month. The share is
-      # picked by a stable hash of the file name.
       - name: Determine files to check
         id: files
         env:
@@ -116,10 +110,6 @@ jobs:
         with:
           use-public-rspm: true
 
-      # needs: check installs the target package's own Imports/Suggests
-      # (testthat, and — for DataSHIELD client packages — DSLite/DSI/the
-      # relevant server package) from ITS DESCRIPTION. The package itself is
-      # loaded from source by run_test_blocks() via testthat/pkgload.
       - uses: r-lib/actions/setup-r-dependencies@v2
         if: steps.files.outputs.count != '0'
         with:

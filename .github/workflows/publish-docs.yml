@@ -1,6 +1,3 @@
-# Not a reusable workflow: builds the Quarto site in docs/ and publishes it
-# to GitHub Pages. The pages read the workflow files and examples/ directly,
-# so a change to either also rebuilds the site.
 name: Publish Docs
 
 on:

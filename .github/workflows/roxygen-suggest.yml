@@ -45,7 +45,6 @@ on:
 
 jobs:
   suggest-docs:
-    # Never review the bot's own suggestion or sweep PRs.
     if: ${{ !startsWith(github.head_ref, 'bot-suggest/') }}
     runs-on: ubuntu-latest
     permissions:
