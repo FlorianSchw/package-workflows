@@ -168,6 +168,7 @@ jobs:
           origin-pr-number: ${{ github.event.pull_request.number }}
           sweep-base: ${{ inputs.sweep-base }}
           pr-body-file: 'suggestion_report.md'
+          comment-summary-file: 'suggestion_summary.md'
           sweep-branch-prefix: 'bot-suggest/tests-sweep'
           sweep-commit-message: 'test: monthly test coverage sweep'
           sweep-pr-title: 'Monthly test coverage sweep'

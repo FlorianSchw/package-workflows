@@ -175,6 +175,11 @@ and `CONTRIBUTING.md`); no PRs until a branch model and rules exist.
     scope inputs (`sweep-lookback-days`, `sweep-rotation-months`).
   - `suggestions.qmd` "What gets proposed": add the existing-test actions.
   - `roadmap.qmd`: "Model per task" is done for tests.
+  - `test-coverage-suggest.qmd`: packages without testthat get it set up
+    (`tests/testthat.R`, `Suggests`, edition 3 only when fresh) — also a
+    note in Getting started that the test workflow needs no prior setup;
+    the link comment and PR description start with a one-line statistic.
+  - `suggestions.qmd`: example link comment now includes the statistic line.
 
 - Versioning: all workflows are referenced `@main`, and `package-release.yml`
   reads its release config from `main` too. The old `v1` tag is unused.

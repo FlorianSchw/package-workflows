@@ -76,6 +76,8 @@ passed_in <- function(results, description) {
 # --- Main loop ---------------------------------------------------------------
 
 updated_files <- character(0)
+counts <- c(new = 0, updated = 0, deleted = 0) # for format_test_summary()
+created_setups <- character(0)
 sweep_failures <- character(0)   # failed new tests in a sweep (no PR to comment on)
 existing_changes <- character(0) # applied updates/deletions, with reasons
 existing_notes <- character(0)   # possible bugs, failing tests left unchanged
@@ -170,6 +172,8 @@ for (f in files) {
   kept_path <- write_test_file(existing_test_file, final)
   if (!is.null(kept_path)) {
     updated_files <- c(updated_files, if (length(passing_new) > 0) created_setup, kept_path)
+    counts <- counts + c(length(passing_new), length(kept_updates), length(review$deletes))
+    if (length(passing_new) > 0 && !is.null(created_setup)) created_setups <- c(created_setups, created_setup)
     for (d in c(names(kept_updates), review$deletes)) {
       existing_changes <- c(existing_changes, sprintf("- `%s`: \"%s\" — %s", function_name, d, review$explanations[[d]]))
     }
@@ -198,10 +202,21 @@ for (f in files) {
   }
 }
 
+# Proposed tests only count if R CMD check runs them: set up testthat in
+# packages that don't have it yet.
+testthat_setup <- if (counts[["new"]] > 0) ensure_testthat_setup(package_name) else character(0)
+updated_files <- c(updated_files, testthat_setup)
+
 writeLines(updated_files, "updated_files.txt")
 
+# One-line summary: in the link comment on the originating PR (read by
+# commit-updated-files from suggestion_summary.md) and on top of the
+# suggestion PR's description.
+summary_line <- format_test_summary(counts, created_setups, testthat_setup)
+if (length(updated_files) > 0) writeLines(summary_line, "suggestion_summary.md")
+
 section <- function(title, lines, intro = NULL) paste(c(title, "", intro, if (!is.null(intro)) "", lines), collapse = "\n")
-report <- character(0)
+report <- if (length(updated_files) > 0) paste("**Summary:**", summary_line) else character(0)
 if (length(existing_changes) > 0) {
   report <- c(report, section("## Changes to existing tests", existing_changes, "Each change passed a real run. Check the reasons before merging."))
 }

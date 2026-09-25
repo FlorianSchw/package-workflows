@@ -46,8 +46,16 @@ Entry script: `R/suggest_tests.R`. Per function file in `files_to_check.txt`:
    (profile `test-failure-classification`):
    `real_bug` → GitHub issue; `bad_test` / `env_misconfiguration` → PR
    comment, or in a sweep into the report.
-10. Written files are listed in `updated_files.txt`; the
-    `commit-updated-files` action proposes them. `publish_test_report()`
+10. If new tests were kept, `ensure_testthat_setup()` makes sure R CMD
+    check runs them: creates `tests/testthat.R`, adds testthat to
+    `Suggests`, and sets `Config/testthat/edition: 3` (edition only when
+    the runner is created fresh — an existing suite's edition stays).
+11. Written files are listed in `updated_files.txt`; the
+    `commit-updated-files` action proposes them. `format_test_summary()`
+    gives a one-line statistic (new / updated / deleted tests, DSLite and
+    testthat setup created) for the link comment on the originating PR
+    (`suggestion_summary.md`) and the top of the PR description.
+    `publish_test_report()`
     puts changes to existing tests (with reasons), reported tests and
     sweep failures into the suggestion PR's description — or, without a
     suggestion PR, a PR comment (sweep: one issue).

@@ -20,6 +20,9 @@ inputs:
   pr-body-file:
     description: 'File appended to the sub-PR or sweep PR body if it exists (optional).'
     required: false
+  comment-summary-file:
+    description: '"changed" mode: one-line summary added to the link comment if the file exists (optional).'
+    required: false
   commit-prefix:
     description: '"changed" mode: per-file commit message prefix; the file path is appended.'
     required: false
@@ -61,6 +64,7 @@ runs:
         SCAN_MODE: ${{ inputs.scan-mode }}
         MANIFEST: ${{ inputs.manifest }}
         PR_BODY_FILE: ${{ inputs.pr-body-file }}
+        COMMENT_SUMMARY_FILE: ${{ inputs.comment-summary-file }}
         COMMIT_PREFIX: ${{ inputs.commit-prefix }}
         SUB_BRANCH_PREFIX: ${{ inputs.sub-branch-prefix }}
         SUB_PR_TITLE: ${{ inputs.sub-pr-title }}
@@ -151,7 +155,11 @@ runs:
           if [ -z "$OPEN_PR" ]; then
             PR_URL=$(gh pr create --base "$ORIGINAL_BRANCH" --head "$SUB_BRANCH" --title "$SUB_PR_TITLE" --body-file "$BODY_FILE")
             if [ -n "$ORIGIN_PR_NUMBER" ]; then
-              COMMENT="**${SUB_PR_TITLE}** opened: ${PR_URL} (into \`${ORIGINAL_BRANCH}\`)"$'\n\n'"${COMMITTED_FILES}"
+              COMMENT="**${SUB_PR_TITLE}** opened: ${PR_URL} (into \`${ORIGINAL_BRANCH}\`)"
+              if [ -n "$COMMENT_SUMMARY_FILE" ] && [ -s "$COMMENT_SUMMARY_FILE" ]; then
+                COMMENT="${COMMENT}"$'\n\n'"$(cat "$COMMENT_SUMMARY_FILE")"
+              fi
+              COMMENT="${COMMENT}"$'\n\n'"${COMMITTED_FILES}"
               gh pr comment "$ORIGIN_PR_NUMBER" --body "$COMMENT" || echo "::warning::Failed to post notification comment on PR #$ORIGIN_PR_NUMBER"
             fi
           elif [ -n "$PR_BODY_FILE" ] && [ -s "$PR_BODY_FILE" ]; then
