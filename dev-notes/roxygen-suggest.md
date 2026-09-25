@@ -3,7 +3,7 @@
 Reusable workflow that reviews each function's roxygen2 documentation for
 completeness and accuracy with Claude, rewrites the block, and proposes the
 result as a suggestion PR. Shares auth, config and R conventions with
-[test-coverage-suggest.yml](test-coverage-suggest.md) (see `CLAUDE.md`).
+[test-suggest.yml](test-coverage-suggest.md) (see `CLAUDE.md`).
 
 ## How it works
 
@@ -25,7 +25,8 @@ Entry script: `R/suggest_roxygen.R`. Per file in `files_to_check.txt`:
    explanation and proposed text) go to `format_roxygen_report()` →
    `suggestion_report.md` → the suggestion PR's description, as
    collapsible groups: "Applied changes (n)" per file, "No changes applied
-   (n)" per reason. Claude also returns `code_issues` (likely defects in
+   (n)" per reason; heading levels and spacing are set in
+   `config/report-style.yml` (GitHub strips CSS). Claude also returns `code_issues` (likely defects in
    the code, not the docs), shown as "Possible bugs in the code" in the
    same description. On top, a one-line statistic
    (`format_roxygen_summary()`), repeated in the link comment on the
