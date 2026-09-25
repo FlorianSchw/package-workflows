@@ -42,6 +42,10 @@ The example callers switch mode by trigger, so one file handles both:
       scan-mode: ${{ github.event_name == 'pull_request' && 'changed' || 'all' }}
 ```
 
+GitHub stops scheduled workflows in repositories without activity for 60
+days — add the [workflow keepalive](workflow-keepalive.qmd) so the sweeps
+keep running.
+
 ## What gets proposed {#what-gets-proposed}
 
 A suggestion should be a real improvement, not a reworded sentence or an

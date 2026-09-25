@@ -46,6 +46,9 @@ website:
           - test-coverage-suggest.qmd
           - claude-setup.qmd
           - cleanup-suggestion-branch.qmd
+      - section: "Maintenance"
+        contents:
+          - workflow-keepalive.qmd
 
 format:
   html:

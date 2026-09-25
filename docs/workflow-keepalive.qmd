@@ -1,0 +1,38 @@
+---
+title: "Workflow keepalive"
+description: "Keeps scheduled workflows from being disabled after 60 days of inactivity."
+---
+
+GitHub disables a repository's scheduled workflows after **60 days without
+activity** in it — for example the monthly [sweeps](suggestions.qmd#sweeps)
+or a scheduled [R CMD check](r-cmd-check.qmd) in a package that isn't
+changed for a while. They then silently stop running.
+
+`workflow-keepalive.yml` re-enables the workflow that calls it, which
+resets that timer. It wraps
+[liskin/gh-workflow-keepalive](https://github.com/liskin/gh-workflow-keepalive),
+so the action is maintained in one place instead of in every repository.
+
+## Example
+
+Add this job to **each workflow that has a `schedule`** trigger:
+
+```yaml
+  keepalive:
+    if: github.event_name == 'schedule'
+    permissions:
+      actions: write
+    uses: FlorianSchw/package-workflows/.github/workflows/workflow-keepalive.yml@main
+```
+
+The example callers of the [roxygen](roxygen-suggest.qmd) and
+[test](test-coverage-suggest.qmd) suggestions already include it. It only
+runs on scheduled runs, so it adds nothing to pull requests.
+
+## Inputs
+
+{{< wf-inputs workflow-keepalive.yml >}}
+
+## Permissions
+
+{{< wf-permissions workflow-keepalive.yml >}}

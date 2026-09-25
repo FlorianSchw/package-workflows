@@ -1,0 +1,12 @@
+name: Workflow Keepalive
+
+on:
+  workflow_call:
+
+jobs:
+  keepalive:
+    runs-on: ubuntu-latest
+    permissions:
+      actions: write
+    steps:
+      - uses: liskin/gh-workflow-keepalive@v1

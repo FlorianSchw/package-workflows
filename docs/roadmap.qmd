@@ -67,9 +67,10 @@ issues?
 
 ## Planned
 
-- **Keepalive for scheduled workflows.** GitHub disables scheduled
+- ~~**Keepalive for scheduled workflows.** GitHub disables scheduled
   workflows after 60 days without repository activity; a shared workflow
-  will keep them running without each repository adding its own fix.
+  will keep them running without each repository adding its own fix.~~
+  Available: [Workflow keepalive](workflow-keepalive.qmd).
 - **Caching for R CMD check**, to speed up repeated runs.
 - **Real coverage data** for the test suggestions, e.g. how much each
   proposed test adds.

@@ -52,6 +52,12 @@ the live caller used to validate changes before wider rollout.
     suggestion workflows; see below.
   - `cleanup-suggestion-branch.yml` — on PR close, deletes a `bot-suggest/*`
     head branch unless another open PR still uses it.
+  - `workflow-keepalive.yml` — wraps `liskin/gh-workflow-keepalive@v1`
+    (user's choice over custom `gh api` code). Inside a reusable workflow
+    `GITHUB_WORKFLOW_REF` is the caller's, so it re-enables the calling
+    workflow, resetting GitHub's 60-day inactivity timer. Callers add it
+    as a job (`if: github.event_name == 'schedule'`) to each scheduled
+    workflow.
 - Branch-protection rulesets (formerly `rulesets/` + `apply-ruleset.yml`)
   now live in a separate private repo.
 - `.github/actions/` — composite actions: `anthropic-token` (suggestion
@@ -204,9 +210,12 @@ and `CONTRIBUTING.md`); no PRs until a branch model and rules exist.
     — details to be clarified.
   - **README update workflow:** a new workflow that keeps a package's
     README up to date — scope to be clarified.
-- Reusable workflow keepalive: GitHub disables scheduled workflows after
+- ~~Reusable workflow keepalive: GitHub disables scheduled workflows after
   60 days without repository activity. Callers with cron jobs (monthly
   sweeps, scheduled R CMD check, …) currently each add their own
   `liskin/gh-workflow-keepalive@v1` job (dsSupportClient's R-CMD-Check
   caller does, with `actions: write`). Wanted: one centrally maintained
-  reusable workflow for it, plus a docs page and example.
+  reusable workflow for it, plus a docs page and example.~~ Done:
+  `workflow-keepalive.yml`. Not yet run in real CI; dsSupportClient's
+  R-CMD-Check caller still uses `liskin` directly, and its suggestion
+  callers have no keepalive yet.
