@@ -183,7 +183,8 @@ and `CONTRIBUTING.md`); no PRs until a branch model and rules exist.
   - `roxygen-suggest.qmd`: the PR description groups "Applied changes (n)"
     per file and "No changes applied (n)" per reason, with Claude's
     proposed text; untagged titles/descriptions are kept; possible code
-    bugs are reported (PR comment / sweep PR section).
+    bugs are reported in the suggestion PR (fallback: comment on the PR);
+    the link comment shows a statistic line.
   - `test-coverage-suggest.qmd` DataSHIELD section: an existing DSLite
     setup is found in any `setup*.R` / `helper*.R` and shown to Claude
     (own names and helpers are used); a generated setup goes to

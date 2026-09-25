@@ -121,18 +121,23 @@ for (f in files) {
 
 writeLines(updated_files, "updated_files.txt")
 
-# Applied and not-applied changes go into the suggestion PR's description —
-# only when there is a PR at all, so notes alone never open one.
-# Possible code bugs: in a PR run a comment on that PR (the author's code;
-# posted once), in a sweep a section of the sweep PR's description, and
-# without a sweep PR only the log (an issue would need `issues: write`,
-# which roxygen callers don't grant).
-is_sweep <- !nzchar(pr_number)
+# Everything about the suggestions — applied and not-applied changes and
+# possible code bugs — goes into the suggestion PR's description, with a
+# one-line statistic on top that the link comment on the originating PR
+# repeats (suggestion_summary.md). Only written when there is a PR, so
+# notes alone never open one. Without a suggestion PR, possible bugs go to
+# a comment on the originating PR (posted once), or in a sweep only to the
+# log (an issue would need `issues: write`, which roxygen callers don't
+# grant).
 if (length(updated_files) > 0) {
-  writeLines(format_roxygen_report(report_files, if (is_sweep) code_issue_files else list()), "suggestion_report.md")
-}
-if (length(code_issue_files) > 0 && !is_sweep) {
-  comment_once(pr_number, paste(format_code_issues(code_issue_files), collapse = "\n"), "possible code bugs")
-} else if (length(code_issue_files) > 0 && length(updated_files) == 0) {
-  message("Possible code bugs (no sweep PR to report them in):\n", paste(format_code_issues(code_issue_files), collapse = "\n"))
+  summary_line <- format_roxygen_summary(report_files, code_issue_files)
+  writeLines(summary_line, "suggestion_summary.md")
+  writeLines(c(paste("**Summary:**", summary_line), "", format_roxygen_report(report_files, code_issue_files)), "suggestion_report.md")
+} else if (length(code_issue_files) > 0) {
+  bugs <- paste(format_code_issues(code_issue_files), collapse = "\n")
+  if (nzchar(pr_number)) {
+    comment_once(pr_number, bugs, "possible code bugs")
+  } else {
+    message("Possible code bugs (no sweep PR to report them in):\n", bugs)
+  }
 }

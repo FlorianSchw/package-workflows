@@ -26,9 +26,11 @@ Entry script: `R/suggest_roxygen.R`. Per file in `files_to_check.txt`:
    `suggestion_report.md` → the suggestion PR's description, as
    collapsible groups: "Applied changes (n)" per file, "No changes applied
    (n)" per reason. Claude also returns `code_issues` (likely defects in
-   the code, not the docs): a comment on the originating PR in a PR run
-   (`comment_once()`), a "Possible bugs in the code" section of the sweep
-   PR in a sweep, only the log if a sweep opens no PR.
+   the code, not the docs), shown as "Possible bugs in the code" in the
+   same description. On top, a one-line statistic
+   (`format_roxygen_summary()`), repeated in the link comment on the
+   originating PR. Without a suggestion PR, bugs go to a comment on the
+   originating PR (`comment_once()`), in a sweep only to the log.
 5. `build_roxygen_block()` assembles the block deterministically in
    `tag_order`, taking Claude's text only for accepted fields and the
    original lines for all others; `write_in_place()` swaps it into the file.

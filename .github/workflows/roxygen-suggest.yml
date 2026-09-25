@@ -129,6 +129,7 @@ jobs:
           sub-pr-body: 'Automated roxygen2 documentation suggestions. Review and merge to include them.'
           origin-pr-number: ${{ github.event.pull_request.number }}
           pr-body-file: 'suggestion_report.md'
+          comment-summary-file: 'suggestion_summary.md'
           sweep-base: ${{ inputs.sweep-base }}
           sweep-branch-prefix: 'bot-suggest/docs-sweep'
           sweep-commit-message: 'docs: monthly roxygen suggestion sweep'
