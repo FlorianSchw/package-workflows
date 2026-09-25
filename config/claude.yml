@@ -16,11 +16,30 @@ roxygen-review:
     tool_name: submit_review
   accept_reasons: [missing, inaccurate, incomplete]   # not: clarity, style
 
+# Tests use the stronger model with adaptive thinking: deciding which
+# tests add value, and whether a failing test is outdated or points to a
+# bug, needs careful reasoning. Thinking counts toward max_tokens.
+# fallbacks: server-side fallback to another model if Opus 5 declines.
 test-review:
   anthropic:
     tool_name: submit_tests
+    model: claude-opus-5
+    max_tokens: 32000
+    thinking:
+      type: adaptive
+    effort: high
+    fallbacks: default
+    betas: [server-side-fallback-2026-07-01]
   accept_reasons: [uncovered_branch, error_handling, edge_case, regression]   # not: other
+  max_new_tests: 10   # per function and run; changes to existing tests don't count
 
 test-failure-classification:
   anthropic:
     tool_name: submit_failure_classification
+    model: claude-opus-5
+    max_tokens: 16000
+    thinking:
+      type: adaptive
+    effort: high
+    fallbacks: default
+    betas: [server-side-fallback-2026-07-01]

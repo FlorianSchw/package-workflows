@@ -4,7 +4,7 @@ on:
   workflow_call:
     inputs:
       scan-mode:
-        description: '"changed" (R/ files changed in this PR) or "all" (every R/*.R file)'
+        description: '"changed" (R/ files changed in this PR) or "all" (sweep of R/*.R, see sweep-* inputs)'
         required: false
         type: string
         default: 'changed'
@@ -13,6 +13,16 @@ on:
         required: false
         type: string
         default: 'dev'
+      sweep-lookback-days:
+        description: '"all" mode: review functions whose file or test changed within this many days'
+        required: false
+        type: number
+        default: 35
+      sweep-rotation-months:
+        description: '"all" mode: also review every function at least once in this many months (0: all, every sweep)'
+        required: false
+        type: number
+        default: 6
       datashield:
         description: 'Whether this repo is a DataSHIELD package'
         required: false
@@ -67,11 +77,33 @@ jobs:
           ref: main
           path: .shared-workflows
 
+      # A sweep reviews what changed recently (function file or its test
+      # file within sweep-lookback-days) plus a rotating share of the rest,
+      # so every function comes up at least once per sweep-rotation-months —
+      # fewer Claude calls than all functions every month. The share is
+      # picked by a stable hash of the file name.
       - name: Determine files to check
         id: files
+        env:
+          LOOKBACK_DAYS: ${{ inputs.sweep-lookback-days }}
+          ROTATION: ${{ inputs.sweep-rotation-months }}
         run: |
           if [ "${{ inputs.scan-mode }}" = "all" ]; then
-            find R -name '*.R' > files_to_check.txt
+            find R -name '*.R' | sort > all_files.txt
+            if [ "$ROTATION" -le 0 ]; then
+              cp all_files.txt files_to_check.txt
+            else
+              git log --since="$LOOKBACK_DAYS days ago" --name-only --format= -- R tests/testthat | sort -u > recent_files.txt
+              slot=$(( ($(date +%Y) * 12 + 10#$(date +%m)) % ROTATION ))
+              while IFS= read -r f; do
+                test_file="tests/testthat/test-$(basename "$f" .R).R"
+                if grep -qxF -e "$f" -e "$test_file" recent_files.txt \
+                   || [ $(( $(printf '%s' "$f" | cksum | cut -d' ' -f1) % ROTATION )) -eq "$slot" ]; then
+                  echo "$f"
+                fi
+              done < all_files.txt > files_to_check.txt
+            fi
+            echo "Sweep reviews $(wc -l < files_to_check.txt) of $(wc -l < all_files.txt) files."
           else
             git diff --name-only \
               origin/${{ github.event.pull_request.base.ref }}...HEAD -- 'R/*.R' \
@@ -110,6 +142,7 @@ jobs:
           ANTHROPIC_API_KEY: ${{ steps.anthropic_auth.outputs.access-token }}
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           PR_NUMBER: ${{ github.event.pull_request.number }}
+          BASE_REF: ${{ github.event.pull_request.base.ref }}
           DATASHIELD: ${{ inputs.datashield }}
           DATASHIELD_TYPE: ${{ inputs.datashield-type }}
         run: Rscript .shared-workflows/R/suggest_tests.R
@@ -128,14 +161,14 @@ jobs:
         with:
           scan-mode: ${{ inputs.scan-mode }}
           token: ${{ steps.push_token.outputs.token || secrets.commit-push-pat || secrets.GITHUB_TOKEN }}
-          commit-prefix: 'test: add generated test for'
+          commit-prefix: 'test: suggested test changes for'
           sub-branch-prefix: 'bot-suggest/tests'
-          sub-pr-title: 'Generated test coverage suggestions'
-          sub-pr-body: 'Automated generated tests. Every included test already passed a real run before being committed — review and merge to include them.'
+          sub-pr-title: 'Test suggestions'
+          sub-pr-body: 'New and updated tests from the test-coverage-suggest workflow. Every new or changed test passed a real run; changes to existing tests are listed below with their reason — review before merging.'
           origin-pr-number: ${{ github.event.pull_request.number }}
           sweep-base: ${{ inputs.sweep-base }}
           pr-body-file: 'suggestion_report.md'
           sweep-branch-prefix: 'bot-suggest/tests-sweep'
           sweep-commit-message: 'test: monthly test coverage sweep'
           sweep-pr-title: 'Monthly test coverage sweep'
-          sweep-pr-body: 'Automated generated tests from the test-coverage-suggest workflow. Every included test already passed a real run before being committed — review before merging.'
+          sweep-pr-body: 'New and updated tests from the test-coverage-suggest workflow. Every new or changed test passed a real run; changes to existing tests are listed below with their reason — review before merging.'

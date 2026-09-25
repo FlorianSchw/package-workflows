@@ -55,19 +55,42 @@ pass a real run are proposed. (`filter_generated_tests()`.)
 **Every function is reviewed**, in PRs and in sweeps, whether it already
 has tests or not — the old "test file mentions the function name → skip"
 heuristic is gone. Claude decides whether new tests add value; the
-threshold above decides what is proposed. At most 5 new tests per function
-and run.
+threshold above decides what is proposed. At most ~~5~~ `max_new_tests`
+(default 10, `config/claude.yml`) new tests per function and run — 5 was
+too few to check real behavior.
 
-### Existing tests that could be deleted
+### ~~Existing tests that could be deleted~~ Existing tests
 
-Claude may list existing tests as `duplicate`, `behavior_removed` or
-`trivial`, with an explanation. They are **never deleted automatically**;
-only entries naming a test that actually exists in the file are kept.
-They are reported:
+*Revised 2026-09-25.* Originally existing tests were never touched, and
+deletion candidates only reported. dsSupportClient PR #21 showed the cost:
+the PR changed a function's contract, its old test failed, R CMD check was
+red, and only a human could fix it. Now Claude decides on existing tests,
+using their current results and the history evidence
+(`build_test_evidence()`: which of function and test changed later; in a
+PR, whether the PR changed the function without its test, and the diff).
 
-- in the suggestion PR's description, if new tests were proposed;
-- otherwise as a comment on the originating PR (sweep: in the sweep PR's
-  description, or one issue if no sweep PR opens).
+| Action | Reason | Effect |
+|---|---|---|
+| `update` | `contract_changed` — behavior changed on purpose, test expects the old | Body replaced, description kept |
+| `delete` | `duplicate`, `behavior_removed`, `trivial` | Test removed |
+| `report` | `possible_code_bug` — test describes sensible behavior the code no longer delivers | Test unchanged, reported |
+
+Safeguards in R (`review_existing_tests()`), whatever Claude says:
+
+- action and reason must fit together as in the table;
+- **only a currently failing test is updated** — passing tests are never
+  rewritten;
+- **a failing test is never adapted to output that may be wrong**: the
+  bug case is `report`, not `update`;
+- the test must exist and be editable (unique name, own lines);
+- an update is only kept if it passes a real run; otherwise the original
+  stays and the failed attempt is reported;
+- failing tests Claude left without a decision are reported too.
+
+Everything arrives only as a suggestion PR; changes to existing tests are
+listed in its description with reason and explanation, reported tests
+under "Existing tests to look at" (without a suggestion PR: a PR comment,
+in a sweep one issue).
 
 ## Revisit when
 
@@ -84,5 +107,6 @@ They are reported:
 - **Coverage gain per generated test** (`covr`), shown in the suggestion PR
   — an objective signal. Not a hard filter: edge-case tests often add no
   line coverage and are still valuable.
-- **Give Claude the diff of the changed function** in PR runs, if
-  suggestions turn out to be unfocused.
+- ~~**Give Claude the diff of the changed function** in PR runs, if
+  suggestions turn out to be unfocused.~~ Done with the existing-test
+  review (part of `build_test_evidence()`).

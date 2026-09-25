@@ -13,54 +13,80 @@ config and R conventions (see `CLAUDE.md`).
 Entry script: `R/suggest_tests.R`. Per function file in `files_to_check.txt`:
 
 1. `parse_r_file()` → function name + source; `find_existing_test_file()`
-   looks for `tests/testthat/test-<function>.R`.
-2. Every function is reviewed, tested or not (the old "test file mentions
-   the function → skip" heuristic is gone, see
-   [suggestion-thresholds.md](suggestion-thresholds.md)).
-3. For DataSHIELD client packages, `detect_dslite_setup()` checks for an
+   looks for `tests/testthat/test-<function>.R`; `parse_test_file()` finds
+   its `test_that()` blocks (R's parser; only uniquely named blocks on
+   their own lines are editable).
+2. Every function is reviewed, tested or not (see
+   [suggestion-thresholds.md](suggestion-thresholds.md)); a sweep selects
+   which functions (see "Sweep scope" below).
+3. The existing tests are run first (`run_test_blocks()`), and
+   `build_test_evidence()` collects the history: last change of function
+   and test file, which changed later, and in a PR whether the PR changed
+   the function without its test, plus the function's diff.
+4. For DataSHIELD client packages, `detect_dslite_setup()` checks for an
    existing DSLite `tests/testthat/setup.R`.
-4. `ask_claude_for_tests()` (profile `test-review`, prompt
-   `prompts/test-review-prompt.md`, guidance `config/test-role-guidance.json`)
-   returns up to 5 tests as fields — description, reason, setup code,
-   assertions — never assembled `test_that()` code, plus existing tests
-   that could be deleted (`obsolete_tests`, reported via
-   `format_obsolete_tests()`, never applied).
-5. `filter_generated_tests()` applies the threshold (accepted reasons,
-   no verbatim duplicates). `assemble_test_block()` builds the blocks; if a fresh DSLite setup is
-   needed, `ensure_dslite_setup_file()` writes `setup.R` for the dataset
-   Claude picked.
-6. `write_test_blocks()` + `run_test_blocks()` write all candidates and run
-   the file with the package loaded from source.
-7. The file is rewritten as *original content + passing tests only*. A
-   generated `setup.R` is kept only if at least one test passed.
-8. Each failing **generated** test goes to `ask_claude_to_classify_failure()`
+5. `ask_claude_for_tests()` (profile `test-review`: Opus 5 with adaptive
+   thinking; prompt `prompts/test-review-prompt.md`, guidance
+   `config/test-role-guidance.json`) returns fields only, never assembled
+   `test_that()` code: up to `max_new_tests` new tests (description,
+   reason, setup code, assertions) and decisions on existing tests
+   (update / delete / report, with reason and explanation).
+6. `filter_generated_tests()` applies the threshold to new tests,
+   `review_existing_tests()` the safeguards to the decisions (see Design
+   decisions). `assemble_test_block()` builds the blocks; if a fresh DSLite
+   setup is needed, `ensure_dslite_setup_file()` writes `setup.R`.
+7. `rewrite_test_content()` builds a candidate file (updates in place,
+   deletions, new tests appended; everything else line for line),
+   `write_test_file()` writes it and `run_test_blocks()` runs it with the
+   package loaded from source.
+8. The file is rewritten from the *original* with only what passed: failed
+   new tests are left out, a failed update keeps the original test and is
+   reported. A generated `setup.R` is kept only if a new test passed.
+9. Each failing **new** test goes to `ask_claude_to_classify_failure()`
    (profile `test-failure-classification`):
    `real_bug` → GitHub issue; `bad_test` / `env_misconfiguration` → PR
-   comment, or in a sweep (no PR) one report appended to the sweep PR body
-   — a single issue instead if no test passed and so no sweep PR opens.
-9. Written files are listed in `updated_files.txt`; the
-   `commit-updated-files` action commits them.
+   comment, or in a sweep into the report.
+10. Written files are listed in `updated_files.txt`; the
+    `commit-updated-files` action proposes them. `publish_test_report()`
+    puts changes to existing tests (with reasons), reported tests and
+    sweep failures into the suggestion PR's description — or, without a
+    suggestion PR, a PR comment (sweep: one issue).
 
 Trigger modes: `changed` (PR — new/modified functions only; commits go to
 `bot-suggest/tests/<PR branch>`, opened as a sub-PR into the PR branch
-with a link comment on the originating PR) and `all` (sweep — whole
-package, opens a PR against `dev`).
+with a link comment on the originating PR) and `all` (sweep — opens a PR
+against `sweep-base`).
+
+**Sweep scope:** a sweep doesn't review every function every month. It
+takes functions whose file or test file changed within
+`sweep-lookback-days` (default 35), plus a rotating share of the rest —
+picked by a stable hash of the file name — so each function comes up at
+least once per `sweep-rotation-months` (default 6; `0` = all functions
+every sweep). Saves Claude calls without lowering quality per call.
 
 ## Design decisions
 
 - **Real tests, not stubs.** Runnable `test_that()` blocks with genuine
   assertions — highest value, accepted risk.
-- **Never touch existing tests.** Only append, or create the test file.
-- **Max 5 tests per function**, enforced by the tool schema (`maxItems`),
-  not by prompt wording.
+- ~~**Never touch existing tests.** Only append, or create the test file.~~
+  Revised 2026-09-25 (PR #21 showed why: an outdated test left R CMD check
+  red, with a human needed for every such case): existing tests are
+  reviewed — updated, deleted or reported — under the safeguards in
+  [suggestion-thresholds.md](suggestion-thresholds.md). Key rule: a
+  failing test is never adapted to output that may be wrong.
+- ~~**Max 5 tests per function**~~ Now `max_new_tests` (default 10) in
+  `config/claude.yml` — 5 was too few to check real behavior. Enforced by
+  the tool schema (`maxItems`), not by prompt wording.
 - **Every test is run before it's trusted.** Tests can be checked
   mechanically; docs can't — use that.
 - **A failure is never silently kept or dropped.** Three causes are kept
   apart: bad test, real bug caught, broken environment. Classification
   happens *after* the run, from the actual failure output. Real bugs get an
   issue because it outlives the PR.
-- **Only generated tests are judged.** Pre-existing tests in the same file
-  are run too, but their failures are not classified.
+- ~~**Only generated tests are judged.**~~ Pre-existing tests are run
+  before any change and their results — with the history evidence — go to
+  Claude, which decides on them; failures of new tests are classified as
+  before.
 - **Passing tests are proposed, not pushed** — via a sub-PR into the PR
   branch, like roxygen suggestions, so the PR author has the final say.
 

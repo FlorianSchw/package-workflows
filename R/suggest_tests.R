@@ -1,22 +1,25 @@
 #!/usr/bin/env Rscript
-# Reads files_to_check.txt (produced by the calling workflow), and for each
-# function's (first) file asks Claude whether new, real, runnable
-# test_that() blocks would add value next to the existing tests — and
-# which existing tests could be deleted (reported, never applied). New
-# tests pass filter_generated_tests() first, then every candidate is
-# actually run before being trusted — a
-# passing test gets appended to tests/testthat/test-<function>.R (never
-# touching existing tests) and listed in updated_files.txt for the workflow
-# to commit; a failing candidate is classified (bad_test / real_bug /
-# env_misconfiguration) and surfaced for human judgment instead of being
-# silently discarded or silently kept.
+# Reads files_to_check.txt (produced by the calling workflow) and, for each
+# function's (first) file, reviews its tests with Claude: new real,
+# runnable test_that() blocks where they add value, and decisions on
+# existing tests — update an outdated one, delete an obsolete one, or
+# report one that points to a possible bug. Claude sees the existing
+# tests' current results and the history evidence (build_test_evidence())
+# to tell an outdated test from a bug.
+#
+# Nothing is trusted unchecked: new tests pass filter_generated_tests(),
+# decisions on existing tests pass review_existing_tests(), then every new
+# and updated test is actually run. The test file is rewritten from its
+# original content with only what passed (plus deletions) and listed in
+# updated_files.txt for the workflow to propose; a failing new test is
+# classified (bad_test / real_bug / env_misconfiguration) and surfaced,
+# a failing update keeps the original test and is reported.
 #
 # Sibling to R/suggest_roxygen.R — same conventions: orchestration only
 # here, logic in R/functions/, Claude call settings in config/claude.yml,
 # deterministic field-based assembly (Claude never writes final test_that()
-# syntax directly). See dev-notes/test-coverage-suggest.md for the
-# design reasoning, including which pieces are still placeholders
-# (per-function coverage data, in particular).
+# syntax directly). See dev-notes/test-coverage-suggest.md and
+# dev-notes/suggestion-thresholds.md for the design reasoning.
 
 library(httr2)
 library(jsonlite)
@@ -34,12 +37,14 @@ config_path <- resolve_shared_path("config/claude.yml")
 test_review_settings <- config::get(file = config_path)
 anthropic_config <- test_review_settings$anthropic
 accept_reasons <- unlist(test_review_settings$accept_reasons)
+max_new_tests <- if (is.null(test_review_settings$max_new_tests)) 10L else as.integer(test_review_settings$max_new_tests)
 failure_classification_config <- config::get(config = "test-failure-classification", file = config_path)$anthropic
 
 api_key    <- Sys.getenv("ANTHROPIC_API_KEY")
 gh_token   <- Sys.getenv("GH_TOKEN")
 repo       <- Sys.getenv("GITHUB_REPOSITORY")
 pr_number  <- Sys.getenv("PR_NUMBER")
+base_ref   <- Sys.getenv("BASE_REF")  # empty in a sweep
 is_sweep   <- !nzchar(pr_number)  # no PR to comment on (all mode)
 datashield <- as.logical(Sys.getenv("DATASHIELD", "false"))
 ds_type    <- Sys.getenv("DATASHIELD_TYPE", "")
@@ -58,11 +63,22 @@ dslite_datasets <- if (is_client) read_json_config("config/dslite-canned-dataset
 files <- readLines("files_to_check.txt")
 files <- files[nzchar(files)]
 
+run_quietly <- function(path, what) {
+  tryCatch(run_test_blocks(path, package_name), error = function(e) {
+    message(sprintf("Running %s failed: %s", what, conditionMessage(e)))
+    list()
+  })
+}
+passed_in <- function(results, description) {
+  isTRUE(Find(function(r) identical(r$description, description), results)$passed)
+}
+
 # --- Main loop ---------------------------------------------------------------
 
 updated_files <- character(0)
-sweep_failures <- character(0)
-obsolete_notes <- character(0)
+sweep_failures <- character(0)   # failed new tests in a sweep (no PR to comment on)
+existing_changes <- character(0) # applied updates/deletions, with reasons
+existing_notes <- character(0)   # possible bugs, failing tests left unchanged
 
 for (f in files) {
   parsed <- tryCatch(parse_r_file(f), error = function(e) {
@@ -72,9 +88,10 @@ for (f in files) {
   if (is.null(parsed)) next
 
   function_name <- parsed$fn_name
-  # Every function is reviewed, tested or not: Claude decides whether new
-  # tests add value, filter_generated_tests() applies the threshold.
   existing_test_file <- find_existing_test_file(function_name)
+  blocks <- if (existing_test_file$exists) parse_test_file(existing_test_file$content) else list()
+  baseline <- if (existing_test_file$exists) run_quietly(existing_test_file$path, sprintf("existing tests for %s", function_name)) else list()
+  evidence <- build_test_evidence(f, existing_test_file$path, base_ref)
 
   # Re-checked per function: a setup.R generated for an earlier function
   # in this run is reused by later ones.
@@ -83,7 +100,7 @@ for (f in files) {
   role_text <- build_test_role_guidance(datashield, ds_type, has_existing_setup, offered_datasets, test_role_guidance)
 
   result <- tryCatch(
-    ask_claude_for_tests(parsed, existing_test_file, role_text, offered_datasets),
+    ask_claude_for_tests(parsed, existing_test_file, role_text, offered_datasets, format_test_results(baseline), evidence, max_new_tests),
     error = function(e) {
       message(sprintf("Claude call failed for %s: %s", function_name, conditionMessage(e)))
       NULL
@@ -91,24 +108,37 @@ for (f in files) {
   )
   if (is.null(result)) next
 
-  # Deletion suggestions stand on their own — collected even when no new
-  # test is proposed.
-  obsolete_notes <- c(obsolete_notes, format_obsolete_tests(result$obsolete_tests, existing_test_file$content, function_name))
+  review <- review_existing_tests(result$existing_tests, blocks, baseline, function_name)
+  existing_notes <- c(existing_notes, review$notes)
 
-  result$tests <- filter_generated_tests(result$tests, existing_test_file$content, accept_reasons, function_name)
-  if (!isTRUE(result$needs_tests) || length(result$tests) == 0) {
-    message(sprintf("%s: no new tests that add value, skipping.", function_name))
+  # A failing existing test Claude left without any decision is reported too.
+  decided <- vapply(result$existing_tests, function(d) d$description, character(1))
+  for (r in Filter(function(r) !isTRUE(r$passed) && !r$description %in% decided, baseline)) {
+    existing_notes <- c(existing_notes, sprintf("- `%s`: \"%s\" — fails, no change proposed. %s", function_name, r$description, gsub("\\s+", " ", r$message)))
+  }
+
+  existing_descriptions <- vapply(blocks, function(b) b$description, character(1))
+  new_tests <- if (isTRUE(result$needs_tests)) {
+    filter_generated_tests(result$tests, existing_test_file$content, accept_reasons, function_name, existing_descriptions)
+  } else {
+    list()
+  }
+  test_blocks <- if (length(new_tests) > 0) {
+    tryCatch(assemble_test_block(new_tests, function_name), error = function(e) {
+      message(sprintf("Failed to assemble test blocks for %s: %s", function_name, conditionMessage(e)))
+      character(0)
+    })
+  } else {
+    character(0)
+  }
+
+  if (length(test_blocks) == 0 && length(review$updates) == 0 && length(review$deletes) == 0) {
+    message(sprintf("%s: nothing to change.", function_name))
     next
   }
 
-  test_blocks <- tryCatch(assemble_test_block(result$tests, function_name), error = function(e) {
-    message(sprintf("Failed to assemble test blocks for %s: %s", function_name, conditionMessage(e)))
-    NULL
-  })
-  if (is.null(test_blocks)) next
-
   created_setup <- NULL
-  if (!is.null(offered_datasets) && isTRUE(nzchar(result$dslite_dataset))) {
+  if (length(test_blocks) > 0 && !is.null(offered_datasets) && isTRUE(nzchar(result$dslite_dataset))) {
     dataset_choice <- Find(function(d) identical(d$name, result$dslite_dataset), offered_datasets)
     if (is.null(dataset_choice)) {
       message(sprintf(
@@ -120,31 +150,34 @@ for (f in files) {
     }
   }
 
-  # Write ALL candidates first so testthat can actually run them.
-  written_path <- write_test_blocks(existing_test_file, test_blocks)
-  run_results <- tryCatch(run_test_blocks(written_path, package_name), error = function(e) {
-    message(sprintf("Running generated tests failed for %s: %s", function_name, conditionMessage(e)))
-    NULL
-  })
+  # Write ALL candidates (new tests, updates, deletions) so testthat can
+  # actually run them.
+  candidate <- rewrite_test_content(existing_test_file$content, blocks, review$updates, review$deletes, test_blocks)
+  write_test_file(existing_test_file, candidate)
+  run_results <- run_quietly(existing_test_file$path, sprintf("candidate tests for %s", function_name))
 
-  # Only generated blocks count — the file also contains any pre-existing
-  # tests, whose failures are not this workflow's to classify.
-  generated <- Filter(function(r) r$description %in% names(test_blocks), run_results)
-  passing_names <- vapply(Filter(function(r) isTRUE(r$passed), generated), function(r) r$description, character(1))
-  failing <- Filter(function(r) !isTRUE(r$passed), generated)
-
-  # Rewrite from the ORIGINAL content + only passing blocks — a failing
-  # candidate is never left in the committed file. A freshly generated
-  # setup.R is only kept alongside at least one passing test.
-  kept_path <- write_test_blocks(existing_test_file, test_blocks[names(test_blocks) %in% passing_names])
-  if (!is.null(kept_path)) {
-    updated_files <- c(updated_files, created_setup, kept_path)
-    message(sprintf("%s: %d test(s) passed and were added.", function_name, length(passing_names)))
-  } else if (!is.null(created_setup)) {
-    file.remove(created_setup)
+  passing_new <- names(test_blocks)[vapply(names(test_blocks), function(d) passed_in(run_results, d), logical(1))]
+  failing_new <- Filter(function(r) r$description %in% setdiff(names(test_blocks), passing_new), run_results)
+  kept_updates <- review$updates[vapply(names(review$updates), function(d) passed_in(run_results, d), logical(1))]
+  for (d in setdiff(names(review$updates), names(kept_updates))) {
+    existing_notes <- c(existing_notes, sprintf("- `%s`: \"%s\" — an update was proposed (%s) but still failed, so the original test was kept.", function_name, d, review$explanations[[d]]))
   }
 
-  for (fail in failing) {
+  # Rewrite from the ORIGINAL content with only what passed — a failing
+  # candidate is never left in the proposed file. A freshly generated
+  # setup.R is only kept alongside at least one passing new test.
+  final <- rewrite_test_content(existing_test_file$content, blocks, kept_updates, review$deletes, test_blocks[passing_new])
+  kept_path <- write_test_file(existing_test_file, final)
+  if (!is.null(kept_path)) {
+    updated_files <- c(updated_files, if (length(passing_new) > 0) created_setup, kept_path)
+    for (d in c(names(kept_updates), review$deletes)) {
+      existing_changes <- c(existing_changes, sprintf("- `%s`: \"%s\" — %s", function_name, d, review$explanations[[d]]))
+    }
+    message(sprintf("%s: %d new test(s), %d update(s), %d deletion(s).", function_name, length(passing_new), length(kept_updates), length(review$deletes)))
+  }
+  if (!is.null(created_setup) && (is.null(kept_path) || length(passing_new) == 0)) file.remove(created_setup)
+
+  for (fail in failing_new) {
     block_text <- test_blocks[[fail$description]]
     classification <- tryCatch(
       ask_claude_to_classify_failure(fn_source(parsed), block_text, fail$message),
@@ -167,18 +200,16 @@ for (f in files) {
 
 writeLines(updated_files, "updated_files.txt")
 
+section <- function(title, lines, intro = NULL) paste(c(title, "", intro, if (!is.null(intro)) "", lines), collapse = "\n")
 report <- character(0)
+if (length(existing_changes) > 0) {
+  report <- c(report, section("## Changes to existing tests", existing_changes, "Each change passed a real run. Check the reasons before merging."))
+}
+if (length(existing_notes) > 0) {
+  report <- c(report, section("## Existing tests to look at", existing_notes, "Not changed automatically."))
+}
 if (length(sweep_failures) > 0) {
   report <- c(report, paste(c("## Generated tests that failed", "", paste(sweep_failures, collapse = "\n\n---\n\n")), collapse = "\n"))
-}
-if (length(obsolete_notes) > 0) {
-  report <- c(report, paste(c(
-    "## Existing tests that could be deleted",
-    "",
-    "Suggested by Claude, not applied — check each before deleting anything.",
-    "",
-    obsolete_notes
-  ), collapse = "\n"))
 }
 if (length(report) > 0) {
   publish_test_report(report, has_pr = length(updated_files) > 0)

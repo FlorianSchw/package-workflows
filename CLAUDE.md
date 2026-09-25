@@ -167,7 +167,14 @@ and `CONTRIBUTING.md`); no PRs until a branch model and rules exist.
   - `examples/check-description-authors.yml`: drop the `paths` filter
     (all PRs into `dev`), and say why on the page.
   - `suggestions.qmd`: the example comment/title for authors is now
-    "Update contributors in DESCRIPTION".
+    "Update contributors in DESCRIPTION"; tests now "Test suggestions".
+  - `test-coverage-suggest.qmd`: existing tests are reviewed (update /
+    delete / report, safeguards, history evidence), max 10 new tests,
+    quality rules, stronger model; "Tests that could be deleted" section
+    and "Existing tests are never changed" bullet are outdated; sweep
+    scope inputs (`sweep-lookback-days`, `sweep-rotation-months`).
+  - `suggestions.qmd` "What gets proposed": add the existing-test actions.
+  - `roadmap.qmd`: "Model per task" is done for tests.
 
 - Versioning: all workflows are referenced `@main`, and `package-release.yml`
   reads its release config from `main` too. The old `v1` tag is unused.
@@ -217,22 +224,30 @@ and `CONTRIBUTING.md`); no PRs until a branch model and rules exist.
   Ran in real CI on dsSupportClient PR #21 (reviewing tested functions
   confirmed); whether reasons dropped anything is only in the job logs,
   and no deletion notes were produced yet.
-- Model per task: all profiles in `config/claude.yml` use the `default`
+- ~~Model per task: all profiles in `config/claude.yml` use the `default`
   model (`claude-sonnet-5`). Tests likely deserve a stronger model than
-  roxygen — they matter more, and the add/delete judgment needs better
-  reasoning. `config::get()` already merges per profile, so it's a
-  `model:` under `test-review` (and possibly `test-failure-classification`).
-  Consider enabling thinking there too — it's `disabled` by default
-  because it once used up the whole `max_tokens` budget, so it needs a
-  larger `max_tokens`. Watch cost per run on the Cost page.
+  roxygen~~ Done: `test-review` and `test-failure-classification` use
+  `claude-opus-5` with adaptive thinking, `effort: high`, larger
+  `max_tokens` (32000 / 16000) and the server-side refusal fallback
+  (`fallbacks: default` + beta header); `call_claude_tool()` stops with a
+  clear error on `max_tokens` / `refusal`. Roxygen stays on Sonnet 5.
+  Still open: watch cost per run on the Cost page (tests now review every
+  selected function with Opus). Forced tool calls with thinking work on the
+  Claude API; they would 400 on Opus 5.5 / Fable 5.1 (use `auto` then).
 - Shared caching for `R-CMD-Check.yml` — flagged, not started.
 - Internal only — keep these off `docs/roadmap.qmd` (user's decision):
-  - **Changing existing tests:** the test workflow currently never
-    modifies existing tests (it only appends, and reports deletion
-    candidates). Revisit whether it may propose changes to them.
-  - **Max number of test suggestions:** currently 5 per function and run
-    (schema `maxItems`). Revisit the number, and whether a cap per run or
-    per sweep is needed.
+  - ~~**Changing existing tests:** the test workflow currently never
+    modifies existing tests~~ Done: existing tests are updated / deleted /
+    reported under the safeguards in `dev-notes/suggestion-thresholds.md`,
+    using test results and history evidence (function diff in PRs).
+    Tested locally end to end (mocked Claude), not yet in CI — replay a
+    PR like #21 (contract change + outdated test) as the first real check.
+  - ~~**Max number of test suggestions:** currently 5~~ Done:
+    `max_new_tests` (10) in `config/claude.yml`. Sweep cost is handled by
+    scope instead: `sweep-lookback-days` / `sweep-rotation-months` in
+    `test-coverage-suggest.yml` (recently changed + rotating share; tested
+    locally). A cheaper sweep model was considered and not done — the
+    existing-test diagnosis needs the strong model.
   - **Author contributions in `DESCRIPTION`:** ~~`aut` vs `ctb`~~ done
     (`R/` changes → `aut`, otherwise `ctb`, upgrade only; tested locally
     with a mocked GitHub API, not yet in CI). ~~**Names** — the full name
