@@ -37,8 +37,6 @@ jobs:
         with:
           use-public-rspm: true
 
-      # Only the script's own packages — the package's dependencies aren't
-      # needed to read and edit DESCRIPTION.
       - uses: r-lib/actions/setup-r-dependencies@v2
         with:
           packages: any::desc, any::jsonlite, any::httr2, any::purrr
