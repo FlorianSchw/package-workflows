@@ -7,19 +7,11 @@ default:
       type: disabled
     tool_choice_type: tool
 
-# accept_reasons: which of Claude's stated reasons lead to a proposed
-# change (full lists in R/functions/suggestion_reasons.R). A revisable
-# decision — see dev-notes/suggestion-thresholds.md.
-
 roxygen-review:
   anthropic:
     tool_name: submit_review
   accept_reasons: [missing, inaccurate, incomplete]   # not: clarity, style
 
-# Tests use the stronger model with adaptive thinking: deciding which
-# tests add value, and whether a failing test is outdated or points to a
-# bug, needs careful reasoning. Thinking counts toward max_tokens.
-# fallbacks: server-side fallback to another model if Opus 5 declines.
 test-review:
   anthropic:
     tool_name: submit_tests
