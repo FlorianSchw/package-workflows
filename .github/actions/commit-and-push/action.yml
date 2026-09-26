@@ -1,0 +1,33 @@
+name: 'Commit and Push'
+description: >-
+  Commits the listed files to the current branch in one commit and pushes
+  it. No-op when nothing actually changed. If the branch moved on in the
+  meantime, rebases and tries again. For generated files that are facts,
+  not suggestions (e.g. workflow diagrams); suggestion PRs use
+  commit-updated-files instead. The logic is in commit-and-push.sh next to
+  this file.
+inputs:
+  files:
+    description: 'Files to commit, one path per line.'
+    required: true
+  commit-message:
+    description: 'Commit message, set by the calling workflow.'
+    required: true
+  token:
+    description: 'Token used to push — an App token if the branch is protected.'
+    required: true
+  branch:
+    description: 'Branch to push to.'
+    required: false
+    default: ${{ github.ref_name }}
+runs:
+  using: 'composite'
+  steps:
+    - name: Commit and push
+      shell: bash
+      env:
+        GH_TOKEN: ${{ inputs.token }}
+        FILES: ${{ inputs.files }}
+        COMMIT_MESSAGE: ${{ inputs.commit-message }}
+        BRANCH: ${{ inputs.branch }}
+      run: bash "$GITHUB_ACTION_PATH/commit-and-push.sh"
