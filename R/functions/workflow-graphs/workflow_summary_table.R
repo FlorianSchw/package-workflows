@@ -1,9 +1,11 @@
 # The table at the top of the overview — the quickest way in, and always
-# readable on GitHub: one row per workflow with its name and file, all its
-# triggers (trigger_summary()), the reusable workflows it calls (full
-# reference; "not readable" if resolve_called_workflows() couldn't read
-# it), and what it produces (`outcomes`, file -> labels) plus the
-# workflows it starts (`chains`). Returns Markdown lines.
+# readable on GitHub: one row per workflow (in the order given) with its
+# name, its file (the only place the file is named; the diagrams leave it
+# out), all its triggers (trigger_summary()), the reusable workflows it
+# calls (full reference; "not readable" if resolve_called_workflows()
+# couldn't read it), and what it produces (`outcomes`, file -> list of
+# list(text, condition) from workflow_outcomes()) plus the workflows it
+# starts (`chains`). Returns Markdown lines.
 workflow_summary_table <- function(workflows, called, outcomes, chains) {
   # Pipes would end the cell, asterisks in "R/**" would turn into bold.
   cell <- function(x) gsub("*", "\\*", gsub("|", "\\|", x, fixed = TRUE), fixed = TRUE)
@@ -15,13 +17,16 @@ workflow_summary_table <- function(workflows, called, outcomes, chains) {
       if (is.null(ref)) return(NULL)
       paste0(ref$label, if (isTRUE(called[[ref$key]]$readable)) "" else " (not readable)")
     })))
+    produced <- vapply(outcomes[[wf$file]], function(o) {
+      if (nzchar(o$condition)) sprintf("%s — *%s*", cell(o$text), cell(o$condition)) else cell(o$text)
+    }, character(1))
     starts <- unique(vapply(Filter(function(ch) identical(ch$from, wf$file), chains), function(ch) sprintf("starts **%s**", cell(name_of[[ch$to]])), character(1)))
-    produces <- c(cell(outcomes[[wf$file]]), starts)
-    sprintf("| **%s**<br>`%s` | %s | %s | %s |",
+    produces <- c(produced, starts)
+    sprintf("| %s | `%s` | %s | %s | %s |",
             cell(wf$name), wf$file, cell(trigger_summary(wf)),
             if (length(refs) > 0) cell(paste(refs, collapse = "<br>")) else "—",
             if (length(produces) > 0) paste(produces, collapse = "<br>") else "—")
   }, character(1))
 
-  c("| Workflow | Runs on | Calls | Produces |", "|---|---|---|---|", rows)
+  c("| Name | File | Runs on | Calls | Produces |", "|---|---|---|---|---|", rows)
 }

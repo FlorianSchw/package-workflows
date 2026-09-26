@@ -3,12 +3,14 @@
 # small diagram per situation (workflow_situations(), situation_diagram())
 # — and one "detail:<file>" block per workflow with its heading (name, file)
 # and detail diagram. Headings are part of the blocks, so they follow a
-# renamed workflow. `outcomes` is config/workflow-outcomes.yml as read by
-# yaml. Details are ordered by file name (only matters for a new README).
+# renamed workflow. `outcomes_config` is config/workflow-outcomes.yml as
+# read by yaml. Table rows and details follow workflow_order() — also in
+# an existing README (update_marked_blocks()).
 workflow_graph_blocks <- function(workflows, called, chains, outcomes_config) {
   # One element per line, so a regenerated block compares equal to the file.
   fence <- function(code) c("```mermaid", strsplit(code, "\n", fixed = TRUE)[[1]], "```")
-  outcomes <- stats::setNames(lapply(workflows, workflow_outcomes, config = outcomes_config),
+  workflows <- workflow_order(workflows, chains)
+  outcomes <- stats::setNames(lapply(workflows, workflow_outcomes, called = called, config = outcomes_config),
                               vapply(workflows, function(wf) wf$file, character(1)))
 
   overview <- workflow_summary_table(workflows, called, outcomes, chains)

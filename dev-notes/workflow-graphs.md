@@ -79,6 +79,25 @@ Open points at the end.
   `owner/repo/path` without ref, the repo's own as
   `.github/workflows/<file>` — the kinds it produces. Overridable per repo
   via `resolve_shared_path()`. Not derivable from the YAML.
+  Second round of user feedback (2026-09-26): entries may be free
+  wording with `{input}` placeholders filled from the calling job's
+  `with:` (else the input default), so checks say what they check
+  ("Check: PR comes from dev", "Check: commit messages follow
+  Conventional Commits") instead of a vague "Check result on the PR".
+  Outcomes are per job and carry the job's run condition
+  (`job_run_condition()`: the caller job's `if:`, "if check fails" for
+  needs-results, plus a condition shared by all jobs of the called
+  workflow) — in the table as "text — *condition*", in the situation
+  diagrams on the arrow.
+- **Same round:** table split into *Name* and *File* (the file appears
+  only there; situation diagrams and chain targets show the name only);
+  all paths listed (no "+3"); conditions never truncated (the cleanup
+  condition was cut at 60 characters); detail frames no longer repeat
+  the called workflow (it's in the table) and a single-job called
+  workflow doesn't repeat its job name; table rows and details ordered by
+  `workflow_order()` (situations, chain targets right after their
+  source) instead of alphabetically — an existing README is reordered on
+  the next run (see "Marked blocks").
 - **Keepalive jobs** stay in the diagrams (user's choice, 2026-09-26).
 - **Called workflows are read** at the referenced ref via the GitHub API —
   needed to find chains that start inside them (e.g.
@@ -107,13 +126,21 @@ Open points at the end.
   `<!-- workflow-graphs:detail:<file>:start -->` … `:end -->`.
   - No README yet: created with a short starter text (written only this
     once), the overview block, and a heading + block per workflow.
-  - Later runs: only block contents change; text around the blocks and
-    block order stay as the user left them. Each detail block contains
+  - Later runs: only block contents change. Each detail block contains
     its own `###` heading (workflow name, file in small print), so a
     renamed workflow's heading follows; the `##` section headings of the
     starter text are the user's.
-  - New workflow file: block (with heading) appended at the end.
-  - Deleted workflow: its block is removed; surrounding text stays.
+  - ~~Block order stays as the user left them~~ — revised 2026-09-26
+    (user: a new order must not require deleting the README): detail
+    blocks always follow `workflow_order()`. Text below a detail block,
+    up to the next detail block or a `#`/`##` heading, belongs to that
+    workflow and moves with it; text above the first detail block and
+    sections from such a heading on stay put. Manual reordering is given
+    up (the generator would undo it anyway).
+  - New workflow file: block (with heading) inserted in its place in the
+    order.
+  - Deleted workflow: its block is removed; text written below it is kept,
+    after the last workflow.
 - **Name:** `workflow-graphs.yml` (decided 2026-09-26; not a suggestion,
   so not `*-suggest`).
 - **Commit step:** a new shared composite action

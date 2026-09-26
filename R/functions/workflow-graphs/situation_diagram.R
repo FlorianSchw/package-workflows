@@ -1,14 +1,16 @@
 # The diagram for one situation (workflow_situations()): the event on the
-# left, the workflows it starts, the workflows those start in turn (dotted
-# arrows, `chains`), and on the right what they produce — one box per kind
-# of outcome, shared by the workflows that produce it (`outcomes`, a named
-# list file -> labels from workflow_outcomes()). Laid out left to right
-# with the workflows stacked, so it stays narrow enough to read on GitHub.
-# Returns the Mermaid code.
+# left, the workflows it starts (name, and the path filter or schedule for
+# this event — the file is in the table), the workflows those start in
+# turn (dotted arrows, `chains`), and on the right what they produce — one
+# box per outcome, shared by the workflows that produce it, with the
+# condition on the arrow (`outcomes`, file -> list of list(text, condition)
+# from workflow_outcomes()). Laid out left to right with the workflows
+# stacked, so it stays narrow enough to read on GitHub. Returns the
+# Mermaid code.
 situation_diagram <- function(situation, workflows, chains, outcomes) {
   by_file <- stats::setNames(workflows, vapply(workflows, function(wf) wf$file, character(1)))
   box <- function(file, note = NULL) {
-    sprintf('  %s["%s"]', mermaid_id("wf", file), mermaid_label(c(by_file[[file]]$name, file, note)))
+    sprintf('  %s["%s"]', mermaid_id("wf", file), mermaid_label(c(by_file[[file]]$name, note)))
   }
 
   lines <- c("flowchart LR", sprintf('  ev(["%s"])', mermaid_label(situation$title)))
@@ -31,12 +33,19 @@ situation_diagram <- function(situation, workflows, chains, outcomes) {
     }
   }
 
-  kinds <- unique(unlist(outcomes[included]))
-  for (i in seq_along(kinds)) {
-    lines <- c(lines, sprintf('  out_%d(["%s"]):::outcome', i, mermaid_label(kinds[i])))
+  texts <- unique(unlist(lapply(outcomes[included], function(os) vapply(os, function(o) o$text, character(1)))))
+  for (i in seq_along(texts)) {
+    lines <- c(lines, sprintf('  out_%d(["%s"]):::outcome', i, mermaid_label(texts[i])))
   }
   for (f in included) {
-    for (o in outcomes[[f]]) lines <- c(lines, sprintf("  %s --> out_%d", mermaid_id("wf", f), match(o, kinds)))
+    for (o in outcomes[[f]]) {
+      target <- sprintf("out_%d", match(o$text, texts))
+      lines <- c(lines, if (nzchar(o$condition)) {
+        sprintf('  %s -- "%s" --> %s', mermaid_id("wf", f), mermaid_label(o$condition), target)
+      } else {
+        sprintf("  %s --> %s", mermaid_id("wf", f), target)
+      })
+    }
   }
   paste(c(lines, "  classDef outcome stroke-dasharray: 4 3"), collapse = "\n")
 }

@@ -1,14 +1,16 @@
 # The detail diagram of one workflow, top to bottom: its triggers in a
 # start box, then its jobs in `needs:` order. A job that calls a reusable
-# workflow is opened up: a frame titled with the job ID, holding a dashed
-# note with the call's full reference and the job's condition, and the
+# workflow is opened up: a frame titled with the job ID, holding the
 # called workflow's own jobs with their steps (step_names()) — what
-# actually happens. A call that couldn't be read (resolve_called_workflows())
-# stays one box, marked "not readable"; a job of this workflow itself lists
-# its steps. Conditions are in words (job_condition()); a condition on the
-# result of a needed job labels the arrow instead. Dotted arrows lead to
-# the workflows a job starts (`chains`). Frame titles are kept to the job
-# ID: GitHub cuts off longer ones. Returns the Mermaid code.
+# actually happens (which workflow is called is in the table). A called
+# workflow with a single job doesn't repeat that job's name. A condition
+# under which the job runs is a dashed note at the top of the frame, in
+# words (job_condition()); a condition on the result of a needed job
+# labels the arrow instead. A call that couldn't be read
+# (resolve_called_workflows()) stays one box, marked "not readable"; a job
+# of this workflow itself lists its steps. Dotted arrows lead to the
+# workflows a job starts (`chains`). Frame titles are kept to the job ID:
+# GitHub cuts off longer ones. Returns the Mermaid code.
 workflow_detail_diagram <- function(workflow, called, chains, workflows) {
   triggers <- vapply(names(workflow$triggers), function(e) describe_trigger(e, workflow$triggers[[e]]), character(1))
   lines <- c("flowchart TD", sprintf('  start(["%s"])', mermaid_label(triggers)))
@@ -34,28 +36,29 @@ workflow_detail_diagram <- function(workflow, called, chains, workflows) {
     inner <- if (!is.null(ref)) called[[ref$key]]$workflow else NULL
 
     if (!is.null(inner)) {
-      note <- sprintf("%s__ref", id)
-      lines <- c(lines,
-        sprintf('  subgraph %s ["%s"]', id, mermaid_text(title)),
-        "    direction TB",
-        sprintf('    %s["%s"]:::refnote', note, mermaid_label(c("calls", ref$lines, cond$note)))
-      )
+      lines <- c(lines, sprintf('  subgraph %s ["%s"]', id, mermaid_text(title)), "    direction TB")
+      note <- NULL
+      if (!is.na(cond$note)) {
+        note <- sprintf("%s__cond", id)
+        lines <- c(lines, sprintf('    %s["%s"]:::condnote', note, mermaid_label(cond$note)))
+      }
+      single <- length(inner$jobs) == 1
       for (inner_id in names(inner$jobs)) {
         ij <- inner$jobs[[inner_id]]
         inner_ref <- parse_workflow_ref(ij$uses)
         body <- if (!is.null(inner_ref)) inner_ref$lines else step_names(ij)
         node <- sprintf("%s__%s", id, safe(inner_id))
-        lines <- c(lines, sprintf('    %s["%s"]', node, mermaid_label(c(job_title(inner_id, ij), job_condition(ij)$note, body))))
+        lines <- c(lines, sprintf('    %s["%s"]', node, mermaid_label(c(if (!single) job_title(inner_id, ij), job_condition(ij)$note, body))))
         inner_needs <- unlist(ij$needs)
-        lines <- c(lines, if (length(inner_needs) == 0) {
-          sprintf("    %s ~~~ %s", note, node)  # keeps the note on top
-        } else {
-          sprintf("    %s__%s --> %s", id, safe(inner_needs), node)
-        })
+        if (length(inner_needs) > 0) {
+          lines <- c(lines, sprintf("    %s__%s --> %s", id, safe(inner_needs), node))
+        } else if (!is.null(note)) {
+          lines <- c(lines, sprintf("    %s ~~~ %s", note, node))  # keeps the note on top
+        }
       }
       lines <- c(lines, "  end")
     } else {
-      body <- if (!is.null(ref)) c("calls", ref$lines, "(not readable)") else step_names(job)
+      body <- if (!is.null(ref)) c(ref$lines, "(not readable)") else step_names(job)
       lines <- c(lines, sprintf('  %s["%s"]', id, mermaid_label(c(title, cond$note, body))))
     }
     lines <- c(lines, arrows(unlist(job$needs), cond, id))
@@ -64,9 +67,9 @@ workflow_detail_diagram <- function(workflow, called, chains, workflows) {
   for (ch in Filter(function(ch) identical(ch$from, workflow$file) && !is.na(ch$job), chains)) {
     target <- Find(function(wf) identical(wf$file, ch$to), workflows)
     lines <- c(lines,
-      sprintf('  %s(["%s"])', mermaid_id("wf", ch$to), mermaid_label(c(target$name, ch$to))),
+      sprintf('  %s(["%s"])', mermaid_id("wf", ch$to), mermaid_label(target$name)),
       sprintf('  %s -. "%s" .-> %s', mermaid_id("job", ch$job), mermaid_text(ch$label), mermaid_id("wf", ch$to))
     )
   }
-  paste(c(lines, "  classDef refnote stroke-dasharray: 4 3"), collapse = "\n")
+  paste(c(lines, "  classDef condnote stroke-dasharray: 4 3"), collapse = "\n")
 }

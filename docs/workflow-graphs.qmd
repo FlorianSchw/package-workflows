@@ -23,19 +23,21 @@ involved: the same files always give the same diagrams.
 
 ## What you get
 
-- **A table** of all workflows: what starts them, which reusable
-  workflows they call (with owner, repository, file and version), and
-  what they produce — the quickest way in.
+- **A table** of all workflows — name, file, what starts them, which
+  reusable workflows they call (with owner, repository, file and
+  version), and what they produce, with the condition where there is one
+  ("Issue for the PR author — *if check fails*"). The quickest way in.
 - **One small diagram per situation** — a pull request into `dev`, a pull
   request into `main`, a closed pull request, a schedule, a push: the
   workflows it starts, the workflows those start in turn (dotted arrows),
-  and what comes out of it — a suggestion PR, a comment, an issue, a
-  release. A workflow with several triggers appears in each.
-- **One diagram per workflow**: its jobs in the order they run, with the
-  result each waits for (success, failure). A job that calls a reusable
-  workflow is opened up to show that workflow's jobs and their steps, so
-  you see what actually happens. Conditions are written in words where
-  possible, e.g. "only on schedule".
+  and what comes out of it, with conditions on the arrows. A workflow
+  with several triggers appears in each.
+- **One diagram per workflow**, in the order they come into play: its
+  jobs in the order they run, with the result each waits for (success,
+  failure). A job that calls a reusable workflow is opened up to show
+  that workflow's jobs and their steps, so you see what actually happens.
+  Conditions are written in words where possible, e.g. "only on
+  schedule" or "skipped for PRs from bot-suggest/ branches".
 
 GitHub draws the diagrams itself ([Mermaid](https://mermaid.js.org)), so
 the README is plain text: changes show up as readable diffs.
@@ -47,16 +49,27 @@ described in `config/workflow-outcomes.yml` of this repository — for all
 workflows here. Workflows that aren't listed simply get no outcome boxes.
 To describe your own workflows, put a copy of that file at the same path
 in your repository ([as for the other settings](suggestions.qmd#adjusting-the-guidance))
-and add them, e.g. `.github/workflows/deploy.yml: [commit]`.
+and add them, e.g. `.github/workflows/deploy.yml: [commit]` or your own
+wording, `.github/workflows/deploy.yml: ["Site deployed to {environment}"]`
+— `{environment}` is filled in from the calling job's input of that name.
+Conditions under which a job runs are added automatically.
 
 ## Your own text is kept
 
 The diagrams sit between marker comments such as
 `<!-- workflow-graphs:overview:start -->`. Only those blocks are ever
 replaced. The first run writes a short introduction around them; after
-that, everything outside the blocks is yours — add explanations between
-the diagrams, reorder them, rewrite the introduction. A new workflow gets
-its block added at the end, a deleted one's block is removed.
+that, everything outside the blocks is yours:
+
+- **Text below a workflow's diagram belongs to that workflow** and moves
+  with it, as the workflows are always shown in the order they come into
+  play. Write explanations of a workflow right below its diagram.
+- **Text above the first workflow, and any section after them** that
+  starts with a `#` or `##` heading, stays where it is — e.g. the
+  introduction, or a closing "## Notes" section.
+- A new workflow is added in its place in the order. When a workflow is
+  deleted, its diagram goes, but the text you wrote below it is kept,
+  after the last workflow.
 
 ## When it runs
 
