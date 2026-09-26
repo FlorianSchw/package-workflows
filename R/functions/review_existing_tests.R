@@ -13,7 +13,7 @@
 review_existing_tests <- function(decisions, blocks, baseline, function_name) {
   fits <- list(update = "contract_changed", delete = c("duplicate", "behavior_removed", "trivial"), report = "possible_code_bug")
   failing <- vapply(Filter(function(r) !isTRUE(r$passed), baseline), function(r) r$description, character(1))
-  label <- function(d) sprintf("`%s`: \"%s\"", function_name, d$description)
+  label <- function(d) sprintf("\"%s\"", d$description)
 
   out <- list(updates = character(0), deletes = character(0), explanations = character(0), notes = character(0))
   for (d in decisions) {

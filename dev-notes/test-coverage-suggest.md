@@ -66,9 +66,11 @@ Entry script: `R/suggest_tests.R`. Per function file in `files_to_check.txt`:
     gives a one-line statistic (new / updated / deleted tests, DSLite and
     testthat setup created) for the link comment on the originating PR
     (`suggestion_summary.md`) and the top of the PR description.
-    `publish_test_report()`
-    puts changes to existing tests (with reasons), reported tests and
-    sweep failures into the suggestion PR's description — or, without a
+    `format_test_report()` lays out changes to existing tests (with
+    reasons), reported tests and sweep failures like the roxygen report
+    (a section per kind, a collapsible group per test file, style from
+    `config/report-style.yml`); `publish_test_report()` puts it into the
+    suggestion PR's description — or, without a
     suggestion PR, a PR comment (sweep: one issue).
 
 Trigger modes: `changed` (PR — new/modified functions only; commits go to

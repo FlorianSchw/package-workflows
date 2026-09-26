@@ -83,9 +83,14 @@ passed_in <- function(results, description) {
 updated_files <- character(0)
 counts <- c(new = 0, updated = 0, deleted = 0) # for format_test_summary()
 created_setups <- character(0)
-sweep_failures <- character(0)   # failed new tests in a sweep (no PR to comment on)
-existing_changes <- character(0) # applied updates/deletions, with reasons
-existing_notes <- character(0)   # possible bugs, failing tests left unchanged
+# Report entries per test file (format_test_report()):
+sweep_failures <- list()   # failed new tests in a sweep (no PR to comment on)
+existing_changes <- list() # applied updates/deletions, with reasons
+existing_notes <- list()   # possible bugs, failing tests left unchanged
+add_entry <- function(store, path, entries) {
+  if (length(entries) > 0) store[[path]] <- c(store[[path]], entries)
+  store
+}
 
 for (f in files) {
   parsed <- tryCatch(parse_r_file(f), error = function(e) {
@@ -116,12 +121,12 @@ for (f in files) {
   if (is.null(result)) next
 
   review <- review_existing_tests(result$existing_tests, blocks, baseline, function_name)
-  existing_notes <- c(existing_notes, review$notes)
+  existing_notes <- add_entry(existing_notes, existing_test_file$path, review$notes)
 
   # A failing existing test Claude left without any decision is reported too.
   decided <- vapply(result$existing_tests, function(d) d$description, character(1))
   for (r in Filter(function(r) !isTRUE(r$passed) && !r$description %in% decided, baseline)) {
-    existing_notes <- c(existing_notes, sprintf("- `%s`: \"%s\" — fails, no change proposed. %s", function_name, r$description, gsub("\\s+", " ", r$message)))
+    existing_notes <- add_entry(existing_notes, existing_test_file$path, sprintf("- \"%s\" — fails, no change proposed. %s", r$description, gsub("\\s+", " ", r$message)))
   }
 
   existing_descriptions <- vapply(blocks, function(b) b$description, character(1))
@@ -167,7 +172,7 @@ for (f in files) {
   failing_new <- Filter(function(r) r$description %in% setdiff(names(test_blocks), passing_new), run_results)
   kept_updates <- review$updates[vapply(names(review$updates), function(d) passed_in(run_results, d), logical(1))]
   for (d in setdiff(names(review$updates), names(kept_updates))) {
-    existing_notes <- c(existing_notes, sprintf("- `%s`: \"%s\" — an update was proposed (%s) but still failed, so the original test was kept.", function_name, d, review$explanations[[d]]))
+    existing_notes <- add_entry(existing_notes, existing_test_file$path, sprintf("- \"%s\" — an update was proposed (%s) but still failed, so the original test was kept.", d, review$explanations[[d]]))
   }
 
   # Rewrite from the ORIGINAL content with only what passed — a failing
@@ -180,7 +185,7 @@ for (f in files) {
     counts <- counts + c(length(passing_new), length(kept_updates), length(review$deletes))
     if (length(passing_new) > 0 && !is.null(created_setup)) created_setups <- c(created_setups, created_setup)
     for (d in c(names(kept_updates), review$deletes)) {
-      existing_changes <- c(existing_changes, sprintf("- `%s`: \"%s\" — %s", function_name, d, review$explanations[[d]]))
+      existing_changes <- add_entry(existing_changes, existing_test_file$path, sprintf("- \"%s\" — %s", d, review$explanations[[d]]))
     }
     message(sprintf("%s: %d new test(s), %d update(s), %d deletion(s).", function_name, length(passing_new), length(kept_updates), length(review$deletes)))
   }
@@ -200,7 +205,7 @@ for (f in files) {
     if (identical(classification$category, "real_bug")) {
       create_bug_issue(function_name, block_text, fail$message, classification)
     } else if (is_sweep) {
-      sweep_failures <- c(sweep_failures, format_test_failure(function_name, block_text, fail$message, classification))
+      sweep_failures <- add_entry(sweep_failures, existing_test_file$path, format_test_failure(function_name, block_text, fail$message, classification))
     } else {
       post_test_failure_comment(function_name, block_text, fail$message, classification)
     }
@@ -220,17 +225,7 @@ writeLines(updated_files, "updated_files.txt")
 summary_line <- format_test_summary(counts, created_setups, testthat_setup)
 if (length(updated_files) > 0) writeLines(summary_line, "suggestion_summary.md")
 
-section <- function(title, lines, intro = NULL) paste(c(title, "", intro, if (!is.null(intro)) "", lines), collapse = "\n")
-report <- if (length(updated_files) > 0) paste("**Summary:**", summary_line) else character(0)
-if (length(existing_changes) > 0) {
-  report <- c(report, section("## Changes to existing tests", existing_changes, "Each change passed a real run. Check the reasons before merging."))
-}
-if (length(existing_notes) > 0) {
-  report <- c(report, section("## Existing tests to look at", existing_notes, "Not changed automatically."))
-}
-if (length(sweep_failures) > 0) {
-  report <- c(report, paste(c("## Generated tests that failed", "", paste(sweep_failures, collapse = "\n\n---\n\n")), collapse = "\n"))
-}
-if (length(report) > 0) {
+if (length(existing_changes) + length(existing_notes) + length(sweep_failures) > 0 || length(updated_files) > 0) {
+  report <- format_test_report(if (length(updated_files) > 0) summary_line, existing_changes, existing_notes, sweep_failures)
   publish_test_report(report, has_pr = length(updated_files) > 0)
 }

@@ -191,7 +191,8 @@ and `CONTRIBUTING.md`); no PRs until a branch model and rules exist.
     proposed text; untagged titles/descriptions are kept; possible code
     bugs are reported in the suggestion PR (fallback: comment on the PR);
     the link comment shows a statistic line; the layout (heading levels,
-    spacing) is adjustable in `config/report-style.yml`.
+    spacing) is adjustable in `config/report-style.yml` — the same file
+    also styles the test report (grouped per test file).
   - Page names: `test-coverage-suggest.qmd` (and its dev-note) still
     carry the old workflow name; the file is now `test-suggest.yml`.
   - `test-coverage-suggest.qmd` DataSHIELD section: an existing DSLite
@@ -297,14 +298,18 @@ and `CONTRIBUTING.md`); no PRs until a branch model and rules exist.
   the numeric App ID). `resolve-push-token` takes `client-id` and falls
   back to `app-id` in a separate step (passing `app-id` at all triggers
   the deprecation warning); the four workflows using it accept an
-  `app-client-id` secret. Still open: confirm in CI on dsSupportClient,
-  then remove `app-id` together with the workflow renaming (both need
+  `app-client-id` secret. Confirmed in CI on dsSupportClient (all four
+  callers switched to `APP_CLIENT_ID`; no deprecation warning). Still
+  open: remove `app-id` together with the workflow renaming (both need
   caller changes).
 - **Ubuntu 26 on `ubuntu-latest` from 2026-10-19:** P3M binaries
   (`use-public-rspm`) may lag for a new Ubuntu → source builds, slow or
-  failing. Plan: pin all workflows (and R-CMD-Check's `os-list` default)
+  failing. ~~Plan: pin all workflows (and R-CMD-Check's `os-list` default)
   to `ubuntu-24.04` before then; move to 26.04 deliberately once P3M
-  serves binaries for it, tested on dsSupportClient first.
+  serves binaries for it, tested on dsSupportClient first.~~ Decided
+  (2026-09-26): no pin, stay on `ubuntu-latest`. After 2026-10-19, if
+  dependency installs get slow or fail, check P3M support for 26.04
+  first; pinning to `ubuntu-24.04` remains the fallback.
 - Internal only — keep these off `docs/roadmap.qmd` (user's decision):
   - **Name of a generated DSLite setup file:** `setup.R` if none exists,
     else `setup-dslite.R` (must start with `setup` for testthat to run

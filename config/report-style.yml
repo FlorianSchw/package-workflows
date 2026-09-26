@@ -1,11 +1,13 @@
-# Layout of the roxygen suggestion report (the suggestion PR's description).
+# Layout of the roxygen and test suggestion reports (the suggestion PR's
+# description, or the comment/issue when there is no suggestion PR).
 # GitHub strips CSS from Markdown, so font sizes and pixel spacing can't be
 # set directly; heading levels and blank lines are what's available.
 
 # Level of the section headings ("Applied changes (n)", ...): 1-6.
 section_heading: 2
 
-# Headings of the collapsible groups ("R/ds.rse.R (8)", "clarity (6)"):
+# Headings of the collapsible groups ("R/ds.rse.R (8)", "clarity (6)",
+# "tests/testthat/test-ds.rse.R (2)"):
 # 1-6 for a heading of that level (smaller for higher numbers), "bold" for
 # bold text or "plain" for normal text — the last two are the most compact.
 group_heading: 4
