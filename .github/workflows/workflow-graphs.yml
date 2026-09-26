@@ -1,0 +1,67 @@
+name: Workflow Graphs
+
+on:
+  workflow_call:
+    secrets:
+      app-client-id:
+        description: 'GitHub App Client ID (Iv23li...); its token can push to a protected branch (optional).'
+        required: false
+      app-private-key:
+        description: 'Private key of that GitHub App (required with app-client-id).'
+        required: false
+      commit-push-pat:
+        description: 'PAT with contents write, fallback if no App is set (optional).'
+        required: false
+
+jobs:
+  workflow-graphs:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      pull-requests: write
+    # Two merges in quick succession: the second run waits instead of racing.
+    concurrency:
+      group: workflow-graphs-${{ github.ref }}
+      cancel-in-progress: false
+
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
+
+      - name: Checkout shared scripts
+        uses: actions/checkout@v7
+        with:
+          repository: FlorianSchw/package-workflows
+          ref: main
+          path: .shared-workflows
+
+      - uses: r-lib/actions/setup-r@v2
+        with:
+          use-public-rspm: true
+
+      - uses: r-lib/actions/setup-r-dependencies@v2
+        with:
+          packages: any::yaml, any::httr2, any::jsonlite, any::purrr
+
+      - name: Draw workflow diagrams
+        env:
+          GH_TOKEN: ${{ github.token }}
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+        run: Rscript .shared-workflows/R/workflow_graphs.R
+
+      - name: Resolve push token
+        id: push_token
+        if: github.event_name != 'pull_request'
+        uses: FlorianSchw/package-workflows/.github/actions/resolve-push-token@main
+        with:
+          client-id: ${{ secrets.app-client-id }}
+          app-private-key: ${{ secrets.app-private-key }}
+
+      - name: Commit the README
+        if: github.event_name != 'pull_request'
+        uses: FlorianSchw/package-workflows/.github/actions/commit-and-push@main
+        with:
+          files: .github/workflows/README.md
+          commit-message: 'docs: update workflow diagrams'
+          token: ${{ steps.push_token.outputs.token || secrets.commit-push-pat || github.token }}
