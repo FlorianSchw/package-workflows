@@ -15,7 +15,7 @@ tested locally on 2026-09-26, not yet run in CI; open points at the end.
 - **Deterministic:** diagrams come from parsing the YAML only, no Claude.
   Exact, free, same output for the same input.
 - **Language: R** (user's choice, 2026-09-26), for one language across the
-  repo — entry script `R/workflow_graphs.R`, logic in `R/functions/`, one
+  repo — entry script `R/workflow_graphs.R`, logic in `R/functions/workflow-graphs/`, one
   function per file, `yaml` package. The ~30–60 s R setup per run was
   accepted: callers are R repos, and a non-R repo can still use it.
   Revisable later (Python was the alternative).

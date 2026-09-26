@@ -18,7 +18,7 @@ library(jsonlite)
 library(purrr)
 
 functions_dir <- if (dir.exists("R/functions")) "R/functions" else ".shared-workflows/R/functions"
-walk(list.files(functions_dir, pattern = "\\.R$", full.names = TRUE), source)
+walk(list.files(file.path(functions_dir, c("shared", "authors")), pattern = "\\.R$", full.names = TRUE), source)
 
 gh_token  <- Sys.getenv("GH_TOKEN")
 repo      <- Sys.getenv("GITHUB_REPOSITORY")

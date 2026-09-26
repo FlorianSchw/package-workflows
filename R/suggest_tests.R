@@ -16,7 +16,8 @@
 # a failing update keeps the original test and is reported.
 #
 # Sibling to R/suggest_roxygen.R — same conventions: orchestration only
-# here, logic in R/functions/, Claude call settings in config/claude.yml,
+# here, logic in R/functions/shared/ and R/functions/tests/, Claude call
+# settings in config/claude.yml,
 # deterministic field-based assembly (Claude never writes final test_that()
 # syntax directly). See dev-notes/test-suggest.md and
 # dev-notes/suggestion-thresholds.md for the design reasoning.
@@ -28,7 +29,7 @@ library(purrr)
 # R/suggest_roxygen.R for why library(config) is avoided.
 
 functions_dir <- if (dir.exists("R/functions")) "R/functions" else ".shared-workflows/R/functions"
-walk(list.files(functions_dir, pattern = "\\.R$", full.names = TRUE), source)
+walk(list.files(file.path(functions_dir, c("shared", "tests")), pattern = "\\.R$", full.names = TRUE), source)
 
 # R_CONFIG_ACTIVE (an env var set by the calling workflow step) selects
 # "test-review" as the active profile; the failure classifier has its own
@@ -65,7 +66,7 @@ files <- files[nzchar(files)]
 
 # Structure of the test data the package's setup/helper files create —
 # once per run, in a separate R process.
-test_data <- summarize_test_data(test_support_files(), functions_dir)
+test_data <- summarize_test_data(test_support_files(), file.path(functions_dir, "tests"))
 message("Test data:\n", test_data)
 
 run_quietly <- function(path, what) {

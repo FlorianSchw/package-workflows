@@ -87,9 +87,14 @@ the live caller used to validate changes before wider rollout.
   `workflow-graphs.yml`, meant for future generated-file workflows too).
 - `R/` — entry scripts `suggest_roxygen.R`, `suggest_tests.R`,
   `suggest_authors.R`, `workflow_graphs.R` (env/config wiring + main loop
-  only) and
-  `R/functions/` (all logic, one function per file, loaded in bulk via
-  `purrr::walk()`). No R inlined in workflow YAML.
+  only) and `R/functions/` (all logic, one function per file), split into
+  `shared/` (config/prompt files, GitHub API, report layout, reading R
+  files, the Claude call) and one folder per workflow: `roxygen/`,
+  `tests/`, `authors/`, `workflow-graphs/`. Each entry script loads only
+  `shared/` plus its own folder (`purrr::walk()`), so a function used by
+  two workflows must move to `shared/` — no calls across workflow
+  folders (checked on the 2026-09-26 split). No R inlined in workflow
+  YAML.
 - `config/`, `prompts/` — guidance, prompt templates and
   Claude call settings for the suggestion workflows.
 - `dev-notes/` — internal design notes and status per suggestion workflow
@@ -106,7 +111,8 @@ the live caller used to validate changes before wider rollout.
   `docs/suggestions-internals.qmd` ("Under the hood") has step diagrams
   and a table of the R functions of the roxygen and test workflows, with
   source links — update it when adding, renaming or removing a function
-  in `R/functions/` or changing the order of steps. Preview with
+  in `R/functions/shared/`, `roxygen/` or `tests/` (the links include the
+  folder) or changing the order of steps. Preview with
   `quarto preview docs` (`.claude/launch.json` has a `docs` entry).
 
 ## SUGGESTION WORKFLOWS — shared mechanics

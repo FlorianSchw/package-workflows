@@ -13,14 +13,15 @@
 # to date on further pushes (upsert_pr_comment()).
 #
 # This file only wires environment inputs together; all logic lives in
-# R/functions/ — one function per file, loaded in bulk below.
+# R/functions/shared/ and R/functions/workflow-graphs/ — one function per
+# file, loaded in bulk below.
 
 library(httr2)
 library(jsonlite)
 library(purrr)
 
 functions_dir <- if (dir.exists(".shared-workflows/R/functions")) ".shared-workflows/R/functions" else "R/functions"
-walk(list.files(functions_dir, pattern = "\\.R$", full.names = TRUE), source)
+walk(list.files(file.path(functions_dir, c("shared", "workflow-graphs")), pattern = "\\.R$", full.names = TRUE), source)
 
 gh_token      <- Sys.getenv("GH_TOKEN")
 repo          <- Sys.getenv("GITHUB_REPOSITORY")

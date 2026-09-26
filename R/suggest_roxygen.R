@@ -13,8 +13,8 @@
 # through Claude at all.
 #
 # This file only wires environment/config inputs together and runs the main
-# loop. All logic lives in R/functions/ — one function per file, loaded in
-# bulk below.
+# loop. All logic lives in R/functions/shared/ and R/functions/roxygen/ —
+# one function per file, loaded in bulk below.
 
 library(httr2)
 library(jsonlite)
@@ -23,7 +23,7 @@ library(purrr)
 # against library(config), since it masks base::get()/base::merge().
 
 functions_dir <- if (dir.exists("R/functions")) "R/functions" else ".shared-workflows/R/functions"
-walk(list.files(functions_dir, pattern = "\\.R$", full.names = TRUE), source)
+walk(list.files(file.path(functions_dir, c("shared", "roxygen")), pattern = "\\.R$", full.names = TRUE), source)
 
 # R_CONFIG_ACTIVE picks the active profile in config/claude.yml ("roxygen-review")
 # — set as an env var on the calling workflow step.
