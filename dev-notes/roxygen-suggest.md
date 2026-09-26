@@ -3,7 +3,7 @@
 Reusable workflow that reviews each function's roxygen2 documentation for
 completeness and accuracy with Claude, rewrites the block, and proposes the
 result as a suggestion PR. Shares auth, config and R conventions with
-[test-suggest.yml](test-coverage-suggest.md) (see `CLAUDE.md`).
+[test-suggest.yml](test-suggest.md) (see `CLAUDE.md`).
 
 ## How it works
 

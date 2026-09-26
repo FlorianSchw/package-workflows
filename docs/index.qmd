@@ -38,9 +38,9 @@ need is very welcome, see [Roadmap and open questions](roadmap.qmd).
 | | [Create issue](create-issue.qmd) | Opens an issue when a check fails |
 | | [Trigger release publish](trigger-release-publish.qmd) | Starts the release as a separate run |
 | Bot suggestions | [How suggestions work](suggestions.qmd) | Shared mechanics: suggestion PRs, sweeps, cleanup |
-| | [DESCRIPTION authors](check-description-authors.qmd) | Suggests adding new contributors to `DESCRIPTION` |
+| | [DESCRIPTION authors](check-description-authors.qmd) | Credits the contributors of a pull request in `DESCRIPTION` |
 | | [Roxygen suggestions](roxygen-suggest.qmd) | Claude reviews and rewrites roxygen2 documentation |
-| | [Test coverage suggestions](test-coverage-suggest.qmd) | Claude writes testthat tests; only passing ones are proposed |
+| | [Test suggestions](test-suggest.qmd) | Claude reviews and writes testthat tests; only passing ones are proposed |
 | | [Claude setup](claude-setup.qmd) | Keyless Claude API access for the two workflows above |
 | | [Cleanup suggestion branch](cleanup-suggestion-branch.qmd) | Deletes bot branches once their PR is closed |
 | Maintenance | [Workflow keepalive](workflow-keepalive.qmd) | Keeps scheduled workflows from being disabled after 60 days of inactivity |

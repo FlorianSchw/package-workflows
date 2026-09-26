@@ -14,5 +14,5 @@ jobs:
     with:
       dry-run: false   # true: report the next version only, release nothing
     secrets:
-      app-id: ${{ secrets.APP_ID }}
+      app-client-id: ${{ secrets.APP_CLIENT_ID }}
       app-private-key: ${{ secrets.APP_PRIVATE_KEY }}

@@ -1,33 +1,98 @@
 ---
-title: "Test coverage suggestions"
-description: "Claude writes testthat tests; only tests that pass are proposed."
+title: "Test suggestions"
+description: "Claude reviews and writes testthat tests; only tests that pass are proposed."
+aliases:
+  - test-coverage-suggest.html
 ---
 
-`test-suggest.yml` has Claude review each function together with
-its existing tests and write new `testthat` tests where they add value. It
-**runs every generated test** and proposes only the ones that pass as a
-[suggestion PR](suggestions.qmd).
+`test-suggest.yml` has Claude review each function together with its
+existing tests. It writes new `testthat` tests where they add value, fixes
+or removes existing tests that no longer fit, **runs every new or changed
+test**, and proposes only what passes as a [suggestion PR](suggestions.qmd).
 
 ## What it does
 
-- **Every function is reviewed** — changed ones in a PR, all of them in a
-  [sweep](suggestions.qmd#sweeps) — whether it already has tests or not.
-- **Up to five new tests per function, only if they add value.** Claude
-  names the value of each test — an uncovered code path, error handling,
-  an edge case, or a likely regression — and tests without such a reason
-  are dropped, as are copies of existing tests. See
-  [what gets proposed](suggestions.qmd#what-gets-proposed).
-- **Existing tests are never changed** — new tests are only appended, or
-  the test file is created. One function per file is assumed.
+- **Every function is reviewed**, whether it already has tests or not —
+  the changed ones in a PR, and in a [sweep](#sweep-scope) the recently
+  changed ones plus a rotating share of the rest.
+- **New tests only where they add value.** Claude names the value of each
+  test — an uncovered code path, error handling, an edge case, or a likely
+  regression — and tests without such a reason are dropped, as are copies
+  of existing tests. See [what gets proposed](suggestions.qmd#what-gets-proposed).
+  At most 10 new tests per function.
+- **Existing tests are reviewed too** — see [below](#existing-tests).
 - **Every test is run** with your package loaded from source before it is
   proposed.
+- **No setup needed.** A package without `testthat` gets it set up in the
+  same suggestion PR: `tests/testthat.R`, `testthat` in `Suggests`, and
+  `Config/testthat/edition: 3` (only when the test runner is created; an
+  existing suite keeps its edition).
 
-## Tests that could be deleted
+One test file per function is assumed: `tests/testthat/test-<function>.R`.
 
-Claude also points out existing tests that look redundant, test behaviour
-the function no longer has, or assert nothing meaningful — with a reason.
-Nothing is deleted: the list appears in the suggestion PR's description,
-or as a comment on your PR if no new tests were proposed.
+The review uses a stronger Claude model than the
+[roxygen suggestions](roxygen-suggest.qmd), with extended thinking:
+deciding which tests add value, and why an existing test fails, needs more
+careful reasoning than documentation.
+
+## What Claude gets
+
+Besides the function and its test file:
+
+- **The results of the existing tests**, run before anything is changed.
+- **The history**: when the function and its test file last changed, and
+  in a PR whether the function changed without its test — with the diff.
+- **Your test support files** (`tests/testthat/setup*.R`, `helper*.R`)
+  verbatim, so the tests use your own objects and helper functions.
+- **The structure of the test data** those files create: for each table
+  its rows, columns, types and missing values, and for factors the counts
+  per level. The level counts are the only data values sent to Claude.
+
+## Test quality
+
+Claude is asked to write tests that
+
+- assert **concrete values** from the known test data (counts, levels,
+  dimensions), not just a class;
+- always assert something — no `if (...) expect_...`;
+- never swallow errors or warnings with `try()` / `tryCatch()`, but check
+  them with `expect_error()` / `expect_warning()`;
+- test each error branch once;
+- describe exactly what they check.
+
+## Existing tests {#existing-tests}
+
+Claude also decides on existing tests, and states a reason for each:
+
+| Action | Reason | When |
+|---|---|---|
+| Update | `contract_changed` | The function was changed on purpose and the test still expects the old behaviour |
+| Delete | `duplicate`, `behavior_removed`, `trivial` | The test repeats another, tests something the function no longer does, or asserts nothing meaningful |
+| Report | `possible_code_bug` | The test fails, and the code rather than the test looks wrong |
+
+Safeguards apply before anything is changed:
+
+- **Only a failing test is updated.** A passing test is never rewritten.
+- **A test is never adapted to output that may be wrong.** If the code may
+  be at fault, the test stays and is reported instead.
+- **An update must pass a real run**; otherwise the original test is kept
+  and the attempt is reported.
+
+## The report
+
+The link comment on your PR and the suggestion PR's description start with
+a one-line summary, e.g. "7 new tests · 1 existing test updated". The
+description then lists, grouped per test file in collapsible sections:
+
+- **Changes to existing tests**, each with its reason;
+- **Existing tests to look at** — reported tests and failing tests left
+  unchanged;
+- in a sweep, **generated tests that failed** (see below).
+
+Heading sizes and spacing can be adjusted in `config/report-style.yml`
+([per repository](suggestions.qmd#adjusting-the-guidance)). Without a
+suggestion PR, the report is posted as a comment on your PR, or in a sweep
+as one issue.
 
 ## Failing tests
 
@@ -40,17 +105,30 @@ failed, from the actual error output, and the workflow reports it:
 | `bad_test` | The test itself is wrong | A comment on your PR |
 | `env_misconfiguration` | The test setup is broken, e.g. a missing package | A comment on your PR |
 
-In a [sweep](suggestions.qmd#sweeps) there is no PR to comment on, so the
-last two are listed in the sweep PR's description instead, or in one issue
-if no test passed at all.
+In a sweep there is no PR to comment on, so the last two are listed in the
+sweep PR's description instead, or in one issue if no test passed at all.
+
+## Sweep scope {#sweep-scope}
+
+A [sweep](suggestions.qmd#sweeps) doesn't review every function every
+month. It takes the functions whose file or test file changed within
+`sweep-lookback-days` (default 35), plus a rotating share of the rest, so
+that each function comes up at least once every `sweep-rotation-months`
+(default 6). Set `sweep-rotation-months: 0` to review all functions in
+every sweep.
 
 ## DataSHIELD client packages
 
 Client-side functions need a DataSHIELD server. With `datashield: true` and
 `datashield-type: client`, tests run against
 [DSLite](https://github.com/datashield/DSLite), an in-process server:
-an existing DSLite `tests/testthat/setup.R` is reused; otherwise one is
-created with one of DSLite's bundled datasets.
+
+- An **existing DSLite setup** in any `tests/testthat/setup*.R` or
+  `helper*.R` is reused, with your own connection names, symbols and
+  helpers.
+- Otherwise one is **created** with one of DSLite's bundled datasets, in
+  `tests/testthat/setup.R` — or in `setup-dslite.R` if a `setup.R`
+  without DSLite already exists, which is never touched.
 
 ::: {.callout-important}
 DSLite takes the server functions from the **installed server packages**.

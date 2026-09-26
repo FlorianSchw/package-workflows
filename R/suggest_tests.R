@@ -18,7 +18,7 @@
 # Sibling to R/suggest_roxygen.R — same conventions: orchestration only
 # here, logic in R/functions/, Claude call settings in config/claude.yml,
 # deterministic field-based assembly (Claude never writes final test_that()
-# syntax directly). See dev-notes/test-coverage-suggest.md and
+# syntax directly). See dev-notes/test-suggest.md and
 # dev-notes/suggestion-thresholds.md for the design reasoning.
 
 library(httr2)

@@ -1,5 +1,5 @@
 # Builds the Claude tool-call JSON schema for submit_failure_classification
-# — forces the 3-way classification from dev-notes/test-coverage-suggest.md
+# — forces the 3-way classification from dev-notes/test-suggest.md
 # into a structural enum rather than trusting free text to stay on-category.
 build_submit_failure_classification_tool <- function() {
   list(

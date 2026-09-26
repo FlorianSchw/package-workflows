@@ -26,7 +26,7 @@ Add this job to **each workflow that has a `schedule`** trigger:
 ```
 
 The example callers of the [roxygen](roxygen-suggest.qmd) and
-[test](test-coverage-suggest.qmd) suggestions already include it. It only
+[test](test-suggest.qmd) suggestions already include it. It only
 runs on scheduled runs, so it adds nothing to pull requests.
 
 ## Inputs

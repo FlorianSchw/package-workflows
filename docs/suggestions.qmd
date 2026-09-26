@@ -6,7 +6,7 @@ description: "Shared mechanics of the bot suggestion workflows."
 Three workflows propose changes to your package instead of just checking
 it: [DESCRIPTION authors](check-description-authors.qmd),
 [roxygen suggestions](roxygen-suggest.qmd) and
-[test coverage suggestions](test-coverage-suggest.qmd). They share how
+[test suggestions](test-suggest.qmd). They share how
 their changes reach you.
 
 ## Suggestions are pull requests, never direct commits
@@ -21,7 +21,12 @@ suggest for your PR, it
 
    > **Roxygen documentation suggestions** opened: #19 (into `feat/my-feature`)
    >
+   > 2 changes applied · 1 not applied
+   >
    > - `R/ds.wrapper.R`
+
+   The other titles are "Test suggestions" and "Update contributors in
+   DESCRIPTION".
 
 You review the suggestion like any PR: merge it, edit it first, or close
 it. New pushes to your PR update the same suggestion PR instead of opening
@@ -33,7 +38,9 @@ The roxygen and test workflows also have a `scan-mode: all`, meant for a
 monthly schedule: they review the **whole package** on `dev` (the
 `sweep-base` input) and collect everything in one pull request into `dev`
 from `bot-suggest/<kind>-sweep-YYYY-MM`. Running a sweep again in the same
-month updates that month's pull request.
+month updates that month's pull request. The test workflow limits each
+sweep to recently changed functions plus a rotating share of the rest, see
+[sweep scope](test-suggest.qmd#sweep-scope).
 
 The example callers switch mode by trigger, so one file handles both:
 
@@ -63,6 +70,12 @@ exist. The lists are set as `accept_reasons` in `config/claude.yml` and can
 be [changed per repository](#adjusting-the-guidance). They are a first
 setting, likely to be tuned.
 
+The test workflow also changes **existing tests**, but only for fixed
+reasons: an update when the function's behaviour was changed on purpose
+(`contract_changed`), a deletion for a duplicate, removed behaviour or a
+trivial test. A test that fails because the code may be wrong is only
+reported. See [existing tests](test-suggest.qmd#existing-tests).
+
 ## Housekeeping
 
 - The bot never reviews its own pull requests: the suggestion workflows skip
@@ -83,6 +96,7 @@ path** in your repository — it is used instead of the shared one:
 |---|---|
 | `config/bot-authors.json` | Accounts never added to `DESCRIPTION` |
 | `config/claude.yml` | Claude model, request settings and `accept_reasons` |
+| `config/report-style.yml` | Heading levels and spacing of the suggestion reports |
 | `config/roxygen-style.json` | Roxygen tag order and per-tag guidance |
 | `config/test-role-guidance.json` | Testing strategy given to Claude |
 | `prompts/*.md` | The full prompts sent to Claude |

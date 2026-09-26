@@ -40,11 +40,13 @@ These lists are a first setting.
 *Feedback wanted:* suggestion PRs that weren't worth it, or improvements
 you expected but didn't get.
 
-### Model per task
+### ~~Model per task~~
 
-All suggestion workflows currently use the same Claude model. Tests
+~~All suggestion workflows currently use the same Claude model. Tests
 arguably deserve a stronger one, since deciding which tests add value — or
-could be deleted — needs more careful reasoning than documentation.
+could be deleted — needs more careful reasoning than documentation.~~
+Done: the [test suggestions](test-suggest.qmd) use a stronger model with
+extended thinking.
 
 ### Release options
 
@@ -58,10 +60,10 @@ issues?
 
 ## Not yet proven in real use
 
-- **Monthly sweeps** of the whole package — the first scheduled run is
-  still ahead.
-- **Test coverage suggestions at scale**: generating, running and
-  proposing tests, and suggestions for deleting existing ones.
+- **Monthly sweeps**: both have run when started by hand; the first
+  scheduled run is still ahead.
+- **Changes to existing tests**: updating and deleting them, and reporting
+  possible bugs. Generating, running and proposing new tests works.
 - **The first real release** with the version written to `DESCRIPTION` —
   the release chain has so far only run as a dry run.
 

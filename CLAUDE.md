@@ -97,7 +97,7 @@ the live caller used to validate changes before wider rollout.
 ## SUGGESTION WORKFLOWS — shared mechanics
 
 Details per workflow: [dev-notes/roxygen-suggest.md](dev-notes/roxygen-suggest.md),
-[dev-notes/test-coverage-suggest.md](dev-notes/test-coverage-suggest.md).
+[dev-notes/test-suggest.md](dev-notes/test-suggest.md).
 
 - **Auth: WIF, no static API key.** The `anthropic-token` action exchanges
   the job's GitHub OIDC token for a short-lived Anthropic token. Nothing
@@ -163,49 +163,14 @@ Update it when an item here is added, changed or done. Feedback channel:
 issues for now (may change — it is named only in `docs/roadmap.qmd#feedback`
 and `CONTRIBUTING.md`); no PRs until a branch model and rules exist.
 
-- Docs pending (for the next batched docs pass):
-  - `check-description-authors.qmd`: the `aut`/`ctb` rule, upgrades, merge
-    commits skipped, reasons in the suggestion PR; replace the "full name
-    as given name" callout with: name split (and its limits, e.g. two-part
-    Spanish surnames), how existing entries are recognised, "may already
-    be listed" notes, and the one-time normalization to the tidyverse
-    `Authors@R` format.
-  - `examples/check-description-authors.yml`: drop the `paths` filter
-    (all PRs into `dev`), and say why on the page.
-  - `suggestions.qmd`: the example comment/title for authors is now
-    "Update contributors in DESCRIPTION"; tests now "Test suggestions".
-  - `test-coverage-suggest.qmd`: existing tests are reviewed (update /
-    delete / report, safeguards, history evidence), max 10 new tests,
-    quality rules, stronger model; "Tests that could be deleted" section
-    and "Existing tests are never changed" bullet are outdated; sweep
-    scope inputs (`sweep-lookback-days`, `sweep-rotation-months`).
-  - `suggestions.qmd` "What gets proposed": add the existing-test actions.
-  - `roadmap.qmd`: "Model per task" is done for tests.
-  - `test-coverage-suggest.qmd`: packages without testthat get it set up
-    (`tests/testthat.R`, `Suggests`, edition 3 only when fresh) — also a
-    note in Getting started that the test workflow needs no prior setup;
-    the link comment and PR description start with a one-line statistic.
-  - `suggestions.qmd`: example link comment now includes the statistic line.
-  - `roxygen-suggest.qmd`: the PR description groups "Applied changes (n)"
-    per file and "No changes applied (n)" per reason, with Claude's
-    proposed text; untagged titles/descriptions are kept; possible code
-    bugs are reported in the suggestion PR (fallback: comment on the PR);
-    the link comment shows a statistic line; the layout (heading levels,
-    spacing) is adjustable in `config/report-style.yml` — the same file
-    also styles the test report (grouped per test file).
-  - Page names: `test-coverage-suggest.qmd` (and its dev-note) still
-    carry the old workflow name; the file is now `test-suggest.yml`.
-  - `test-coverage-suggest.qmd` DataSHIELD section: an existing DSLite
-    setup is found in any `setup*.R` / `helper*.R` and shown to Claude
-    (own names and helpers are used); a generated setup goes to
-    `setup.R`, or `setup-dslite.R` if a `setup.R` without DSLite exists
-    (revisable after feedback). Claude also gets the structure of
-    the test data (rows, columns, types, missing values, factor level
-    counts — the level counts are the only data values shared; mention it).
-  - GitHub App Client ID: `getting-started.qmd` (secrets table, App setup
-    steps: store the Client ID as `APP_CLIENT_ID`; `APP_ID` deprecated)
-    and the four examples passing `app-id` (`app-client-id: ${{
-    secrets.APP_CLIENT_ID }}` instead).
+- ~~Docs pending~~ Done in the docs pass of 2026-09-26: authors page (roles,
+  names, matching, `desc` format; no `paths` filter), test page rewritten
+  and renamed to `test-suggest.qmd` (redirect from the old URL via
+  `aliases`), roxygen report, suggestions page (titles, statistic line,
+  existing-test actions, `report-style.yml`), App Client ID in Getting
+  started and all examples, roadmap. The dev-note is now
+  `dev-notes/test-suggest.md`. Next changes: note them here again as
+  "Docs pending".
 
 - Versioning: all workflows are referenced `@main`, and `package-release.yml`
   reads its release config from `main` too. The old `v1` tag is unused.
@@ -227,7 +192,9 @@ and `CONTRIBUTING.md`); no PRs until a branch model and rules exist.
     `@refs/heads/main`); tags need a prefix/condition match.
 - Federation rules for the other two accounts, before rolling out beyond
   dsSupportClient.
-- Not yet confirmed in real CI: `all` mode of both suggestion workflows;
+- Not yet confirmed in real CI: ~~`all` mode of both suggestion workflows~~
+  (both ran when started by hand: roxygen → dsSupportClient PR #25, tests →
+  PR #28; a scheduled run is still ahead);
   ~~`test-suggest.yml` actually generating, running and proposing
   tests~~ confirmed on dsSupportClient PR #21 → sub-PR #24 (tests for an
   already-tested function, `bad_test` classification comment, sub-PR

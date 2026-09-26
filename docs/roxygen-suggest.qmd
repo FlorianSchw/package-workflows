@@ -25,9 +25,30 @@ improved block as a [suggestion PR](suggestions.qmd).
   Changes that only make correct text clearer or restyle it are dropped,
   as are changes in whitespace, punctuation or case only — those parts
   keep your original lines. See
-  [what gets proposed](suggestions.qmd#what-gets-proposed).
+  [what gets proposed](suggestions.qmd#what-gets-proposed). This also
+  holds for a title or description written without a tag (the first
+  lines of the block): unless it is changed, it stays as it is.
 
 If a block is already adequate, nothing is proposed.
+
+## The report
+
+The link comment on your PR and the suggestion PR's description start with
+a one-line summary, e.g. "8 changes applied · 3 not applied · 1 possible
+bug". The description then shows, in collapsible sections:
+
+- **Applied changes**, grouped per file, each with its reason and a short
+  explanation;
+- **No changes applied**, grouped per reason (e.g. `clarity`), with
+  Claude's proposed text — adopt one by hand if it's worth it;
+- **Possible bugs in the code** that Claude noticed while checking the
+  documentation against the code. Nothing in the code is changed. Without
+  a suggestion PR, these are posted as a comment on your PR.
+
+Heading sizes and spacing can be adjusted in `config/report-style.yml`
+([per repository](suggestions.qmd#adjusting-the-guidance)); GitHub
+doesn't allow custom fonts or spacing, so the options are heading levels
+and blank lines.
 
 ## DataSHIELD packages
 

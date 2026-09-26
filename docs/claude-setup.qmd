@@ -3,7 +3,7 @@ title: "Claude setup"
 description: "Keyless Claude API access for the roxygen and test suggestion workflows."
 ---
 
-The [roxygen](roxygen-suggest.qmd) and [test](test-coverage-suggest.qmd)
+The [roxygen](roxygen-suggest.qmd) and [test](test-suggest.qmd)
 suggestion workflows call the Claude API **without a stored API key**. They
 use [Workload Identity Federation](https://platform.claude.com/docs/en/manage-claude/workload-identity-federation):
 the job proves its identity with GitHub's OIDC token and gets a

@@ -43,7 +43,7 @@ website:
           - suggestions.qmd
           - check-description-authors.qmd
           - roxygen-suggest.qmd
-          - test-coverage-suggest.qmd
+          - test-suggest.qmd
           - claude-setup.qmd
           - cleanup-suggestion-branch.qmd
       - section: "Maintenance"

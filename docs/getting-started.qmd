@@ -17,6 +17,10 @@ Most example callers use `branches: [dev]` or `branches: [main]` in their
 triggers. If your branches are named differently, adjust those triggers and
 the `allowed-head` / `sweep-base` inputs.
 
+Your package needs no other preparation. For example, the
+[test suggestions](test-suggest.qmd) set up `testthat` themselves if the
+package doesn't use it yet.
+
 ## Caller files
 
 Every workflow page has an example caller to copy into
@@ -39,7 +43,7 @@ as long as the caller maps them to the workflow's secret names.
 
 | Repository secret | Used by | Purpose |
 |---|---|---|
-| `APP_ID`, `APP_PRIVATE_KEY` | release, bot suggestions | GitHub App for bot pushes and PRs — see below |
+| `APP_CLIENT_ID`, `APP_PRIVATE_KEY` | release, bot suggestions | GitHub App for bot pushes and PRs — see below |
 | `CODECOV_TOKEN` | R CMD check | Coverage upload; required for private repositories |
 | `ANTHROPIC_ORG_ID` | roxygen / test suggestions | Anthropic organization ID — can be an organization-level secret |
 | `ANTHROPIC_SVAC_ID` | roxygen / test suggestions | Service account of this repository |
@@ -59,7 +63,7 @@ default `GITHUB_TOKEN` has two drawbacks:
   and tag to a protected `main`, which needs a *bypass actor*.
 
 A GitHub App solves both. The workflows use it automatically when
-`app-id` and `app-private-key` are passed, and fall back to a
+`app-client-id` and `app-private-key` are passed, and fall back to a
 `commit-push-pat` secret or `GITHUB_TOKEN` otherwise.
 
 1. Create a GitHub App (in your organization's or your personal settings)
@@ -68,9 +72,10 @@ A GitHub App solves both. The workflows use it automatically when
    webhook is needed.
 2. Generate a private key for it.
 3. Install the App on the repositories that use these workflows.
-4. Store the App ID and the private key as the secrets `APP_ID` and
-   `APP_PRIVATE_KEY` — as organization secrets if several repositories
-   share the App.
+4. Store the App's **Client ID** (on its settings page, starting with
+   `Iv23li`, not the numeric App ID) and the private key as the secrets
+   `APP_CLIENT_ID` and `APP_PRIVATE_KEY` — as organization secrets if
+   several repositories share the App.
 5. Add the App as a bypass actor in your `main` ruleset, see
    [Branch protection](branch-protection.qmd).
 
@@ -80,6 +85,13 @@ Instead of the App, you can pass a personal access token as the
 `commit-push-pat` secret (fine-grained: **Contents** and **Pull requests**
 *Read and write* on the repository). Pull requests opened with it do
 trigger workflows. The token order is App → PAT → `GITHUB_TOKEN`.
+
+::: {.callout-note}
+## Older callers: `app-id`
+The numeric App ID, passed as `app-id`, still works but is deprecated by
+GitHub and shows a warning in every run. Switch to `app-client-id`; the
+`app-id` secret will be removed in a later version.
+:::
 
 The App is still recommended: a PAT acts as its owner, so bot commits and
 pull requests appear under their name, it stops working when they leave or

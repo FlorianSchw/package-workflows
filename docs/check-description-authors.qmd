@@ -1,12 +1,30 @@
 ---
 title: "DESCRIPTION authors"
-description: "Suggests adding new contributors to DESCRIPTION."
+description: "Credits the contributors of a pull request in DESCRIPTION."
 ---
 
 `check-description-authors.yml` looks at every commit of the pull request
-and checks whether its author is credited in `DESCRIPTION`. Missing people
-are added with the role `aut` and proposed as a
-[suggestion PR](suggestions.qmd) into your branch.
+and checks whether its author is credited in `DESCRIPTION`. What's missing
+is proposed as a [suggestion PR](suggestions.qmd) into your branch, titled
+"Update contributors in DESCRIPTION".
+
+## Roles
+
+- **`aut`** for anyone whose commits changed a file under `R/`;
+- **`ctb`** for everyone else — tests, documentation, CI, …
+- Someone already listed as `ctb` who now changes `R/` is **upgraded** to
+  `aut`. Nobody is ever downgraded or removed, and other roles (`cre`,
+  `cph`, …) are left alone.
+
+Merge commits don't count. The suggestion PR's description gives the
+reason for each change, e.g. "added as `aut` (changed `R/ds.rse.R`)".
+
+::: {.callout-important}
+Trigger the workflow on **all** pull requests, without a `paths` filter.
+Otherwise contributors who only touch tests or docs are never seen.
+:::
+
+## Names
 
 Authors are resolved to the **name on their GitHub profile**, not the name
 in their local git configuration, so a GitHub handle doesn't end up next to
@@ -15,9 +33,25 @@ the git author name. Bots such as `dependabot[bot]` or
 `github-actions[bot]` are skipped; the list lives in
 `config/bot-authors.json` and can be [overridden](suggestions.qmd#adjusting-the-guidance).
 
+**Existing entries are recognised** by a commit e-mail that matches the
+entry's (GitHub's noreply addresses are ignored), or by the name — ignoring
+case, accents, punctuation and word order. E-mails are only used for this
+matching and never written to `DESCRIPTION`. If only the family name and
+the first initial match ("F. Schwarz" vs. "Florian Schwarz"), nobody is
+added; the suggestion PR (or, if nothing else changes, a comment on your
+PR) says the person **may already be listed**, so you can decide.
+
+**New people** are added with the name split into given and family name:
+the last word is the family name, together with particles such as `van`,
+`von` or `de` before it ("Ludwig van Beethoven" → "Ludwig" / "van
+Beethoven"). This can't know every naming convention — two-part Spanish
+surnames, for example, end up partly in the given name — and a one-word
+profile name is flagged in the PR. Check the names before merging.
+
 ::: {.callout-note}
-The full name is added as the given name. Split it into given and family
-name in the suggestion PR before merging if you need that.
+`DESCRIPTION` is written with the [desc](https://desc.r-lib.org) package,
+which formats `Authors@R` in its standard (tidyverse) layout. A
+hand-formatted field is reformatted once, on the first change.
 :::
 
 ## Example

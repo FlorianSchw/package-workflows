@@ -4,7 +4,7 @@
 # (fewest files, the usual convention); if a setup.R exists without
 # DSLite (e.g. other fixtures), writes setup-dslite.R instead, so that
 # file is never touched — testthat runs every setup*.R (a name must start
-# with "setup"). Revisable, see dev-notes/test-coverage-suggest.md. Safe to
+# with "setup"). Revisable, see dev-notes/test-suggest.md. Safe to
 # call once per processed function: after the first write,
 # detect_dslite_setup() finds it and this isn't called again.
 ensure_dslite_setup_file <- function(dataset_choice, package_name) {
