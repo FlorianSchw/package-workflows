@@ -3,25 +3,19 @@
 # schedule for this event — the file is in the table), what they produce
 # (`outcomes`, file -> workflow_outcomes(), fitted to the situation by
 # situation_outcomes()), and the workflows they start in turn (dotted
-# arrows, `chains`).
-#
-# Outcomes follow the order of the jobs that produce them: a job that
-# needs another starts from that job's outcomes, with the result it waits
-# for on the arrow ("if check fails") — so Release reads check → PR merged
-# / Issue, and PR merged ⇢ Publish Release. A job without outcomes of its
-# own passes its incoming arrows through. An outcome that leads on to
-# something has its own box per workflow; the others are shared by wording
-# across workflows ("Suggestion PR"). A condition shared by all arrows
-# leaving a workflow's box is written once in the box instead.
+# arrows, `chains`). Each workflow's arrows follow its jobs
+# (workflow_flow()) — so Release reads check → PR merged / Issue, and PR
+# merged ⇢ Publish Release. An outcome that leads on to something has its
+# own box per workflow; the others are shared by wording across workflows
+# ("Suggestion PR").
 #
 # Laid out left to right with the workflows stacked; columns spaced wider
 # than Mermaid's default and arrow labels wrapped narrower, so labels fit
-# between the arrows. A diagram more than four columns deep is drawn top
-# to bottom instead, so GitHub doesn't shrink it to fit the page width.
-# Returns the Mermaid code.
+# between the arrows. A diagram more than four columns deep
+# (diagram_depth()) is drawn top to bottom instead, so GitHub doesn't
+# shrink it to fit the page width. Returns the Mermaid code.
 situation_diagram <- function(situation, workflows, chains, outcomes) {
   by_file <- stats::setNames(workflows, vapply(workflows, function(wf) wf$file, character(1)))
-  label_of <- function(parts) paste(Filter(nzchar, parts), collapse = ", ")
 
   # The workflows this event starts, and those they start in turn.
   included <- names(situation$members)
@@ -33,51 +27,11 @@ situation_diagram <- function(situation, workflows, chains, outcomes) {
     }
   }
 
-  # Per workflow: its outcome keys, and the arrows between box, outcomes
-  # and started workflows, before deciding which outcome boxes are shared.
-  outcome_text <- list()      # key -> wording
-  edges <- list()             # list(from, to, label, dotted)
-  box_notes <- list()
-  for (f in included) {
-    wf <- by_file[[f]]
-    box <- mermaid_id("wf", f)
-    outs <- situation_outcomes(outcomes[[f]], situation$trigger)
-    keys <- sprintf("%s|%s|%d", f, vapply(outs, function(o) if (is.na(o$job)) "" else o$job, character(1)), seq_along(outs))
-    for (i in seq_along(outs)) outcome_text[[keys[i]]] <- outs[[i]]$text
-    jobs_out <- vapply(outs, function(o) if (is.na(o$job)) "" else o$job, character(1))
-
-    # Where arrows into a job come from: its own outcomes, or — for a job
-    # without outcomes — what its needs lead to, down to the workflow box.
-    sources <- function(job, seen = character(0)) {
-      if (job %in% seen) return(box)
-      mine <- keys[jobs_out == job]
-      if (length(mine) > 0) return(mine)
-      needs <- unlist(wf$jobs[[job]]$needs)
-      if (length(needs) == 0) return(box)
-      unique(unlist(lapply(needs, sources, seen = c(seen, job))))
-    }
-
-    wf_edges <- list()
-    for (i in seq_along(outs)) {
-      o <- outs[[i]]
-      needs <- if (is.na(o$job)) NULL else unlist(wf$jobs[[o$job]]$needs)
-      froms <- if (length(needs) == 0) box else unique(unlist(lapply(needs, sources)))
-      for (fr in froms) wf_edges[[length(wf_edges) + 1]] <- list(from = fr, to = keys[i], label = label_of(c(o$needs, o$condition)), dotted = FALSE)
-    }
-    for (ch in Filter(function(ch) identical(ch$from, f), chains)) {
-      froms <- if (is.na(ch$job)) box else sources(ch$job)
-      for (fr in froms) wf_edges[[length(wf_edges) + 1]] <- list(from = fr, to = mermaid_id("wf", ch$to), label = ch$label, dotted = TRUE)
-    }
-
-    # A condition on every arrow leaving the box goes into the box.
-    from_box <- Filter(function(e) identical(e$from, box) && !e$dotted, wf_edges)
-    shared <- unique(vapply(from_box, function(e) e$label, character(1)))
-    if (length(from_box) > 0 && length(shared) == 1 && nzchar(shared)) {
-      box_notes[[f]] <- shared
-      wf_edges <- lapply(wf_edges, function(e) { if (identical(e$from, box) && !e$dotted) e$label <- ""; e })
-    }
-    edges <- c(edges, wf_edges)
-  }
+  flows <- lapply(stats::setNames(included, included), function(f) {
+    workflow_flow(by_file[[f]], situation_outcomes(outcomes[[f]], situation$trigger), chains)
+  })
+  outcome_text <- do.call(c, unname(lapply(flows, function(fl) fl$outcome_text)))
+  edges <- do.call(c, unname(lapply(flows, function(fl) fl$edges)))
 
   # Outcomes leading on to something keep a box of their own; the rest
   # share one box per wording.
@@ -89,34 +43,17 @@ situation_diagram <- function(situation, workflows, chains, outcomes) {
     sprintf("out_%d", match(outcome_text[[key]], shared_texts))
   }
 
-  # Columns = the longest path from the event. GitHub scales a diagram down
-  # to the page width, so a long chain (event → workflow → check → merged →
-  # started workflow → its result) left to right becomes tiny; with more
-  # than four columns it is drawn top to bottom instead.
-  arrows <- c(
-    lapply(names(situation$members), function(f) c("ev", mermaid_id("wf", f))),
-    lapply(edges, function(e) c(node_of(e$from), node_of(e$to)))
-  )
-  depth <- c(ev = 1)
-  repeat {
-    changed <- FALSE
-    for (a in arrows) {
-      if (!is.na(depth[a[1]]) && (is.na(depth[a[2]]) || depth[a[2]] < depth[a[1]] + 1) && depth[a[1]] < 20) {
-        depth[a[2]] <- depth[a[1]] + 1
-        changed <- TRUE
-      }
-    }
-    if (!changed) break
-  }
-  layout <- if (max(depth) > 4) {
+  arrows <- c(lapply(names(situation$members), function(f) c("ev", mermaid_id("wf", f))),
+              lapply(edges, function(e) c(node_of(e$from), node_of(e$to))))
+  lines <- if (diagram_depth(arrows) > 4) {
     c('%%{init: {"flowchart": {"rankSpacing": 70, "nodeSpacing": 40}}}%%', "flowchart TD")
   } else {
     c('%%{init: {"flowchart": {"rankSpacing": 140, "nodeSpacing": 45}}}%%', "flowchart LR")
   }
+  lines <- c(lines, sprintf('  ev(["%s"])', mermaid_label(situation$event)))
 
-  lines <- c(layout, sprintf('  ev(["%s"])', mermaid_label(situation$event)))
   for (f in included) {
-    notes <- Filter(nzchar, c(situation$members[[f]], box_notes[[f]]))
+    notes <- Filter(nzchar, c(situation$members[[f]], flows[[f]]$box_note))
     lines <- c(lines, sprintf('  %s["<b>%s</b>%s"]', mermaid_id("wf", f), mermaid_label(by_file[[f]]$name),
                               if (length(notes) > 0) paste0("<br/>", mermaid_label(notes)) else ""))
     if (f %in% names(situation$members)) lines <- c(lines, sprintf("  ev --> %s", mermaid_id("wf", f)))
