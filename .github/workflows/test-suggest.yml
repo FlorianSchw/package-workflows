@@ -158,7 +158,7 @@ jobs:
           commit-prefix: 'test: suggested test changes for'
           sub-branch-prefix: 'bot-suggest/tests'
           sub-pr-title: 'Test suggestions'
-          sub-pr-body: 'New and updated tests from the test-coverage-suggest workflow. Every new or changed test passed a real run; changes to existing tests are listed below with their reason — review before merging.'
+          sub-pr-body: 'New and updated tests from the test suggestion workflow. Every new or changed test passed a real run; changes to existing tests are listed below with their reason — review before merging.'
           origin-pr-number: ${{ github.event.pull_request.number }}
           sweep-base: ${{ inputs.sweep-base }}
           pr-body-file: 'suggestion_report.md'
@@ -166,4 +166,4 @@ jobs:
           sweep-branch-prefix: 'bot-suggest/tests-sweep'
           sweep-commit-message: 'test: monthly test coverage sweep'
           sweep-pr-title: 'Monthly test coverage sweep'
-          sweep-pr-body: 'New and updated tests from the test-coverage-suggest workflow. Every new or changed test passed a real run; changes to existing tests are listed below with their reason — review before merging.'
+          sweep-pr-body: 'New and updated tests from the test suggestion workflow. Every new or changed test passed a real run; changes to existing tests are listed below with their reason — review before merging.'
