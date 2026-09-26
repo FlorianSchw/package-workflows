@@ -316,6 +316,6 @@ and `CONTRIBUTING.md`); no PRs until a branch model and rules exist.
   `liskin/gh-workflow-keepalive@v1` job (dsSupportClient's R-CMD-Check
   caller does, with `actions: write`). Wanted: one centrally maintained
   reusable workflow for it, plus a docs page and example.~~ Done:
-  `workflow-keepalive.yml`. Not yet run in real CI; dsSupportClient's
-  R-CMD-Check caller still uses `liskin` directly, and its suggestion
-  callers have no keepalive yet.
+  `workflow-keepalive.yml`. dsSupportClient's R-CMD-Check, docs and test
+  callers use it (no direct `liskin` any more); it only runs on a
+  scheduled trigger, so it is not yet confirmed in real CI.
