@@ -4,7 +4,8 @@
 # sets all variables used here from the inputs. Does nothing if none of the
 # files actually changed. If the push is rejected because the branch moved
 # on (e.g. two merges in quick succession), rebases onto it and tries
-# again, up to three times.
+# again, up to three times. A rejection for any other reason (a rule, a
+# missing permission) stops at once — retrying can't fix it.
 set -eo pipefail
 
 # actions/checkout stores GITHUB_TOKEN as an extra HTTP header
@@ -38,8 +39,13 @@ for attempt in 1 2 3; do
   if git_with_token push origin "HEAD:refs/heads/$BRANCH"; then
     exit 0
   fi
-  echo "Push rejected (attempt $attempt) — rebasing onto the current $BRANCH."
+  before="$(git rev-parse HEAD)"
   git_with_token pull --rebase origin "$BRANCH"
+  if [ "$(git rev-parse HEAD)" = "$before" ]; then
+    echo "::error::Push to $BRANCH was rejected, but $BRANCH hasn't moved on — see the reason above (e.g. a branch rule or a missing permission)."
+    exit 1
+  fi
+  echo "Push rejected (attempt $attempt) because $BRANCH moved on — rebased, trying again."
 done
 
 echo "::error::Could not push to $BRANCH after 3 attempts."
