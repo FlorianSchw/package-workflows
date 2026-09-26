@@ -233,6 +233,18 @@ and `CONTRIBUTING.md`); no PRs until a branch model and rules exist.
   selected function with Opus). Forced tool calls with thinking work on the
   Claude API; they would 400 on Opus 5.5 / Fable 5.1 (use `auto` then).
 - Shared caching for `r-cmd-check.yml` — flagged, not started.
+- **Claude prompt caching — checked, set aside (2026-09-26).** Console logs
+  of dsSupportClient runs: test review (Opus 5) ~4–8k input / ~1.2–1.9k
+  output tokens per function, failure classification ~1.9k / ~170;
+  roxygen (Sonnet 5) ~3.6–10k input / ~1.1–2.8k output. A few cents per
+  function; output is about half (tests) to two thirds (roxygen) of the
+  cost, and caching only lowers input cost. Roxygen can't benefit: the
+  tool schema (first in the cache prefix) lists each function's params.
+  Tests could save ~15–25% of input cost in multi-function runs (sweeps),
+  but only after reordering `test-review-prompt.md` so the shared part
+  (instructions, guidance, support files, test data) comes first with a
+  `cache_control` breakpoint, and the function-specific part last.
+  Revisit if sweep costs grow.
 - ~~**Rename the workflows before rolling out to more repos**~~ Done
   (2026-09-26): `test-coverage-suggest` → `test-suggest`, `R-CMD-Check` →
   `r-cmd-check` (casing), `check-description-authors` → `authors-suggest`
