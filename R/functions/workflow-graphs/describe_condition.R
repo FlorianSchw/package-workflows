@@ -1,29 +1,27 @@
-# A job's `if:` in words where the pattern is common ("only on schedule",
-# "only if the PR comes from dev", "skipped for PRs from bot-suggest/
-# branches"), else the expression itself as "if: …". Never cut short —
-# labels are wrapped instead (mermaid_label()). `cond` is without ${{ }}.
+# A job's `if:` in words, as "only if: …" (the job runs only then) or
+# "skipped: …" (it doesn't run then), for the common patterns: "only if:
+# scheduled run", "only if: PR comes from dev", "skipped: PRs from
+# bot-suggest/ branches". Anything else as "only if: <expression>". Never
+# cut short — labels are wrapped instead (mermaid_label()). `cond` is
+# without ${{ }}.
 describe_condition <- function(cond) {
   q <- "'([^']*)'"
   head <- "(?:github\\.head_ref|github\\.event\\.pull_request\\.head\\.ref)"
   base <- "(?:github\\.base_ref|github\\.event\\.pull_request\\.base\\.ref)"
   patterns <- list(
-    list(sprintf("^github\\.event_name\\s*==\\s*%s$", q), "only on %s"),
-    list(sprintf("^github\\.event_name\\s*!=\\s*%s$", q), "not on %s"),
-    list(sprintf("^%s\\s*==\\s*%s$", head, q), "only if the PR comes from %s"),
-    list(sprintf("^%s\\s*!=\\s*%s$", head, q), "not if the PR comes from %s"),
-    list(sprintf("^%s\\s*==\\s*%s$", base, q), "only for PRs into %s"),
-    list(sprintf("^github\\.ref_name\\s*==\\s*%s$", q), "only on branch %s"),
-    list(sprintf("^!\\s*startsWith\\(%s,\\s*%s\\)$", head, q), "skipped for PRs from %s branches"),
-    list(sprintf("^startsWith\\(%s,\\s*%s\\)$", head, q), "only for PRs from %s branches"),
-    list("^github\\.event\\.pull_request\\.merged(\\s*==\\s*true)?$", "only if the PR was merged")
+    list(sprintf("^github\\.event_name\\s*==\\s*%s$", q), function(x) paste("only if:", event_noun(x))),
+    list(sprintf("^github\\.event_name\\s*!=\\s*%s$", q), function(x) paste("skipped:", event_noun(x))),
+    list(sprintf("^%s\\s*==\\s*%s$", head, q), function(x) sprintf("only if: PR comes from %s", x)),
+    list(sprintf("^%s\\s*!=\\s*%s$", head, q), function(x) sprintf("skipped: PR comes from %s", x)),
+    list(sprintf("^%s\\s*==\\s*%s$", base, q), function(x) sprintf("only if: PR into %s", x)),
+    list(sprintf("^github\\.ref_name\\s*==\\s*%s$", q), function(x) sprintf("only if: branch %s", x)),
+    list(sprintf("^!\\s*startsWith\\(%s,\\s*%s\\)$", head, q), function(x) sprintf("skipped: PRs from %s branches", x)),
+    list(sprintf("^startsWith\\(%s,\\s*%s\\)$", head, q), function(x) sprintf("only if: PR from %s branches", x)),
+    list("^github\\.event\\.pull_request\\.merged(?:\\s*==\\s*true)?$", function(x) "only if: PR was merged")
   )
   for (p in patterns) {
     m <- regmatches(cond, regexec(p[[1]], cond, perl = TRUE))[[1]]
-    if (length(m) >= 1 && grepl("%s", p[[2]], fixed = TRUE)) {
-      if (length(m) == 2) return(sprintf(p[[2]], gsub("_", " ", m[2])))
-    } else if (length(m) >= 1) {
-      return(p[[2]])
-    }
+    if (length(m) >= 1) return(p[[2]](if (length(m) >= 2) m[2] else NULL))
   }
-  paste0("if: ", cond)
+  paste("only if:", cond)
 }

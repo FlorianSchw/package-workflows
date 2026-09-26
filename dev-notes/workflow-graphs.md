@@ -99,6 +99,27 @@ Open points at the end.
   caller job's `if:`, "if check fails" for needs-results, plus a condition
   shared by all jobs of the called workflow). Overridable per repo via
   `resolve_shared_path()`. Not derivable from the YAML.
+- **Fourth round** (2026-09-26, after the live README):
+  - Sections "## All workflows" and "## Events" (not "situations") come
+    with the block; each diagram titled with the short form ("### PR into
+    dev") and the sentence in italics below. `drop_old_starter_headings()`
+    removes the "## Overview" (directly before the block) and the empty
+    "## Workflows" of the earlier starter — only in exactly that shape.
+  - Boxes: bold workflow name; notes as **only if:** / **skipped:**
+    (`describe_condition()`, `event_filter()`, `event_noun()`), explained
+    in the legend under "Events" and used in the table too.
+  - **Outcomes follow the job order** (`situation_diagram()`, user-found
+    bug): Release used to draw four arrows from its box. Now an outcome
+    starts from the outcomes of the jobs its job `needs` (label: the
+    awaited result), a job without outcomes passes arrows through, and a
+    chain starts from the outcome its sending job depends on — so check →
+    PR merged (if check succeeds) / Issue (if check fails), PR merged ⇢
+    Publish Release. Outcomes that lead on get a box per workflow, leaf
+    outcomes stay shared by wording. `workflow_outcomes()` now records the
+    job and keeps the needs-result (`needs`) apart from other conditions.
+  - Not derivable: that Require Head Branch blocks the merge — that's a
+    branch ruleset, not in the YAML (and not readable with the job's
+    token). Stated on the docs page as a general limit.
 - **Keepalive jobs** stay (user's choice, 2026-09-26) — as an outcome in
   the table and the schedule diagram.
 - **Called workflows are read** at the referenced ref via the GitHub API —

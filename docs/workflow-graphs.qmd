@@ -31,14 +31,18 @@ its file is the place to look.
   version), and what they produce, with the condition where there is one
   ("Issue for the PR author — *if check fails*"). Several entries in a
   cell are listed as bullets.
-- **What runs when**: one small diagram per situation — a pull request
-  into `dev`, a pull request into `main`, a closed pull request, a
-  schedule, a push — with the workflows it starts, the workflows those
-  start in turn (dotted arrows), and what comes out of it. Conditions are
-  written in words ("skipped for PRs from bot-suggest/ branches"): once
-  in a workflow's box when they apply to everything it produces, on the
-  arrow when they differ ("if check fails"). A workflow with several
-  triggers appears in each situation, showing what it produces there.
+- **Events**: one small diagram per event — a pull request into `dev`, a
+  pull request into `main`, a closed pull request, a schedule, a push —
+  with the workflows it starts, what they produce, and the workflows they
+  start in turn (dotted arrows). What a workflow produces follows the
+  order of its jobs: for a release, the check comes first, then "PR
+  merged" if it succeeds or an issue if it fails, and the merge starts the
+  publishing. Conditions are written in words — **only if:** (it happens
+  only then, e.g. when certain files changed) and **skipped:** (it
+  doesn't happen then) — once in a workflow's box when they apply to
+  everything it does, on the arrow when they differ. A workflow with
+  several triggers appears under each event, showing what it produces
+  there.
 
 GitHub draws the diagrams itself ([Mermaid](https://mermaid.js.org)), so
 the README is plain text: changes show up as readable diffs.
@@ -93,6 +97,10 @@ triggers, and dispatches sent with `gh api …/dispatches`,
 another way — or from inside a composite action — shows no arrow. A
 called workflow in a private repository the job can't read is still shown,
 marked "not readable".
+
+Links that exist only through settings don't appear either — for example
+a branch rule that requires a check to pass before a pull request can be
+merged. The diagrams show what the workflow files say.
 
 ## Example
 

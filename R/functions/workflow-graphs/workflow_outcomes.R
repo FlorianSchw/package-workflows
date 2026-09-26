@@ -1,16 +1,18 @@
 # What a workflow of the repository produces, per config/workflow-outcomes.yml
 # (`config`, read with yaml; see resolve_shared_path() for overrides): the
 # outcomes listed for the workflow file itself, and per job those of the
-# reusable workflow it calls, each with the condition under which the job
-# runs (job_run_condition()). An entry is a short name from
+# reusable workflow it calls. An entry is a short name from
 # `config$outcomes` or its own wording; "{name}" is filled in with the
 # job's input of that name, else the called workflow's default. An entry
-# {outcome, only-on} adds "only on <event>" to the condition — for results
-# that depend on the event rather than on a job's `if:`. Returns a list of
-# list(text, condition), without duplicates — empty if nothing is
-# described.
+# {outcome, only-on} adds "only if: <event>" — for results that depend on
+# the event rather than on a job's `if:`.
+#
+# Returns a list of list(text, job, needs, condition), without duplicates:
+# `job` is the producing job's ID (NA for the workflow file's own
+# entries), `needs` the result of other jobs it waits for ("if check
+# fails"), `condition` its other conditions (job_run_condition()).
 workflow_outcomes <- function(workflow, called, config) {
-  one <- function(entry, job_condition, job = NULL, inner = NULL) {
+  one <- function(entry, job_id = NA, run = list(needs = "", own = ""), job = NULL, inner = NULL) {
     only_on <- NULL
     if (is.list(entry)) {
       only_on <- entry[["only-on"]]
@@ -22,17 +24,18 @@ workflow_outcomes <- function(workflow, called, config) {
       if (is.null(value)) value <- inner$triggers$workflow_call$inputs[[name]]$default
       if (!is.null(value)) text <- gsub(sprintf("{%s}", name), as.character(value), text, fixed = TRUE)
     }
-    conditions <- c(if (!is.null(only_on)) sprintf("only on %s", gsub("_", " ", only_on)), if (nzchar(job_condition)) job_condition)
-    list(text = text, condition = paste(conditions, collapse = ", "))
+    conditions <- c(if (!is.null(only_on)) paste("only if:", event_noun(only_on)), if (nzchar(run$own)) run$own)
+    list(text = text, job = job_id, needs = run$needs, condition = paste(conditions, collapse = ", "))
   }
 
-  out <- lapply(config$workflows[[file.path(".github/workflows", workflow$file)]], one, job_condition = "")
-  for (job in workflow$jobs) {
+  out <- lapply(config$workflows[[file.path(".github/workflows", workflow$file)]], one)
+  for (job_id in names(workflow$jobs)) {
+    job <- workflow$jobs[[job_id]]
     ref <- parse_workflow_ref(job$uses)
     if (is.null(ref) || is.null(config$workflows[[ref$id]])) next
-    condition <- job_run_condition(job, called)
+    run <- job_run_condition(job, called)
     inner <- called[[ref$key]]$workflow
-    out <- c(out, lapply(config$workflows[[ref$id]], one, job_condition = condition, job = job, inner = inner))
+    out <- c(out, lapply(config$workflows[[ref$id]], one, job_id = job_id, run = run, job = job, inner = inner))
   }
   unique(out)
 }

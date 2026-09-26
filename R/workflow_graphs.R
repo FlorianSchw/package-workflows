@@ -60,7 +60,7 @@ outcomes_config <- if (file.exists(outcomes_path)) yaml::read_yaml(outcomes_path
 
 blocks <- workflow_graph_blocks(workflows, called, chains, outcomes_config)
 current <- if (file.exists(readme_path)) readLines(readme_path, warn = FALSE) else NULL
-updated <- update_marked_blocks(current, blocks, workflow_readme_starter)
+updated <- update_marked_blocks(if (is.null(current)) NULL else drop_old_starter_headings(current), blocks, workflow_readme_starter)
 if (identical(current, updated)) {
   message("README is up to date.")
 } else {

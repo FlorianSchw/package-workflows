@@ -1,8 +1,9 @@
 # The README written the first time only, when
 # .github/workflow-graphs/README.md doesn't exist yet: a short intro and
-# the overview block. Afterwards the text is the repository's own — later
-# runs only replace the block (update_marked_blocks()). `wrapped` is the
-# named list of blocks with their markers.
+# the overview block (which brings its own "## All workflows" and
+# "## Events" sections). Afterwards the text is the repository's own —
+# later runs only replace the block (update_marked_blocks()). `wrapped` is
+# the named list of blocks with their markers.
 workflow_readme_starter <- function(wrapped) {
   c(
     "# Workflows",
@@ -13,8 +14,6 @@ workflow_readme_starter <- function(wrapped) {
     "updated when the workflows change. For the details of a workflow, see",
     "its file in `.github/workflows/`. Text outside the marked block is yours",
     "and never overwritten.",
-    "",
-    "## Overview",
     "",
     wrapped$overview
   )

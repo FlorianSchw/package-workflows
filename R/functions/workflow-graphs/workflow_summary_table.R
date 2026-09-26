@@ -34,7 +34,8 @@ workflow_summary_table <- function(workflows, called, outcomes, chains) {
     })))
 
     produced <- vapply(outcomes[[wf$file]], function(o) {
-      if (nzchar(o$condition)) sprintf("%s — *%s*", cell(o$text), cell(o$condition)) else cell(o$text)
+      condition <- paste(Filter(nzchar, c(o$needs, o$condition)), collapse = ", ")
+      if (nzchar(condition)) sprintf("%s — *%s*", cell(o$text), cell(condition)) else cell(o$text)
     }, character(1))
     starts <- unique(vapply(Filter(function(ch) identical(ch$from, wf$file), chains), function(ch) sprintf("starts **%s**", cell(name_of[[ch$to]])), character(1)))
 
