@@ -43,6 +43,10 @@ Quality rules for every test you write:
   dimensions), not just a class or a loose pattern.
 - No conditional assertions such as `if (...) expect_...` — every test
   must always assert something.
+- Never wrap the code under test in `try()`, `tryCatch()` or
+  `suppressWarnings()`/`suppressMessages()`: an unexpected error or
+  warning must fail the test. Assert expected conditions with
+  `expect_error()`, `expect_warning()` or `expect_message()` instead.
 - Test each error branch once; don't repeat the same check with a
   different bad input unless the input takes a different code path.
 - The description states exactly what is asserted, and nothing it
