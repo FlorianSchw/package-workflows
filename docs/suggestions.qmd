@@ -4,7 +4,7 @@ description: "Shared mechanics of the bot suggestion workflows."
 ---
 
 Three workflows propose changes to your package instead of just checking
-it: [DESCRIPTION authors](authors-suggest.qmd),
+it: [author suggestions](authors-suggest.qmd) for `DESCRIPTION`,
 [roxygen suggestions](roxygen-suggest.qmd) and
 [test suggestions](test-suggest.qmd). They share how
 their changes reach you. What happens inside the roxygen and test
@@ -75,7 +75,7 @@ The test workflow also changes **existing tests**, but only for fixed
 reasons: an update when the function's behaviour was changed on purpose
 (`contract_changed`), a deletion for a duplicate, removed behaviour or a
 trivial test. A test that fails because the code may be wrong is only
-reported. See [existing tests](test-suggest.qmd#existing-tests).
+reported. See [existing tests](test-suggest-review.qmd#existing-tests).
 
 ## Housekeeping
 

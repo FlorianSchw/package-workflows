@@ -22,10 +22,11 @@ website:
     contents:
       - href: index.qmd
         text: Home
-      - roadmap.qmd
-      - getting-started.qmd
-      - overview.qmd
-      - branch-protection.qmd
+      - section: "Getting started"
+        href: getting-started.qmd
+        contents:
+          - overview.qmd
+          - branch-protection.qmd
       - section: "Pull request checks"
         contents:
           - r-cmd-check.qmd
@@ -43,14 +44,26 @@ website:
           - suggestions.qmd
           - authors-suggest.qmd
           - roxygen-suggest.qmd
-          - test-suggest.qmd
+          - section: "Test suggestions"
+            href: test-suggest.qmd
+            contents:
+              - test-suggest-review.qmd
+              - test-suggest-datashield.qmd
           - claude-setup.qmd
-          - suggestions-internals.qmd
           - cleanup-suggestion-branch.qmd
-      - section: "Maintenance"
+          - section: "Under the hood"
+            href: suggestions-internals.qmd
+            contents:
+              - suggestions-internals-roxygen.qmd
+              - suggestions-internals-tests.qmd
+      - section: "Workflow upkeep"
         contents:
           - workflow-keepalive.qmd
-          - workflow-graphs.qmd
+          - section: "Workflow graphs"
+            href: workflow-graphs.qmd
+            contents:
+              - workflow-graphs-details.qmd
+      - roadmap.qmd
 
 format:
   html:

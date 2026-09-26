@@ -1,0 +1,26 @@
+---
+title: "DataSHIELD client packages"
+description: "How the test suggestions run client-side tests against an in-process DSLite server."
+---
+
+Client-side functions of a DataSHIELD package need a DataSHIELD server to
+run. With `datashield: true` and `datashield-type: client`, the
+[test suggestions](test-suggest.qmd) run their tests against
+[DSLite](https://github.com/datashield/DSLite), an in-process server:
+
+- An **existing DSLite setup** in any `tests/testthat/setup*.R` or
+  `helper*.R` is reused, with your own connection names, symbols and
+  helpers.
+- Otherwise one is **created** with one of DSLite's bundled datasets, in
+  `tests/testthat/setup.R` — or in `setup-dslite.R` if a `setup.R`
+  without DSLite already exists, which is never touched.
+
+Claude sees the structure of the test data inside the DSLite server — see
+[what Claude gets](test-suggest-review.qmd#what-claude-gets).
+
+::: {.callout-important}
+DSLite takes the server functions from the **installed server packages**.
+List them (e.g. `dsBase`), together with `DSLite` and `testthat`, in your
+`DESCRIPTION` — for example under `Suggests` — so the workflow installs
+them. Otherwise every test fails as `env_misconfiguration`.
+:::

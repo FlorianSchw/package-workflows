@@ -1,0 +1,90 @@
+---
+title: "Roxygen suggestions, step by step"
+description: "Each step of the roxygen suggestion workflow and the R functions behind it."
+---
+
+Part of [Under the hood](suggestions-internals.qmd): what the [roxygen suggestions](roxygen-suggest.qmd) do inside the R script, step by step.
+
+Settings are read once; then each file goes through the same steps.
+
+```{mermaid}
+flowchart TD
+  subgraph once ["Once per run"]
+    cfg["① Load settings"]
+  end
+  subgraph each ["For each file"]
+    direction LR
+    parse["② Read the function<br/>and its block"] --> ask["③ Ask Claude"]
+    ask --> thr["④ Apply the<br/>threshold"]
+    thr --> build["⑤ Build the<br/>new block"]
+    build --> write["⑥ Write the file"]
+    ask -. "no changes needed" .-> skip(["File left as is"])
+    thr -. "nothing accepted" .-> skip
+  end
+  subgraph after ["After the last file"]
+    report["⑦ Write the report"]
+  end
+  once --> each --> after
+```
+
+## ① Load settings
+
+| Function | What it does |
+|---|---|
+| [`resolve_shared_path()`](https://github.com/FlorianSchw/package-workflows/blob/main/R/functions/shared/resolve_shared_path.R) | Finds a settings or prompt file: your repository's own copy if it has one ([override](suggestions.qmd#adjusting-the-guidance)), otherwise the shared one. |
+| [`read_json_config()`](https://github.com/FlorianSchw/package-workflows/blob/main/R/functions/shared/read_json_config.R) | Reads a JSON settings file, e.g. the style guide `config/roxygen-style.json`. |
+| [`read_text_file()`](https://github.com/FlorianSchw/package-workflows/blob/main/R/functions/shared/read_text_file.R) | Reads the prompt template `prompts/roxygen-review-prompt.md`. |
+| [`read_package_name()`](https://github.com/FlorianSchw/package-workflows/blob/main/R/functions/shared/read_package_name.R) | Reads the package name from `DESCRIPTION`. |
+| [`find_study_group()`](https://github.com/FlorianSchw/package-workflows/blob/main/R/functions/roxygen/find_study_group.R) | DataSHIELD clients: finds the demo-server study group that fits this package, for ready-made login examples. |
+| [`build_demo_login_snippet()`](https://github.com/FlorianSchw/package-workflows/blob/main/R/functions/roxygen/build_demo_login_snippet.R) | DataSHIELD clients: builds the multi-study login code to use in `@examples`. |
+| [`role_guidance()`](https://github.com/FlorianSchw/package-workflows/blob/main/R/functions/roxygen/role_guidance.R) | DataSHIELD: picks the client or server guidance (e.g. about disclosure control) and adds the login example. |
+| [`build_role_guidance_text()`](https://github.com/FlorianSchw/package-workflows/blob/main/R/functions/roxygen/build_role_guidance_text.R) | Turns that guidance from the settings file into a paragraph for the prompt. |
+
+The Claude settings (model, `accept_reasons`, …) come from
+`config/claude.yml`, profile `roxygen-review`.
+
+## ② Read the function
+
+| Function | What it does |
+|---|---|
+| [`parse_r_file()`](https://github.com/FlorianSchw/package-workflows/blob/main/R/functions/shared/parse_r_file.R) | Finds the first function in the file, its parameters and the roxygen block above it, with every tag and its lines. |
+| [`select_profile()`](https://github.com/FlorianSchw/package-workflows/blob/main/R/functions/roxygen/select_profile.R) | Picks the style guidance for an exported or an internal function (by `@export`). |
+| [`fn_source()`](https://github.com/FlorianSchw/package-workflows/blob/main/R/functions/shared/fn_source.R) | Cuts out the function's source code, so Claude can check the documentation against it. |
+
+## ③ Ask Claude
+
+| Function | What it does |
+|---|---|
+| [`ask_claude_for_review()`](https://github.com/FlorianSchw/package-workflows/blob/main/R/functions/roxygen/ask_claude_for_review.R) | Prepares and sends the review request; returns Claude's fields. |
+| [`build_guidance_text()`](https://github.com/FlorianSchw/package-workflows/blob/main/R/functions/roxygen/build_guidance_text.R) | Turns the style guide's per-tag rules into a list for the prompt. |
+| [`fill_template()`](https://github.com/FlorianSchw/package-workflows/blob/main/R/functions/shared/fill_template.R) | Fills the prompt template's `{{PLACEHOLDERS}}` with the function, its block and the guidance. |
+| [`build_submit_review_tool()`](https://github.com/FlorianSchw/package-workflows/blob/main/R/functions/roxygen/build_submit_review_tool.R) | Defines the form Claude fills in: one field per documentation part and parameter, a list of changes with a reason each, and possible code bugs. |
+| [`suggestion_reasons()`](https://github.com/FlorianSchw/package-workflows/blob/main/R/functions/shared/suggestion_reasons.R) | The fixed list of reasons Claude may give (`missing`, `inaccurate`, `incomplete`, `clarity`, `style`). |
+| [`call_claude_tool()`](https://github.com/FlorianSchw/package-workflows/blob/main/R/functions/shared/call_claude_tool.R) | Sends the request to the Claude API and returns the filled-in form; stops with a clear error if the answer was cut off or refused. |
+
+## ④ Apply the threshold
+
+| Function | What it does |
+|---|---|
+| [`accepted_roxygen_fields()`](https://github.com/FlorianSchw/package-workflows/blob/main/R/functions/roxygen/accepted_roxygen_fields.R) | Keeps a change only if its reason is accepted and the text really differs (more than whitespace, punctuation or case). Records applied and dropped changes for the report. |
+| [`original_roxygen_field()`](https://github.com/FlorianSchw/package-workflows/blob/main/R/functions/roxygen/original_roxygen_field.R) | The current text of one documentation part, for the comparison. |
+| [`implicit_roxygen_field()`](https://github.com/FlorianSchw/package-workflows/blob/main/R/functions/roxygen/implicit_roxygen_field.R) | The same for a title or description written without a tag (the first lines of the block). |
+| [`roxygen_field_text()`](https://github.com/FlorianSchw/package-workflows/blob/main/R/functions/roxygen/roxygen_field_text.R) | Claude's new text for one documentation part. |
+
+## ⑤ Build the block and ⑥ write the file
+
+| Function | What it does |
+|---|---|
+| [`build_roxygen_block()`](https://github.com/FlorianSchw/package-workflows/blob/main/R/functions/roxygen/build_roxygen_block.R) | Assembles the new block in the configured tag order: accepted parts from Claude, all other lines and tags (`@export`, `@seealso`, …) exactly as they were. |
+| [`strip_artifact_lines()`](https://github.com/FlorianSchw/package-workflows/blob/main/R/functions/shared/strip_artifact_lines.R) | Removes stray `#'` or `@tag` lines Claude might have copied into a field; an empty required field stops the file instead of breaking it. |
+| [`write_in_place()`](https://github.com/FlorianSchw/package-workflows/blob/main/R/functions/roxygen/write_in_place.R) | Replaces the old block with the new one in the file. |
+
+## ⑦ Write the report
+
+| Function | What it does |
+|---|---|
+| [`format_roxygen_summary()`](https://github.com/FlorianSchw/package-workflows/blob/main/R/functions/roxygen/format_roxygen_summary.R) | The summary line, e.g. "8 changes applied · 3 not applied · 1 possible bug". |
+| [`format_roxygen_report()`](https://github.com/FlorianSchw/package-workflows/blob/main/R/functions/roxygen/format_roxygen_report.R) | The suggestion PR's description: applied changes per file, not applied ones per reason with Claude's proposed text. |
+| [`format_code_issues()`](https://github.com/FlorianSchw/package-workflows/blob/main/R/functions/roxygen/format_code_issues.R) | The "Possible bugs in the code" section. |
+| [`comment_once()`](https://github.com/FlorianSchw/package-workflows/blob/main/R/functions/shared/comment_once.R) | Without a suggestion PR: posts the possible bugs as a comment on your PR, but not again on the next push. |
+

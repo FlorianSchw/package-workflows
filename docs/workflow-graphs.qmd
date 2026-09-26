@@ -1,25 +1,17 @@
 ---
 title: "Workflow graphs"
-description: "Draws diagrams of a repository's GitHub Actions workflows into .github/workflow-graphs/README.md."
+description: "Draws an overview of a repository's GitHub Actions workflows into .github/workflow-graphs/README.md."
 ---
 
-`workflow-graphs.yml` draws diagrams of your repository's GitHub Actions
-workflows and keeps them up to date in `.github/workflow-graphs/README.md`.
-GitHub shows that file when someone opens the `.github/workflow-graphs/`
-folder, next to `.github/workflows/` — close to where people look to
-understand how the repository's automation works, without cluttering the
-README for your package's users.
+`workflow-graphs.yml` writes an overview of your repository's GitHub
+Actions workflows — a table and diagrams — and keeps it up to date in
+`.github/workflow-graphs/README.md`. GitHub shows that file when someone
+opens the `.github/workflow-graphs/` folder, next to `.github/workflows/` —
+close to where people look to understand how the repository's automation
+works, without cluttering the README for your package's users.
 
-::: {.callout-note}
-## Why not inside `.github/workflows/`?
-GitHub treats every file in `.github/workflows/` as a workflow file, and a
-GitHub App may only change those with an extra *Workflows* permission —
-which would also let it change your actual workflows. A folder of its own
-needs no such permission.
-:::
-
-The diagrams are generated from the workflow files alone, with no AI
-involved: the same files always give the same diagrams.
+It is generated from the workflow files alone, with no AI involved: the
+same files always give the same overview.
 
 ## What you get
 
@@ -45,29 +37,10 @@ its file is the place to look.
   there.
 
 GitHub draws the diagrams itself ([Mermaid](https://mermaid.js.org)), so
-the README is plain text: changes show up as readable diffs.
-
-## What workflows produce
-
-What a workflow produces can't be read from its YAML reliably, so it is
-described in `config/workflow-outcomes.yml` of this repository — for all
-workflows here. Workflows that aren't listed simply get no outcome boxes.
-To describe your own workflows, put a copy of that file at the same path
-in your repository ([as for the other settings](suggestions.qmd#adjusting-the-guidance))
-and add them, e.g. `.github/workflows/deploy.yml: [commit]` or your own
-wording, `.github/workflows/deploy.yml: ["Site deployed to {environment}"]`
-— `{environment}` is filled in from the calling job's input of that name.
-Conditions under which a job runs are added automatically. A result that
-depends on the event is written as
-`{outcome: commit, only-on: push}`.
-
-## Your own text is kept
-
-The table and diagrams sit between two marker comments,
-`<!-- workflow-graphs:overview:start -->` and `…:end -->`. Only that
-block is ever replaced. The first run writes a short introduction around
-it; after that, everything outside the block is yours — add explanations
-above or below it, rewrite the introduction.
+the README is plain text: changes show up as readable diffs. How the
+overview is put together — your own text around it, where "what a workflow
+produces" comes from, and what it can't show — is on
+[How the overview is built](workflow-graphs-details.qmd).
 
 ## When it runs
 
@@ -87,20 +60,6 @@ that rule: add the [GitHub App](getting-started.qmd#github-app) as a bypass
 actor for that branch, as for `main` in the
 [release](branch-protection.qmd).
 :::
-
-## Chains between workflows
-
-To find where one workflow starts another, the called reusable workflows
-are read too, at the version you reference. Found are `workflow_run`
-triggers, and dispatches sent with `gh api …/dispatches`,
-`gh workflow run` or the common dispatch actions. A dispatch sent in
-another way — or from inside a composite action — shows no arrow. A
-called workflow in a private repository the job can't read is still shown,
-marked "not readable".
-
-Links that exist only through settings don't appear either — for example
-a branch rule that requires a check to pass before a pull request can be
-merged. The diagrams show what the workflow files say.
 
 ## Example
 

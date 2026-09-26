@@ -38,18 +38,24 @@ need is very welcome, see [Roadmap and open questions](roadmap.qmd).
 | | [Create issue](create-issue.qmd) | Opens an issue when a check fails |
 | | [Trigger release publish](trigger-release-publish.qmd) | Starts the release as a separate run |
 | Bot suggestions | [How suggestions work](suggestions.qmd) | Shared mechanics: suggestion PRs, sweeps, cleanup |
-| | [DESCRIPTION authors](authors-suggest.qmd) | Credits the contributors of a pull request in `DESCRIPTION` |
+| | [Author suggestions](authors-suggest.qmd) | Credits the contributors of a pull request in `DESCRIPTION` |
 | | [Roxygen suggestions](roxygen-suggest.qmd) | Claude reviews and rewrites roxygen2 documentation |
 | | [Test suggestions](test-suggest.qmd) | Claude reviews and writes testthat tests; only passing ones are proposed |
 | | [Claude setup](claude-setup.qmd) | Keyless Claude API access for the two workflows above |
 | | [Cleanup suggestion branch](cleanup-suggestion-branch.qmd) | Deletes bot branches once their PR is closed |
-| Maintenance | [Workflow keepalive](workflow-keepalive.qmd) | Keeps scheduled workflows from being disabled after 60 days of inactivity |
-| | [Workflow graphs](workflow-graphs.qmd) | Draws diagrams of your workflows into `.github/workflow-graphs/README.md` |
+| | [Under the hood](suggestions-internals.qmd) | How the roxygen and test suggestions work, step by step |
+| Workflow upkeep | [Workflow keepalive](workflow-keepalive.qmd) | Keeps scheduled workflows from being disabled after 60 days of inactivity |
+| | [Workflow graphs](workflow-graphs.qmd) | Writes an overview of your workflows — table and diagrams — into `.github/workflow-graphs/README.md` |
 
 ## Where to start
 
 1. [Getting started](getting-started.qmd) — branch model, secrets and the
    GitHub App most workflows rely on.
 2. [How it fits together](overview.qmd) — diagrams of what runs when.
-3. Copy the example caller of each workflow you want into
+3. [Branch protection](branch-protection.qmd) — the rules the workflows
+   are designed around.
+4. Copy the example caller of each workflow you want into
    `.github/workflows/` of your repository.
+
+Open questions and planned work are listed under
+[Roadmap and open questions](roadmap.qmd).

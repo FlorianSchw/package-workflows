@@ -15,68 +15,24 @@ test**, and proposes only what passes as a [suggestion PR](suggestions.qmd).
 - **Every function is reviewed**, whether it already has tests or not —
   the changed ones in a PR, and in a [sweep](#sweep-scope) the recently
   changed ones plus a rotating share of the rest.
-- **New tests only where they add value.** Claude names the value of each
-  test — an uncovered code path, error handling, an edge case, or a likely
-  regression — and tests without such a reason are dropped, as are copies
-  of existing tests. See [what gets proposed](suggestions.qmd#what-gets-proposed).
-  At most 10 new tests per function.
-- **Existing tests are reviewed too** — see [below](#existing-tests).
+- **New tests only where they add value** — at most 10 per function, each
+  with a stated reason, see [what gets proposed](suggestions.qmd#what-gets-proposed).
+- **Existing tests are reviewed too**: outdated ones are updated, obsolete
+  ones deleted, and ones that point to a bug in the code reported.
 - **Every test is run** with your package loaded from source before it is
-  proposed.
+  proposed. A generated test that fails is not proposed, but classified
+  and reported.
 - **No setup needed.** A package without `testthat` gets it set up in the
   same suggestion PR: `tests/testthat.R`, `testthat` in `Suggests`, and
   `Config/testthat/edition: 3` (only when the test runner is created; an
   existing suite keeps its edition).
 
 One test file per function is assumed: `tests/testthat/test-<function>.R`.
-
-The review uses a stronger Claude model than the
-[roxygen suggestions](roxygen-suggest.qmd), with extended thinking:
-deciding which tests add value, and why an existing test fails, needs more
-careful reasoning than documentation.
-
-## What Claude gets
-
-Besides the function and its test file:
-
-- **The results of the existing tests**, run before anything is changed.
-- **The history**: when the function and its test file last changed, and
-  in a PR whether the function changed without its test — with the diff.
-- **Your test support files** (`tests/testthat/setup*.R`, `helper*.R`)
-  verbatim, so the tests use your own objects and helper functions.
-- **The structure of the test data** those files create: for each table
-  its rows, columns, types and missing values, and for factors the counts
-  per level. The level counts are the only data values sent to Claude.
-
-## Test quality
-
-Claude is asked to write tests that
-
-- assert **concrete values** from the known test data (counts, levels,
-  dimensions), not just a class;
-- always assert something — no `if (...) expect_...`;
-- never swallow errors or warnings with `try()` / `tryCatch()`, but check
-  them with `expect_error()` / `expect_warning()`;
-- test each error branch once;
-- describe exactly what they check.
-
-## Existing tests {#existing-tests}
-
-Claude also decides on existing tests, and states a reason for each:
-
-| Action | Reason | When |
-|---|---|---|
-| Update | `contract_changed` | The function was changed on purpose and the test still expects the old behaviour |
-| Delete | `duplicate`, `behavior_removed`, `trivial` | The test repeats another, tests something the function no longer does, or asserts nothing meaningful |
-| Report | `possible_code_bug` | The test fails, and the code rather than the test looks wrong |
-
-Safeguards apply before anything is changed:
-
-- **Only a failing test is updated.** A passing test is never rewritten.
-- **A test is never adapted to output that may be wrong.** If the code may
-  be at fault, the test stays and is reported instead.
-- **An update must pass a real run**; otherwise the original test is kept
-  and the attempt is reported.
+How Claude decides — what it is shown, the quality rules, the safeguards
+for existing tests and how failures are classified — is on
+[How tests are reviewed](test-suggest-review.qmd). DataSHIELD client
+packages run their tests against DSLite, see
+[DataSHIELD client packages](test-suggest-datashield.qmd).
 
 ## The report
 
@@ -87,26 +43,12 @@ description then lists, grouped per test file in collapsible sections:
 - **Changes to existing tests**, each with its reason;
 - **Existing tests to look at** — reported tests and failing tests left
   unchanged;
-- in a sweep, **generated tests that failed** (see below).
+- in a sweep, **generated tests that failed**.
 
 Heading sizes and spacing can be adjusted in `config/report-style.yml`
 ([per repository](suggestions.qmd#adjusting-the-guidance)). Without a
 suggestion PR, the report is posted as a comment on your PR, or in a sweep
 as one issue.
-
-## Failing tests
-
-A generated test that fails is not proposed. Claude classifies why it
-failed, from the actual error output, and the workflow reports it:
-
-| Classification | Meaning | Reported as |
-|---|---|---|
-| `real_bug` | The test is right and found a defect | An issue |
-| `bad_test` | The test itself is wrong | A comment on your PR |
-| `env_misconfiguration` | The test setup is broken, e.g. a missing package | A comment on your PR |
-
-In a sweep there is no PR to comment on, so the last two are listed in the
-sweep PR's description instead, or in one issue if no test passed at all.
 
 ## Sweep scope {#sweep-scope}
 
@@ -116,26 +58,6 @@ month. It takes the functions whose file or test file changed within
 that each function comes up at least once every `sweep-rotation-months`
 (default 6). Set `sweep-rotation-months: 0` to review all functions in
 every sweep.
-
-## DataSHIELD client packages
-
-Client-side functions need a DataSHIELD server. With `datashield: true` and
-`datashield-type: client`, tests run against
-[DSLite](https://github.com/datashield/DSLite), an in-process server:
-
-- An **existing DSLite setup** in any `tests/testthat/setup*.R` or
-  `helper*.R` is reused, with your own connection names, symbols and
-  helpers.
-- Otherwise one is **created** with one of DSLite's bundled datasets, in
-  `tests/testthat/setup.R` — or in `setup-dslite.R` if a `setup.R`
-  without DSLite already exists, which is never touched.
-
-::: {.callout-important}
-DSLite takes the server functions from the **installed server packages**.
-List them (e.g. `dsBase`), together with `DSLite` and `testthat`, in your
-`DESCRIPTION` — for example under `Suggests` — so the workflow installs
-them. Otherwise every test fails as `env_misconfiguration`.
-:::
 
 ## Example
 

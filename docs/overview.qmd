@@ -18,7 +18,7 @@ flowchart LR
   pr(["PR: feature → dev"])
   pr --> check["R CMD check"]
   pr --> lint["Commitlint"]
-  pr --> authors["DESCRIPTION authors"]
+  pr --> authors["Author suggestions"]
   pr --> rox["Roxygen suggestions"]
   pr --> tests["Test suggestions"]
   authors --> sub["Suggestion PR into the feature branch<br/>+ link comment on your PR"]

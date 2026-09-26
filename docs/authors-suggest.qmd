@@ -1,5 +1,5 @@
 ---
-title: "DESCRIPTION authors"
+title: "Author suggestions"
 description: "Credits the contributors of a pull request in DESCRIPTION."
 aliases:
   - check-description-authors.html

@@ -105,16 +105,25 @@ the live caller used to validate changes before wider rollout.
   (not published).
 - `docs/` — Quarto site, published to GitHub Pages by `publish-docs.yml`
   (the only non-reusable workflow). One page per workflow, grouped in the
-  sidebar via `docs/_quarto.yml`. Inputs/secrets/permissions tables are
+  sidebar via `docs/_quarto.yml` (sections: Getting started, Pull request
+  checks, Release, Bot suggestions, Workflow upkeep; Roadmap last). A long
+  page gets sub-pages as a nested sidebar section whose `href` is the main
+  page: Test suggestions (`test-suggest-review.qmd`,
+  `test-suggest-datashield.qmd`), Under the hood
+  (`suggestions-internals-roxygen.qmd`, `…-tests.qmd`), Workflow graphs
+  (`workflow-graphs-details.qmd`). The main page keeps what a user needs
+  to set it up (what it does, example, inputs/secrets/permissions); the
+  background goes to sub-pages. Inputs/secrets/permissions tables are
   generated from the workflow YAML by `docs/_shortcodes/workflow.lua`
   (`wf-inputs`, `wf-secrets`, `wf-permissions`); `example` includes a file
   from `examples/` — generic caller files, `@main`. The tables follow
   workflow changes automatically; page prose, examples and
   `docs/roadmap.qmd` are updated in a batched docs pass when the user asks
   — until then, note what's needed under "Docs pending" in STILL OPEN.
-  `docs/suggestions-internals.qmd` ("Under the hood") has step diagrams
-  and a table of the R functions of the roxygen and test workflows, with
-  source links — update it when adding, renaming or removing a function
+  "Under the hood" (`docs/suggestions-internals.qmd` plus its two
+  step-by-step sub-pages) has step diagrams and tables of the R functions
+  of the roxygen and test workflows, with source links — update them when
+  adding, renaming or removing a function
   in `R/functions/shared/`, `roxygen/` or `tests/` (the links include the
   folder) or changing the order of steps. Preview with
   `quarto preview docs` (`.claude/launch.json` has a `docs` entry).

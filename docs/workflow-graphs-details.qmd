@@ -1,0 +1,56 @@
+---
+title: "How the overview is built"
+description: "Where the workflow graphs README lives, which text is yours, where outcomes come from, and what can't be shown."
+---
+
+Background to the [workflow graphs](workflow-graphs.qmd): what is
+generated, what you can adjust, and the limits of what can be read from
+workflow files.
+
+## Why a folder of its own
+
+The overview lives in `.github/workflow-graphs/README.md`, not inside
+`.github/workflows/`. GitHub treats every file in `.github/workflows/` as
+a workflow file, and a GitHub App may only change those with an extra
+*Workflows* permission — which would also let it change your actual
+workflows. A folder of its own needs no such permission. And never
+`.github/README.md`: GitHub would show that one instead of your
+repository's front page.
+
+## Your own text is kept
+
+The table and diagrams sit between two marker comments,
+`<!-- workflow-graphs:overview:start -->` and `…:end -->`. Only that
+block is ever replaced. The first run writes a short introduction around
+it; after that, everything outside the block is yours — add explanations
+above or below it, rewrite the introduction.
+
+## What workflows produce
+
+What a workflow produces can't be read from its YAML reliably, so it is
+described in `config/workflow-outcomes.yml` of this repository — for all
+workflows here. Workflows that aren't listed simply get no outcome boxes.
+To describe your own workflows, put a copy of that file at the same path
+in your repository ([as for the other settings](suggestions.qmd#adjusting-the-guidance))
+and add them, e.g. `.github/workflows/deploy.yml: [commit]` or your own
+wording, `.github/workflows/deploy.yml: ["Site deployed to {environment}"]`
+— `{environment}` is filled in from the calling job's input of that name.
+Conditions under which a job runs are added automatically. A result that
+depends on the event is written as
+`{outcome: commit, only-on: push}`.
+
+## Chains between workflows
+
+To find where one workflow starts another, the called reusable workflows
+are read too, at the version you reference. Found are `workflow_run`
+triggers, and dispatches sent with `gh api …/dispatches`,
+`gh workflow run` or the common dispatch actions. A dispatch sent in
+another way — or from inside a composite action — shows no arrow. A
+called workflow in a private repository the job can't read is still shown,
+marked "not readable".
+
+## What can't be shown
+
+Links that exist only through repository settings don't appear — for
+example a branch rule that requires a check to pass before a pull request
+can be merged. The overview shows what the workflow files say.
