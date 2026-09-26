@@ -44,20 +44,42 @@ Open points at the end.
   branch it was started on (`github.ref_name`); a manual run uses the
   branch picked in the Actions UI. On `pull_request` it never commits (the
   head may be a fork); it comments a preview instead (see below).
-- **Diagrams:**
-  - **Overview:** one lane per main event (PR into `dev`, PR into `main`,
-    PR closed, push, …), each workflow once, as a box with its `name:` and
-    the file name in small print. Further triggers and path filters as
-    small print in the box ("R/** only · also: monthly · manual").
-    Arrows between workflows only for chains (`workflow_run`,
-    `repository_dispatch`, `gh workflow run`). No jobs. A first draft with
-    one arrow per trigger→workflow was an unreadable tangle — grouping by
-    event is the fix.
-  - **Detail, one per workflow:** jobs as boxes, `needs:` as arrows
-    labelled with their condition (success / failure), called reusable
-    workflows in small print as the **full reference**
-    `owner/repo › file@ref` (the same repo name can exist in several
-    accounts), job-level `if:` conditions as notes.
+- **Diagrams** (revised 2026-09-26 after the first live README on
+  dsSupportClient: one wide overview was unreadable, GitHub cut off long
+  labels, `<small>` had no effect, and the thin caller files made every
+  detail diagram one box):
+  - **Summary table** first (`workflow_summary_table()`): workflow + file,
+    all triggers with path filters, calls (full reference), produces
+    (outcomes + "starts X"). Tables never get cut off on GitHub.
+  - **One small diagram per situation** (`workflow_situations()`,
+    `situation_diagram()`): PR into `dev`, PR closed, PR into `main`,
+    push, schedule, … — a workflow appears in each of its triggers.
+    Manual runs and `workflow_call` get no diagram (table only); a
+    dispatch/`workflow_run` situation is dropped when its workflows are
+    already shown as chain targets. Left to right: event → workflows
+    (stacked, box: name, file, path filter or schedule) → chain targets
+    (dotted) → outcome boxes (dashed, one per kind, shared).
+    ~~One overview with a lane per main event~~ (first version).
+  - **Detail, one per workflow**, top to bottom: a job calling a readable
+    reusable workflow is a frame titled with the job ID (longer titles get
+    cut off), holding a dashed note ("calls", `owner/repo`,
+    `file@ref`, condition) and the called workflow's jobs with their
+    steps (`step_names()`: named steps, unnamed actions by name, unnamed
+    scripts by their first line; unnamed checkout/setup-*/cache hidden).
+    Conditions in words where common (`describe_condition()`: "only on
+    schedule", "not for bot-suggest/ branches"), else the expression.
+  - **Labels** are wrapped in R (`mermaid_label()`, 26 characters,
+    long names broken after "/" then "-"), since GitHub's Mermaid clips
+    instead of growing a box. `*` is escaped (Mermaid and Markdown read
+    `R/**` as bold). Mermaid reserves `call` (click callbacks) — a class
+    named `call` breaks the whole diagram.
+- **Outcomes** come from `config/workflow-outcomes.yml` (user's choice,
+  2026-09-26: a description file in package-workflows): a vocabulary of
+  outcome kinds with wording, and per workflow — reusable as
+  `owner/repo/path` without ref, the repo's own as
+  `.github/workflows/<file>` — the kinds it produces. Overridable per repo
+  via `resolve_shared_path()`. Not derivable from the YAML.
+- **Keepalive jobs** stay in the diagrams (user's choice, 2026-09-26).
 - **Called workflows are read** at the referenced ref via the GitHub API —
   needed to find chains that start inside them (e.g.
   `trigger-release-publish.yml` sends `repository_dispatch`, which starts

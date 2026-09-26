@@ -35,10 +35,22 @@ workflows <- read_workflows(workflows_dir)
 message(sprintf("Read %d workflow file(s).", length(workflows)))
 
 called <- resolve_called_workflows(workflows)
+unreadable <- Filter(function(c) !isTRUE(c$readable), called)
+if (length(unreadable) > 0) {
+  # A private repository, or a temporary API problem — either way the
+  # diagrams show these calls without their contents and chains.
+  message(sprintf("::warning::Could not read %d called workflow(s): %s", length(unreadable),
+                  paste(vapply(unreadable, function(c) c$ref$label, character(1)), collapse = ", ")))
+}
 chains <- workflow_chains(workflows, called)
 message(sprintf("%d called workflow(s), %d chain(s) between workflows.", length(called), length(chains)))
 
-blocks <- workflow_graph_blocks(workflows, called, chains)
+# What each workflow produces can't be read from the YAML — it's described
+# in config/workflow-outcomes.yml (a caller's own copy wins).
+outcomes_path <- resolve_shared_path("config/workflow-outcomes.yml")
+outcomes_config <- if (file.exists(outcomes_path)) yaml::read_yaml(outcomes_path) else list()
+
+blocks <- workflow_graph_blocks(workflows, called, chains, outcomes_config)
 current <- if (file.exists(readme_path)) readLines(readme_path, warn = FALSE) else NULL
 
 if (nzchar(pr_number)) {

@@ -1,0 +1,36 @@
+# What workflows produce, for the workflow-graphs diagrams and table
+# (.github/workflow-graphs/README.md). This can't be read from the YAML
+# reliably, so it is described here. A repository can override this file
+# (same path in its own repository) to describe its own workflows — start
+# from a copy, since yours replaces this one.
+#
+# outcomes:  the wording of each kind of result.
+# workflows: per workflow, the kinds of result it produces — a reusable
+#            workflow as "<owner>/<repo>/<path>" (without @ref), a workflow
+#            of the repository itself as ".github/workflows/<file>".
+#            Workflows not listed get no outcome boxes.
+
+outcomes:
+  check: Check result on the PR
+  suggestion-pr: Suggestion PR
+  pr-comment: Comment on the PR
+  issue: Issue
+  merge: PR merged
+  release: Version commit, tag and draft release
+  commit: Commit on the branch
+  branch-deleted: Bot branch deleted
+  keepalive: Scheduled workflows kept enabled
+
+workflows:
+  FlorianSchw/package-workflows/.github/workflows/r-cmd-check.yml: [check]
+  FlorianSchw/package-workflows/.github/workflows/commitlint.yml: [check]
+  FlorianSchw/package-workflows/.github/workflows/require-head-branch.yml: [check]
+  FlorianSchw/package-workflows/.github/workflows/authors-suggest.yml: [suggestion-pr, pr-comment]
+  FlorianSchw/package-workflows/.github/workflows/roxygen-suggest.yml: [suggestion-pr, pr-comment]
+  FlorianSchw/package-workflows/.github/workflows/test-suggest.yml: [suggestion-pr, pr-comment, issue]
+  FlorianSchw/package-workflows/.github/workflows/cleanup-suggestion-branch.yml: [branch-deleted]
+  FlorianSchw/package-workflows/.github/workflows/merge-pull-request.yml: [merge]
+  FlorianSchw/package-workflows/.github/workflows/create-issue.yml: [issue]
+  FlorianSchw/package-workflows/.github/workflows/package-release.yml: [release]
+  FlorianSchw/package-workflows/.github/workflows/workflow-keepalive.yml: [keepalive]
+  FlorianSchw/package-workflows/.github/workflows/workflow-graphs.yml: [commit, pr-comment]

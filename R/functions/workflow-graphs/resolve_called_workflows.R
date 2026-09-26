@@ -4,8 +4,10 @@
 # read once; a reference already seen is not followed again (loop guard),
 # and nothing deeper than `max_depth` is read. Composite actions used in
 # steps are not opened — a dispatch sent from inside one is not found.
-# Returns a named list, reference key -> list(ref, readable, dispatches),
-# where `dispatches` includes everything sent further down.
+# Returns a named list, reference key -> list(ref, readable, dispatches,
+# workflow), where `dispatches` includes everything sent further down and
+# `workflow` is the parsed called file (for the detail diagrams; NULL if
+# not readable).
 resolve_called_workflows <- function(workflows, max_depth = 5) {
   resolved <- list()
 
@@ -24,7 +26,7 @@ resolve_called_workflows <- function(workflows, max_depth = 5) {
       inner <- parse_workflow_ref(job$uses)
       if (!is.null(inner)) dispatches <- c(dispatches, visit(inner, depth + 1))
     }
-    resolved[[ref$key]] <<- list(ref = ref, readable = TRUE, dispatches = unique(dispatches))
+    resolved[[ref$key]] <<- list(ref = ref, readable = TRUE, dispatches = unique(dispatches), workflow = wf)
     resolved[[ref$key]]$dispatches
   }
 

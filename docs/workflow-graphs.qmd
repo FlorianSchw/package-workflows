@@ -23,16 +23,31 @@ involved: the same files always give the same diagrams.
 
 ## What you get
 
-- **An overview**: your workflows grouped by what starts them (a pull
-  request into `dev`, a pull request into `main`, a schedule, …). Each box
-  shows the workflow's name, its file, path filters and further triggers.
-  Dotted arrows show where one workflow starts another.
+- **A table** of all workflows: what starts them, which reusable
+  workflows they call (with owner, repository, file and version), and
+  what they produce — the quickest way in.
+- **One small diagram per situation** — a pull request into `dev`, a pull
+  request into `main`, a closed pull request, a schedule, a push: the
+  workflows it starts, the workflows those start in turn (dotted arrows),
+  and what comes out of it — a suggestion PR, a comment, an issue, a
+  release. A workflow with several triggers appears in each.
 - **One diagram per workflow**: its jobs in the order they run, with the
-  result each waits for (success, failure), the reusable workflow a job
-  calls — with owner, repository, file and version — and conditions.
+  result each waits for (success, failure). A job that calls a reusable
+  workflow is opened up to show that workflow's jobs and their steps, so
+  you see what actually happens. Conditions are written in words where
+  possible, e.g. "only on schedule".
 
 GitHub draws the diagrams itself ([Mermaid](https://mermaid.js.org)), so
 the README is plain text: changes show up as readable diffs.
+
+## What workflows produce
+
+What a workflow produces can't be read from its YAML reliably, so it is
+described in `config/workflow-outcomes.yml` of this repository — for all
+workflows here. Workflows that aren't listed simply get no outcome boxes.
+To describe your own workflows, put a copy of that file at the same path
+in your repository ([as for the other settings](suggestions.qmd#adjusting-the-guidance))
+and add them, e.g. `.github/workflows/deploy.yml: [commit]`.
 
 ## Your own text is kept
 
