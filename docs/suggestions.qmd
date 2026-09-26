@@ -4,7 +4,7 @@ description: "Shared mechanics of the bot suggestion workflows."
 ---
 
 Three workflows propose changes to your package instead of just checking
-it: [DESCRIPTION authors](check-description-authors.qmd),
+it: [DESCRIPTION authors](authors-suggest.qmd),
 [roxygen suggestions](roxygen-suggest.qmd) and
 [test suggestions](test-suggest.qmd). They share how
 their changes reach you.

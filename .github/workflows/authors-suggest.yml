@@ -1,4 +1,4 @@
-name: Check DESCRIPTION Authors
+name: DESCRIPTION Author Suggestions
 
 on:
   workflow_call:
@@ -6,18 +6,15 @@ on:
       app-client-id:
         description: 'GitHub App Client ID (Iv23li...); its token lets bot PRs trigger checks (optional).'
         required: false
-      app-id:
-        description: 'Deprecated: numeric GitHub App ID, used only without app-client-id.'
-        required: false
       app-private-key:
-        description: 'Private key of that GitHub App (required with app-client-id or app-id).'
+        description: 'Private key of that GitHub App (required with app-client-id).'
         required: false
       commit-push-pat:
         description: 'PAT with contents write, fallback if no App is set (optional).'
         required: false
 
 jobs:
-  check-authors:
+  suggest-authors:
     runs-on: ubuntu-latest
     permissions:
       contents: write
@@ -49,7 +46,7 @@ jobs:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           BASE_REF: ${{ github.event.pull_request.base.ref }}
           PR_NUMBER: ${{ github.event.pull_request.number }}
-        run: Rscript .shared-workflows/R/check_description_authors.R
+        run: Rscript .shared-workflows/R/suggest_authors.R
 
       - name: Resolve push token
         id: push_token
@@ -57,7 +54,6 @@ jobs:
         uses: FlorianSchw/package-workflows/.github/actions/resolve-push-token@main
         with:
           client-id: ${{ secrets.app-client-id }}
-          app-id: ${{ secrets.app-id }}
           app-private-key: ${{ secrets.app-private-key }}
 
       - name: Commit DESCRIPTION update

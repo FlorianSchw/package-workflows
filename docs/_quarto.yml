@@ -41,7 +41,7 @@ website:
       - section: "Bot suggestions"
         contents:
           - suggestions.qmd
-          - check-description-authors.qmd
+          - authors-suggest.qmd
           - roxygen-suggest.qmd
           - test-suggest.qmd
           - claude-setup.qmd

@@ -86,13 +86,6 @@ Instead of the App, you can pass a personal access token as the
 *Read and write* on the repository). Pull requests opened with it do
 trigger workflows. The token order is App → PAT → `GITHUB_TOKEN`.
 
-::: {.callout-note}
-## Older callers: `app-id`
-The numeric App ID, passed as `app-id`, still works but is deprecated by
-GitHub and shows a warning in every run. Switch to `app-client-id`; the
-`app-id` secret will be removed in a later version.
-:::
-
 The App is still recommended: a PAT acts as its owner, so bot commits and
 pull requests appear under their name, it stops working when they leave or
 the token expires, and it can do everything its owner can.

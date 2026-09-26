@@ -59,7 +59,7 @@ ready-made multi-study login to the Opal demo server for their examples.
 
 ## Example
 
-{{< example docs-suggest.yml >}}
+{{< example roxygen-suggest.yml >}}
 
 Claude is called without a stored API key; the three `anthropic-*` secrets
 come from the [Claude setup](claude-setup.qmd).

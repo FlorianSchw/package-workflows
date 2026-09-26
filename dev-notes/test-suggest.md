@@ -184,7 +184,7 @@ pushes to its own `bot-suggest/<kind>/…` branch, never the PR branch.
 - **Real coverage data.** Every function is now reviewed and Claude decides
   whether tests add value (see [suggestion-thresholds.md](suggestion-thresholds.md)).
   Per-function coverage (`covr::function_coverage()`) captured by
-  `R-CMD-Check.yml` and handed over, instead of a second install + test run,
+  `r-cmd-check.yml` and handed over, instead of a second install + test run,
   would still help: as the coverage gain per generated test, and as a hint
   to Claude about uncovered lines.
   Handoff mechanism not designed yet.

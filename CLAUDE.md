@@ -21,7 +21,7 @@ the live caller used to validate changes before wider rollout.
 ## LAYOUT
 
 - `.github/workflows/` — reusable workflows:
-  - `R-CMD-Check.yml` — R CMD check matrix + optional codecov upload.
+  - `r-cmd-check.yml` — R CMD check matrix + optional codecov upload.
     Inputs: `os-list`, `r-version-list` (JSON array strings; default
     release + oldrel-1/2), `run-codecov`, `extra-apt-packages`,
     `extra-r-packages` (plain names, `any::` added internally).
@@ -43,7 +43,7 @@ the live caller used to validate changes before wider rollout.
     `.github/pr-issue-template.md`.
   - `commitlint.yml` — conventional-commit lint using
     `config/commitlint-config.mjs`.
-  - `check-description-authors.yml` — resolves each PR commit's author to
+  - `authors-suggest.yml` — resolves each PR commit's author to
     their GitHub profile name and credits them in `DESCRIPTION` via a
     `bot-suggest/authors` sub-PR: `aut` if any of their commits changed
     `R/*.R`, else `ctb`; an existing `ctb` is upgraded to `aut`, nobody is
@@ -74,9 +74,9 @@ the live caller used to validate changes before wider rollout.
   now live in a separate private repo.
 - `.github/actions/` — composite actions: `anthropic-token` (suggestion
   workflows), `resolve-push-token` (also `package-release.yml`),
-  `commit-updated-files` (also `check-description-authors.yml`).
+  `commit-updated-files` (also `authors-suggest.yml`).
 - `R/` — entry scripts `suggest_roxygen.R`, `suggest_tests.R`,
-  `check_description_authors.R` (env/config wiring + main loop only) and
+  `suggest_authors.R` (env/config wiring + main loop only) and
   `R/functions/` (all logic, one function per file, loaded in bulk via
   `purrr::walk()`). No R inlined in workflow YAML.
 - `config/`, `prompts/` — guidance, prompt templates and
@@ -232,18 +232,23 @@ and `CONTRIBUTING.md`); no PRs until a branch model and rules exist.
   Still open: watch cost per run on the Cost page (tests now review every
   selected function with Opus). Forced tool calls with thinking work on the
   Claude API; they would 400 on Opus 5.5 / Fable 5.1 (use `auto` then).
-- Shared caching for `R-CMD-Check.yml` — flagged, not started.
-- **Rename the workflows before rolling out to more repos:** names are
-  mixed and partly outdated. ~~`test-coverage-suggest`~~ already renamed
-  to `test-suggest.yml` (caller and federation rule updated on
-  dsSupportClient). Proposal (not decided): prefixes by group — `check-*`
+- Shared caching for `r-cmd-check.yml` — flagged, not started.
+- ~~**Rename the workflows before rolling out to more repos**~~ Done
+  (2026-09-26): `test-coverage-suggest` → `test-suggest`, `R-CMD-Check` →
+  `r-cmd-check` (casing), `check-description-authors` → `authors-suggest`
+  (it proposes, like its siblings; entry script `suggest_authors.R`, docs
+  page `authors-suggest.qmd` with a redirect), example `docs-suggest.yml`
+  → `roxygen-suggest.yml`. Everything else kept — clear enough, and every
+  rename breaks callers. `<thing>-suggest` kept for roxygen/tests so the
+  federation rules' `job_workflow_ref` claims stay valid. ~~Proposal (not
+  decided): prefixes by group — `check-*`
   (`check-r-package`, `check-commit-messages`, `check-pr-source-branch`),
   `release-*` (`release-package`, `release-trigger`, `release-merge-pr`,
   `release-failure-issue`), `suggest-*` (`suggest-roxygen-docs`,
   `suggest-tests`, `suggest-authors`, `suggest-cleanup-branches`),
   `maintain-keepalive`. Breaking: every caller's `uses:` path and the
   federation rules' `job_workflow_ref` claims change; docs/examples too.
-  Combine with removing `app-id` (both need caller changes).
+  Combine with removing `app-id` (both need caller changes).~~
 - **Policy file for the bot's rules** (`config/suggestion-policy.yml`):
   today reasons, action↔reason mapping, the `aut`/`ctb` rule, name
   particles and report routing live partly only in R code. Move the
@@ -266,12 +271,11 @@ and `CONTRIBUTING.md`); no PRs until a branch model and rules exist.
   back to `app-id` in a separate step (passing `app-id` at all triggers
   the deprecation warning); the four workflows using it accept an
   `app-client-id` secret. Confirmed in CI on dsSupportClient (all four
-  callers switched to `APP_CLIENT_ID`; no deprecation warning). Still
-  open: remove `app-id` together with the workflow renaming (both need
-  caller changes).
+  callers switched to `APP_CLIENT_ID`; no deprecation warning). `app-id`
+  removed on 2026-09-26, together with the renaming.
 - **Ubuntu 26 on `ubuntu-latest` from 2026-10-19:** P3M binaries
   (`use-public-rspm`) may lag for a new Ubuntu → source builds, slow or
-  failing. ~~Plan: pin all workflows (and R-CMD-Check's `os-list` default)
+  failing. ~~Plan: pin all workflows (and r-cmd-check's `os-list` default)
   to `ubuntu-24.04` before then; move to 26.04 deliberately once P3M
   serves binaries for it, tested on dsSupportClient first.~~ Decided
   (2026-09-26): no pin, stay on `ubuntu-latest`. After 2026-10-19, if

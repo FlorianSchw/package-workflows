@@ -1,9 +1,11 @@
 ---
 title: "DESCRIPTION authors"
 description: "Credits the contributors of a pull request in DESCRIPTION."
+aliases:
+  - check-description-authors.html
 ---
 
-`check-description-authors.yml` looks at every commit of the pull request
+`authors-suggest.yml` looks at every commit of the pull request
 and checks whether its author is credited in `DESCRIPTION`. What's missing
 is proposed as a [suggestion PR](suggestions.qmd) into your branch, titled
 "Update contributors in DESCRIPTION".
@@ -56,12 +58,12 @@ hand-formatted field is reformatted once, on the first change.
 
 ## Example
 
-{{< example check-description-authors.yml >}}
+{{< example authors-suggest.yml >}}
 
 ## Secrets
 
-{{< wf-secrets check-description-authors.yml >}}
+{{< wf-secrets authors-suggest.yml >}}
 
 ## Permissions
 
-{{< wf-permissions check-description-authors.yml >}}
+{{< wf-permissions authors-suggest.yml >}}
