@@ -1,8 +1,7 @@
 # One trigger (event + its settings from the workflow's `on:`) in words:
 # "PR into dev", "PR closed", "Push to main", "Manual run",
 # "Dispatch: release-publish", "Monthly (day 1)", … Used for the
-# situations of the overview, the table and the start box of each detail
-# diagram. Path filters are
+# start boxes of the situation diagrams and the table. Path filters are
 # not part of it, see event_filter().
 describe_trigger <- function(event, settings) {
   list_of <- function(x) paste(unlist(x), collapse = ", ")

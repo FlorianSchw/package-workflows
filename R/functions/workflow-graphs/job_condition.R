@@ -1,8 +1,8 @@
-# A job's `if:` split for the detail diagram: a condition that only checks
-# the result of one job it needs (`needs.check.result == 'success'`, or the
-# status functions success() / failure() / always()) becomes the label of
-# the arrow from that job — `edge_label`; anything else is shown in the
-# job's box — `note`, in words where possible (describe_condition()).
+# A job's `if:` split in two, for job_run_condition(): a condition that
+# only checks the result of a job it needs (`needs.check.result ==
+# 'success'`, or the status functions success() / failure() / always()) —
+# `edge_label`, the result; anything else — `note`, in words where
+# possible (describe_condition()).
 job_condition <- function(job) {
   cond <- if (is.null(job[["if"]])) "" else trimws(gsub("^\\$\\{\\{\\s*|\\s*\\}\\}$", "", as.character(job[["if"]])))
   if (!nzchar(cond)) return(list(edge_label = NA, note = NA))

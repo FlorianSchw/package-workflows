@@ -1,4 +1,4 @@
-# The order of the workflows in the table and the detail sections — the
+# The order of the workflows in the table — the
 # way they come into play rather than alphabetical: situation by situation
 # (workflow_situations(): PR into dev, PR closed, PR into main, …), each
 # workflow followed by the workflows it starts (`chains`), then anything

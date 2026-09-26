@@ -1,16 +1,15 @@
 #!/usr/bin/env Rscript
-# Draws Mermaid diagrams of the repository's GitHub Actions workflows into
-# .github/workflow-graphs/README.md: an overview (workflows grouped by trigger,
-# with the chains between them) and one detail diagram per workflow (its
-# jobs in `needs:` order). Deterministic — only the YAML is read, including
-# the reusable workflows it calls (resolve_called_workflows()), to find
-# the chains that start inside them.
+# Writes a high-level overview of the repository's GitHub Actions workflows
+# into .github/workflow-graphs/README.md: a table of all workflows and one
+# Mermaid diagram per situation (what runs on which event, what those
+# workflows start and produce). Deterministic — only the YAML is read,
+# including the reusable workflows it calls (resolve_called_workflows()),
+# to find the chains that start inside them and their conditions.
 #
 # Only the marked blocks of the README are replaced (update_marked_blocks());
 # text around them is never touched; the calling workflow commits the
-# result. In a pull request (PR_NUMBER set) nothing is written: the
-# diagrams the PR changes are posted as a preview comment instead, kept up
-# to date on further pushes (upsert_pr_comment()).
+# result. Started by a pull request (PR_NUMBER set), it can't commit: it
+# only says so in one short comment (comment_once()) and stops.
 #
 # This file only wires environment inputs together; all logic lives in
 # R/functions/shared/ and R/functions/workflow-graphs/ — one function per
@@ -30,6 +29,15 @@ workflows_dir <- Sys.getenv("WORKFLOWS_DIR", ".github/workflows")
 # Not in .github/workflows/: GitHub treats every file there as a workflow,
 # and pushing one needs the App's Workflows permission.
 readme_path   <- Sys.getenv("README_PATH", ".github/workflow-graphs/README.md")
+
+if (nzchar(pr_number)) {
+  comment_once(pr_number, paste(
+    "**Workflow graphs** can't commit on a pull request, so the diagrams weren't updated here.",
+    "Run it on a push to the branch where merges land (e.g. `dev`) or by hand instead —",
+    "see the [example caller](https://github.com/FlorianSchw/package-workflows/blob/main/examples/workflow-graphs.yml)."
+  ), "workflow graphs on a pull request")
+  quit(save = "no")
+}
 
 workflows <- read_workflows(workflows_dir)
 message(sprintf("Read %d workflow file(s).", length(workflows)))
@@ -52,15 +60,6 @@ outcomes_config <- if (file.exists(outcomes_path)) yaml::read_yaml(outcomes_path
 
 blocks <- workflow_graph_blocks(workflows, called, chains, outcomes_config)
 current <- if (file.exists(readme_path)) readLines(readme_path, warn = FALSE) else NULL
-
-if (nzchar(pr_number)) {
-  marker <- "<!-- workflow-graphs:preview -->"
-  preview <- format_workflow_graphs_preview(blocks, read_marked_blocks(current), marker)
-  message(if (is.null(preview)) "This PR doesn't change the diagrams." else "Posting the diagram preview.")
-  upsert_pr_comment(pr_number, preview, marker, "This pull request no longer changes the workflow diagrams.")
-  quit(save = "no")
-}
-
 updated <- update_marked_blocks(current, blocks, workflow_readme_starter)
 if (identical(current, updated)) {
   message("README is up to date.")

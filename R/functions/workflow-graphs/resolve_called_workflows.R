@@ -6,7 +6,7 @@
 # steps are not opened — a dispatch sent from inside one is not found.
 # Returns a named list, reference key -> list(ref, readable, dispatches,
 # workflow), where `dispatches` includes everything sent further down and
-# `workflow` is the parsed called file (for the detail diagrams; NULL if
+# `workflow` is the parsed called file (for outcomes and conditions; NULL if
 # not readable).
 resolve_called_workflows <- function(workflows, max_depth = 5) {
   resolved <- list()

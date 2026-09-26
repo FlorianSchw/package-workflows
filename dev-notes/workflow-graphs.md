@@ -43,104 +43,91 @@ Open points at the end.
   `workflow_dispatch`. No `branch` input: the workflow commits to the
   branch it was started on (`github.ref_name`); a manual run uses the
   branch picked in the Actions UI. On `pull_request` it never commits (the
-  head may be a fork); it comments a preview instead (see below).
-- **Diagrams** (revised 2026-09-26 after the first live README on
-  dsSupportClient: one wide overview was unreadable, GitHub cut off long
-  labels, `<small>` had no effect, and the thin caller files made every
-  detail diagram one box):
-  - **Summary table** first (`workflow_summary_table()`): workflow + file,
-    all triggers with path filters, calls (full reference), produces
-    (outcomes + "starts X"). Tables never get cut off on GitHub.
-  - **One small diagram per situation** (`workflow_situations()`,
-    `situation_diagram()`): PR into `dev`, PR closed, PR into `main`,
-    push, schedule, … — a workflow appears in each of its triggers.
-    Manual runs and `workflow_call` get no diagram (table only); a
-    dispatch/`workflow_run` situation is dropped when its workflows are
-    already shown as chain targets. Left to right: event → workflows
-    (stacked, box: name, file, path filter or schedule) → chain targets
-    (dotted) → outcome boxes (dashed, one per kind, shared).
-    ~~One overview with a lane per main event~~ (first version).
-  - **Detail, one per workflow**, top to bottom: a job calling a readable
-    reusable workflow is a frame titled with the job ID (longer titles get
-    cut off), holding a dashed note ("calls", `owner/repo`,
-    `file@ref`, condition) and the called workflow's jobs with their
-    steps (`step_names()`: named steps, unnamed actions by name, unnamed
-    scripts by their first line; unnamed checkout/setup-*/cache hidden).
-    Conditions in words where common (`describe_condition()`: "only on
-    schedule", "not for bot-suggest/ branches"), else the expression.
-  - **Labels** are wrapped in R (`mermaid_label()`, 26 characters,
-    long names broken after "/" then "-"), since GitHub's Mermaid clips
-    instead of growing a box. `*` is escaped (Mermaid and Markdown read
-    `R/**` as bold). Mermaid reserves `call` (click callbacks) — a class
-    named `call` breaks the whole diagram.
+  head may be a fork); it only leaves a short note (see below).
+- **Content: high level only** (user's decision, 2026-09-26, third
+  round): a summary table and one diagram per situation. Specifics are in
+  the workflow files. History: v1 one wide overview with a lane per main
+  event (unreadable, GitHub clipped labels, `<small>` had no effect);
+  v2 added per-workflow detail diagrams opening up the called workflows'
+  jobs and steps — dropped in v3 as too specific, and the table already
+  says what a workflow calls.
+  - **Summary table** (`workflow_summary_table()`, rows in
+    `workflow_order()`: situation by situation, chain targets right after
+    their source): *Name*, *File* (the only place the file is named),
+    *Runs on* (triggers with all path filters — no "+3"), *Calls* (full
+    reference `owner/repo › file@ref`), *Produces* (outcome — *condition*,
+    plus "starts **X**"). A cell with several entries uses "• " bullets.
+  - **What runs when** — heading plus one sentence, then per situation
+    (`workflow_situations()`) a `####` heading in words
+    (`situation_title()`: "When a pull request into dev is opened or
+    updated") and a diagram (`situation_diagram()`): event (short label)
+    → workflows (box: name, path filter or schedule, and a condition
+    shared by all its outcomes) → chain targets (dotted, followed down) →
+    outcome boxes (dashed, shared per wording). Manual runs and
+    `workflow_call` get no diagram; a dispatch/`workflow_run` situation is
+    dropped when its workflows are already chain targets.
+  - **Conditions fitted per situation** (`situation_outcomes()`): an
+    outcome "only on <other event>" is left out ("Scheduled workflows kept
+    enabled" not in the PR diagram), on its own event the condition is
+    dropped; a condition shared by all remaining outcomes of a workflow
+    goes once into its box, only differing ones on the arrows ("if check
+    succeeds" / "if check fails"). This removed the overlapping labels of
+    v2 (several identical "skipped for PRs from bot-suggest/ branches"
+    labels on converging arrows); checked by measuring label/box
+    rectangles in the rendered SVG — no overlaps left.
+  - **Spacing:** `%%{init: {"flowchart": {"rankSpacing": 140,
+    "nodeSpacing": 45}}}%%` so labels fit between the columns; condition
+    labels wrapped at 20 characters.
+  - **Labels** are wrapped in R (`mermaid_label()`, 26 characters, long
+    names broken after "/" then "-"), since GitHub's Mermaid clips instead
+    of growing a box. `*` is escaped (Mermaid and Markdown read `R/**` as
+    bold). Mermaid reserves `call` (click callbacks) — a class named
+    `call` breaks the whole diagram.
+  - Conditions in words where common (`describe_condition()`: "only on
+    schedule", "skipped for PRs from bot-suggest/ branches", "only if the
+    PR comes from dev"), else the full expression — never truncated.
 - **Outcomes** come from `config/workflow-outcomes.yml` (user's choice,
-  2026-09-26: a description file in package-workflows): a vocabulary of
-  outcome kinds with wording, and per workflow — reusable as
+  2026-09-26): short names with wording, and per workflow — reusable as
   `owner/repo/path` without ref, the repo's own as
-  `.github/workflows/<file>` — the kinds it produces. Overridable per repo
-  via `resolve_shared_path()`. Not derivable from the YAML.
-  Second round of user feedback (2026-09-26): entries may be free
-  wording with `{input}` placeholders filled from the calling job's
-  `with:` (else the input default), so checks say what they check
-  ("Check: PR comes from dev", "Check: commit messages follow
-  Conventional Commits") instead of a vague "Check result on the PR".
-  Outcomes are per job and carry the job's run condition
-  (`job_run_condition()`: the caller job's `if:`, "if check fails" for
-  needs-results, plus a condition shared by all jobs of the called
-  workflow) — in the table as "text — *condition*", in the situation
-  diagrams on the arrow.
-- **Same round:** table split into *Name* and *File* (the file appears
-  only there; situation diagrams and chain targets show the name only);
-  all paths listed (no "+3"); conditions never truncated (the cleanup
-  condition was cut at 60 characters); detail frames no longer repeat
-  the called workflow (it's in the table) and a single-job called
-  workflow doesn't repeat its job name; table rows and details ordered by
-  `workflow_order()` (situations, chain targets right after their
-  source) instead of alphabetically — an existing README is reordered on
-  the next run (see "Marked blocks").
-- **Keepalive jobs** stay in the diagrams (user's choice, 2026-09-26).
+  `.github/workflows/<file>` — what it produces: a short name, own wording
+  with `{input}` placeholders (filled from the calling job's `with:`,
+  else the input default: "Check: PR comes from {allowed-head}" → "…
+  dev"), or `{outcome, only-on: <event>}` for results that depend on the
+  event (workflow-graphs commits only on push, comments only on PRs;
+  suggestion workflows comment only on PRs, not in sweeps). Outcomes are
+  per job and carry the job's run condition (`job_run_condition()`: the
+  caller job's `if:`, "if check fails" for needs-results, plus a condition
+  shared by all jobs of the called workflow). Overridable per repo via
+  `resolve_shared_path()`. Not derivable from the YAML.
+- **Keepalive jobs** stay (user's choice, 2026-09-26) — as an outcome in
+  the table and the schedule diagram.
 - **Called workflows are read** at the referenced ref via the GitHub API —
   needed to find chains that start inside them (e.g.
   `trigger-release-publish.yml` sends `repository_dispatch`, which starts
-  the caller's `release-publish.yml`). Reading is for chain detection
-  only: diagrams still show each called workflow as one box.
+  the caller's `release-publish.yml`) and conditions shared by their jobs.
   - **Depth:** workflow calls are followed all the way down (loop guard,
     depth cap). A "level" is a workflow calling a reusable workflow;
     composite actions used in a job's steps are not a level and are **not
     opened** — a dispatch sent from inside an action is missed
-    (documented gap). In package-workflows nothing nests today (no
-    reusable workflow calls another; the only dispatch is a plain `run:`
-    step in `trigger-release-publish.yml`), so one level would suffice
-    there; deeper is for other repos.
+    (documented gap). In package-workflows nothing nests today.
   - **Access:** public repos work with the default token; private ones in
-    other accounts need a token with read access. An unreadable file
-    still gets its box, with a "(not readable)" note.
+    other accounts need a token with read access. An unreadable call is
+    marked "not readable" in the table, and the run logs a warning
+    (also for a temporary API problem — seen locally when the
+    unauthenticated rate limit ran out).
 - **Chain detection is partly heuristic:** `workflow_run` is explicit (the
   listener names the workflow). Dispatches are sent from steps, so only
   known forms are recognised (`gh api …/dispatches`, `gh workflow run`,
   common dispatch actions); an unrecognised form gives no arrow, never a
   wrong one.
-- **Marked blocks:** the generator only replaces content between its
-  markers, found by ID, not position:
-  `<!-- workflow-graphs:overview:start -->` … `:end -->` and
-  `<!-- workflow-graphs:detail:<file>:start -->` … `:end -->`.
-  - No README yet: created with a short starter text (written only this
-    once), the overview block, and a heading + block per workflow.
-  - Later runs: only block contents change. Each detail block contains
-    its own `###` heading (workflow name, file in small print), so a
-    renamed workflow's heading follows; the `##` section headings of the
-    starter text are the user's.
-  - ~~Block order stays as the user left them~~ — revised 2026-09-26
-    (user: a new order must not require deleting the README): detail
-    blocks always follow `workflow_order()`. Text below a detail block,
-    up to the next detail block or a `#`/`##` heading, belongs to that
-    workflow and moves with it; text above the first detail block and
-    sections from such a heading on stay put. Manual reordering is given
-    up (the generator would undo it anyway).
-  - New workflow file: block (with heading) inserted in its place in the
-    order.
-  - Deleted workflow: its block is removed; text written below it is kept,
-    after the last workflow.
+- **Marked block:** the generator only replaces the content between
+  `<!-- workflow-graphs:overview:start -->` and `…:end -->`, found by ID.
+  No README yet: created with a short starter text (written only once)
+  and the block. Blocks no longer generated are removed (the
+  `detail:<file>` blocks of v2 disappear on the next run; the user's
+  `## Workflows` heading from the v2 starter stays until deleted by hand).
+  ~~Detail blocks follow `workflow_order()`, text below one moves with
+  it~~ (v2, obsolete with the detail blocks).
 - **Name:** `workflow-graphs.yml` (decided 2026-09-26; not a suggestion,
   so not `*-suggest`).
 - **Commit step:** a new shared composite action
@@ -157,11 +144,14 @@ Open points at the end.
   specific to suggestion PRs (new branch, per-file commits, force-push);
   splitting it would only share the push line and add more `@main`
   references (see the versioning item in CLAUDE.md).
-- **On `pull_request`:** no commit; a comment with a preview of the
-  diagrams as they'll look after the merge (GitHub renders Mermaid in
-  comments), noting that nothing is committed on PRs — also makes a caller
-  wired to `pull_request` only obvious. Updated in place on further pushes.
-  Caller needs `pull-requests: write`.
+- **On `pull_request`:** no commit, and ~~a comment previewing the
+  diagrams after the merge~~ (dropped 2026-09-26, user's choice) only
+  one short comment (`comment_once()`, so not repeated on further pushes):
+  a commit can't be placed on a pull request, run it on push or by hand
+  instead, with a link to the example caller. The script stops right
+  there, before reading any workflow. The example caller has no
+  `pull_request` trigger, so the comment only appears when a caller is
+  wired up that way. Caller needs `pull-requests: write` for it.
 
 ## Caller consequences
 

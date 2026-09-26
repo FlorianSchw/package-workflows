@@ -71,12 +71,15 @@ the live caller used to validate changes before wider rollout.
     as a job (`if: github.event_name == 'schedule'`) to each scheduled
     workflow.
   - `workflow-graphs.yml` — Mermaid diagrams of the caller's workflows in
-    `.github/workflow-graphs/README.md` (summary table, one diagram per
-    situation, one per workflow), deterministic from the YAML, reading
-    called reusable workflows to find chains and open them up; what
-    workflows produce comes from `config/workflow-outcomes.yml`. Only marked blocks are replaced. On push /
-    manual run: committed directly via `commit-and-push`; on a PR: a
-    preview comment (`upsert_pr_comment()`), nothing committed. Entry
+    `.github/workflow-graphs/README.md` — high level only: a summary
+    table and one diagram per situation (what runs when, what it
+    produces, under which condition). Deterministic from the YAML,
+    reading called reusable workflows for chains and conditions; what
+    workflows produce comes from `config/workflow-outcomes.yml`. Only the
+    marked block is replaced. On push /
+    manual run: committed directly via `commit-and-push`; on a PR:
+    nothing committed, one short comment that it should run on push
+    instead (`comment_once()`); the example caller has no PR trigger. Entry
     script `R/workflow_graphs.R`; design in
     [dev-notes/workflow-graphs.md](dev-notes/workflow-graphs.md).
 - Branch-protection rulesets (formerly `rulesets/` + `apply-ruleset.yml`)
@@ -346,17 +349,18 @@ and `CONTRIBUTING.md`); no PRs until a branch model and rules exist.
     README up to date — scope to be clarified.
   - **Workflow graphs** (new reusable workflow, built 2026-09-26): tested
     locally against dsSupportClient's workflow files (block handling,
-    idempotency, chain detection, PR preview text). First CI run on
+    idempotency, chain detection). First CI run on
     dsSupportClient's `dev` generated the README, but the push to
     `.github/workflows/README.md` was rejected (App lacks the Workflows
     permission, which every file in that folder needs) → moved to
     `.github/workflow-graphs/README.md`; the rerun committed it on `dev`.
-    User found it chaotic with text missing → layout revised (summary
-    table, one diagram per situation, outcome boxes from
-    `config/workflow-outcomes.yml`, called workflows opened up in the
-    details, labels wrapped in R); rendered locally, not yet live. Not yet
-    verified: the PR preview comment in real CI. More layout feedback
-    expected. Design and open points in
+    Three rounds of user feedback on the live README (2026-09-26): now a
+    summary table (name/file, bullets) and one diagram per situation with
+    outcomes and conditions fitted per situation; the per-workflow detail
+    section was dropped (too specific — the files are the place for
+    that). The PR diagram preview was dropped for a one-line note (user's
+    choice). Not yet verified in CI: that note. Further layout feedback
+    possible. Design and open points in
     [dev-notes/workflow-graphs.md](dev-notes/workflow-graphs.md).
 - ~~Reusable workflow keepalive: GitHub disables scheduled workflows after
   60 days without repository activity. Callers with cron jobs (monthly
