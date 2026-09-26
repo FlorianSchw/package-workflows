@@ -16,7 +16,9 @@
 #
 # Laid out left to right with the workflows stacked; columns spaced wider
 # than Mermaid's default and arrow labels wrapped narrower, so labels fit
-# between the arrows. Returns the Mermaid code.
+# between the arrows. A diagram more than four columns deep is drawn top
+# to bottom instead, so GitHub doesn't shrink it to fit the page width.
+# Returns the Mermaid code.
 situation_diagram <- function(situation, workflows, chains, outcomes) {
   by_file <- stats::setNames(workflows, vapply(workflows, function(wf) wf$file, character(1)))
   label_of <- function(parts) paste(Filter(nzchar, parts), collapse = ", ")
@@ -87,11 +89,32 @@ situation_diagram <- function(situation, workflows, chains, outcomes) {
     sprintf("out_%d", match(outcome_text[[key]], shared_texts))
   }
 
-  lines <- c(
-    '%%{init: {"flowchart": {"rankSpacing": 140, "nodeSpacing": 45}}}%%',
-    "flowchart LR",
-    sprintf('  ev(["%s"])', mermaid_label(situation$event))
+  # Columns = the longest path from the event. GitHub scales a diagram down
+  # to the page width, so a long chain (event → workflow → check → merged →
+  # started workflow → its result) left to right becomes tiny; with more
+  # than four columns it is drawn top to bottom instead.
+  arrows <- c(
+    lapply(names(situation$members), function(f) c("ev", mermaid_id("wf", f))),
+    lapply(edges, function(e) c(node_of(e$from), node_of(e$to)))
   )
+  depth <- c(ev = 1)
+  repeat {
+    changed <- FALSE
+    for (a in arrows) {
+      if (!is.na(depth[a[1]]) && (is.na(depth[a[2]]) || depth[a[2]] < depth[a[1]] + 1) && depth[a[1]] < 20) {
+        depth[a[2]] <- depth[a[1]] + 1
+        changed <- TRUE
+      }
+    }
+    if (!changed) break
+  }
+  layout <- if (max(depth) > 4) {
+    c('%%{init: {"flowchart": {"rankSpacing": 70, "nodeSpacing": 40}}}%%', "flowchart TD")
+  } else {
+    c('%%{init: {"flowchart": {"rankSpacing": 140, "nodeSpacing": 45}}}%%', "flowchart LR")
+  }
+
+  lines <- c(layout, sprintf('  ev(["%s"])', mermaid_label(situation$event)))
   for (f in included) {
     notes <- Filter(nzchar, c(situation$members[[f]], box_notes[[f]]))
     lines <- c(lines, sprintf('  %s["<b>%s</b>%s"]', mermaid_id("wf", f), mermaid_label(by_file[[f]]$name),

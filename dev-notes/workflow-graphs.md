@@ -117,6 +117,12 @@ Open points at the end.
     Publish Release. Outcomes that lead on get a box per workflow, leaf
     outcomes stay shared by wording. `workflow_outcomes()` now records the
     job and keeps the needs-result (`needs`) apart from other conditions.
+  - Deep diagrams top to bottom: GitHub scales a diagram to the page
+    width, and "PR into main" (event → Release → check → merged → Publish
+    Release → release, six columns) came out tiny left to right. A
+    diagram more than four columns deep (longest path from the event) is
+    now drawn `TD` with `rankSpacing` 70; measured locally: rendered at
+    full size (595 px) instead of shrunk.
   - Not derivable: that Require Head Branch blocks the merge — that's a
     branch ruleset, not in the YAML (and not readable with the job's
     token). Stated on the docs page as a general limit.
