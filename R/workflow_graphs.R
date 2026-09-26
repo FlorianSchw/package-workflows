@@ -1,6 +1,6 @@
 #!/usr/bin/env Rscript
 # Draws Mermaid diagrams of the repository's GitHub Actions workflows into
-# .github/workflows/README.md: an overview (workflows grouped by trigger,
+# .github/workflow-graphs/README.md: an overview (workflows grouped by trigger,
 # with the chains between them) and one detail diagram per workflow (its
 # jobs in `needs:` order). Deterministic — only the YAML is read, including
 # the reusable workflows it calls (resolve_called_workflows()), to find
@@ -27,7 +27,9 @@ gh_token      <- Sys.getenv("GH_TOKEN")
 repo          <- Sys.getenv("GITHUB_REPOSITORY")
 pr_number     <- Sys.getenv("PR_NUMBER")  # set only in a pull request
 workflows_dir <- Sys.getenv("WORKFLOWS_DIR", ".github/workflows")
-readme_path   <- Sys.getenv("README_PATH", file.path(workflows_dir, "README.md"))
+# Not in .github/workflows/: GitHub treats every file there as a workflow,
+# and pushing one needs the App's Workflows permission.
+readme_path   <- Sys.getenv("README_PATH", ".github/workflow-graphs/README.md")
 
 workflows <- read_workflows(workflows_dir)
 message(sprintf("Read %d workflow file(s).", length(workflows)))
@@ -51,6 +53,7 @@ updated <- update_marked_blocks(current, blocks, workflow_readme_starter)
 if (identical(current, updated)) {
   message("README is up to date.")
 } else {
+  dir.create(dirname(readme_path), recursive = TRUE, showWarnings = FALSE)
   writeLines(updated, readme_path)
   message(sprintf("Wrote %s.", readme_path))
 }

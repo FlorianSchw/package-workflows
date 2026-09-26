@@ -1,4 +1,4 @@
-# The README written the first time only, when .github/workflows/README.md
+# The README written the first time only, when .github/workflow-graphs/README.md
 # doesn't exist yet: a short intro, the overview block and the detail
 # blocks under their own headings. Afterwards the text is the repository's
 # own — later runs only replace the blocks (update_marked_blocks()).

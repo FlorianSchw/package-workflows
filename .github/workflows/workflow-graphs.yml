@@ -62,6 +62,6 @@ jobs:
         if: github.event_name != 'pull_request'
         uses: FlorianSchw/package-workflows/.github/actions/commit-and-push@main
         with:
-          files: .github/workflows/README.md
+          files: .github/workflow-graphs/README.md
           commit-message: 'docs: update workflow diagrams'
           token: ${{ steps.push_token.outputs.token || secrets.commit-push-pat || github.token }}

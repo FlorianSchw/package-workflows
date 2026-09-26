@@ -17,7 +17,7 @@ format_workflow_graphs_preview <- function(blocks, current, marker) {
     marker,
     "**Workflow diagrams after this pull request**",
     "",
-    "Nothing is committed on a pull request: `.github/workflows/README.md` is updated once this is merged.",
+    "Nothing is committed on a pull request: `.github/workflow-graphs/README.md` is updated once this is merged.",
     "",
     if ("overview" %in% changed) c("#### Overview", "", blocks$overview, ""),
     if (length(details) > 0) c(

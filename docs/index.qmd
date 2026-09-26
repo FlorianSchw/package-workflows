@@ -44,7 +44,7 @@ need is very welcome, see [Roadmap and open questions](roadmap.qmd).
 | | [Claude setup](claude-setup.qmd) | Keyless Claude API access for the two workflows above |
 | | [Cleanup suggestion branch](cleanup-suggestion-branch.qmd) | Deletes bot branches once their PR is closed |
 | Maintenance | [Workflow keepalive](workflow-keepalive.qmd) | Keeps scheduled workflows from being disabled after 60 days of inactivity |
-| | [Workflow graphs](workflow-graphs.qmd) | Draws diagrams of your workflows into `.github/workflows/README.md` |
+| | [Workflow graphs](workflow-graphs.qmd) | Draws diagrams of your workflows into `.github/workflow-graphs/README.md` |
 
 ## Where to start
 

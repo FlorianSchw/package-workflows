@@ -71,7 +71,7 @@ the live caller used to validate changes before wider rollout.
     as a job (`if: github.event_name == 'schedule'`) to each scheduled
     workflow.
   - `workflow-graphs.yml` — Mermaid diagrams of the caller's workflows in
-    `.github/workflows/README.md` (overview by trigger + one per
+    `.github/workflow-graphs/README.md` (overview by trigger + one per
     workflow), deterministic from the YAML, reading called reusable
     workflows to find chains. Only marked blocks are replaced. On push /
     manual run: committed directly via `commit-and-push`; on a PR: a
@@ -343,12 +343,16 @@ and `CONTRIBUTING.md`); no PRs until a branch model and rules exist.
     `Co-authored-by:` trailers.
   - **README update workflow:** a new workflow that keeps a package's
     README up to date — scope to be clarified.
-  - **Workflow graphs** (new reusable workflow, built 2026-09-26, not yet
-    run in CI): tested locally against dsSupportClient's workflow files
-    (block handling, idempotency, chain detection, PR preview text). Not
-    yet verified: GitHub's Mermaid keeping `<small>` in labels, the
-    commit/push and preview comment in real CI. Layout feedback expected
-    from the user after checking it live. Design and open points in
+  - **Workflow graphs** (new reusable workflow, built 2026-09-26): tested
+    locally against dsSupportClient's workflow files (block handling,
+    idempotency, chain detection, PR preview text). First CI run on
+    dsSupportClient's `dev` generated the README, but the push to
+    `.github/workflows/README.md` was rejected (App lacks the Workflows
+    permission, which every file in that folder needs) → moved to
+    `.github/workflow-graphs/README.md`; rerun pending. Not yet verified:
+    GitHub's Mermaid keeping `<small>` in labels, the commit/push and the
+    preview comment in real CI. Layout feedback expected from the user
+    after checking it live. Design and open points in
     [dev-notes/workflow-graphs.md](dev-notes/workflow-graphs.md).
 - ~~Reusable workflow keepalive: GitHub disables scheduled workflows after
   60 days without repository activity. Callers with cron jobs (monthly

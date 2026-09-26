@@ -1,4 +1,4 @@
-# Updates the generated blocks of .github/workflows/README.md and leaves
+# Updates the generated blocks of .github/workflow-graphs/README.md and leaves
 # everything else alone. A block sits between
 # `<!-- workflow-graphs:<id>:start -->` and `<!-- workflow-graphs:<id>:end -->`
 # and is found by its ID, not its position, so text written around the

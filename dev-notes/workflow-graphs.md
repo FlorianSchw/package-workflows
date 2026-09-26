@@ -1,17 +1,30 @@
 # workflow-graphs.yml
 
 Reusable workflow that draws Mermaid diagrams of a repository's GitHub
-Actions workflows into `.github/workflows/README.md`. Status: built and
-tested locally on 2026-09-26, not yet run in CI; open points at the end.
+Actions workflows into `.github/workflow-graphs/README.md`. Status: built,
+tested locally on 2026-09-26; first CI run on dsSupportClient generated the
+README but the push failed (see "Where"); location changed, rerun pending.
+Open points at the end.
 
 ## Decisions
 
-- **Where:** `.github/workflows/README.md`. GitHub shows a folder's README
-  when browsing it, so people looking at how the repo's automation works
-  find it there; package users reading the root README don't. Never
+- **Where:** `.github/workflow-graphs/README.md`. GitHub renders a folder's
+  `README.md` when browsing it, so people looking at the automation find
+  it; package users reading the root README don't. Never
   `.github/README.md` — GitHub gives that one priority over the root
-  README, so it would replace the repo's front page. Actions ignores
-  non-YAML files in `.github/workflows/`.
+  README, so it would replace the repo's front page.
+  ~~`.github/workflows/README.md`~~ (first choice): GitHub treats **every
+  file** in `.github/workflows/` as a workflow, and a GitHub App may only
+  create or change those with the **Workflows** permission — the first CI
+  run on dsSupportClient was rejected with GH013 "refusing to allow a
+  GitHub App to create or update workflow … without `workflows`
+  permission". Granting it would let App tokens change real workflows in
+  every installed repo (scoping tokens per workflow was the mitigation
+  considered). User chose a folder of its own instead (2026-09-26): one
+  extra click (`.github/` → `workflow-graphs/`), no new permission, and
+  the README is outside the trigger paths, so no path exclusion needed.
+  `GITHUB_TOKEN` can never change workflow files, so it's no fallback for
+  the old location either.
 - **Deterministic:** diagrams come from parsing the YAML only, no Claude.
   Exact, free, same output for the same input.
 - **Language: R** (user's choice, 2026-09-26), for one language across the
@@ -26,7 +39,7 @@ tested locally on 2026-09-26, not yet run in CI; open points at the end.
   never triggers a semantic-release version bump).
 - **Trigger (in the caller):** `push` to the branch where merges land —
   `dev` in the two-branch model, `main` in repos without `dev` — with
-  `paths: ['.github/workflows/**', '!.github/workflows/README.md']`, plus
+  `paths: ['.github/workflows/**']`, plus
   `workflow_dispatch`. No `branch` input: the workflow commits to the
   branch it was started on (`github.ref_name`); a manual run uses the
   branch picked in the Actions UI. On `pull_request` it never commits (the
@@ -83,7 +96,7 @@ tested locally on 2026-09-26, not yet run in CI; open points at the end.
   so not `*-suggest`).
 - **Commit step:** a new shared composite action
   `.github/actions/commit-and-push` (name not final): commits the listed
-  files to the **current** branch in one commit, pushes (pull/rebase retry,
+  files to the **current** branch in one commit, pushes (pull/rebase retry only if the branch moved on — any other rejection fails at once,
   extraheader reset as in `commit-updated-files.sh`), does nothing if
   nothing changed. Inputs: file list, commit message, token. A shared
   action rather than an inline step because a second user is expected: a
@@ -108,8 +121,8 @@ tested locally on 2026-09-26, not yet run in CI; open points at the end.
   `resolve-push-token`.
 - `concurrency` group per branch, and pull/rebase before pushing, so two
   quick merges don't make the second run fail.
-- The second run after a commit produces identical output → nothing to
-  commit, so no loop even without the path exclusion.
+- The README is outside the trigger paths, and a rerun gives identical
+  output (nothing to commit) — no loop.
 
 ## Open points
 

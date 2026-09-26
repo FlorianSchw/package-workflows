@@ -1,13 +1,22 @@
 ---
 title: "Workflow graphs"
-description: "Draws diagrams of a repository's GitHub Actions workflows into .github/workflows/README.md."
+description: "Draws diagrams of a repository's GitHub Actions workflows into .github/workflow-graphs/README.md."
 ---
 
 `workflow-graphs.yml` draws diagrams of your repository's GitHub Actions
-workflows and keeps them up to date in `.github/workflows/README.md`.
-GitHub shows that file when someone opens the `.github/workflows/` folder —
-right where people look to understand how the repository's automation
-works, without cluttering the README for your package's users.
+workflows and keeps them up to date in `.github/workflow-graphs/README.md`.
+GitHub shows that file when someone opens the `.github/workflow-graphs/`
+folder, next to `.github/workflows/` — close to where people look to
+understand how the repository's automation works, without cluttering the
+README for your package's users.
+
+::: {.callout-note}
+## Why not inside `.github/workflows/`?
+GitHub treats every file in `.github/workflows/` as a workflow file, and a
+GitHub App may only change those with an extra *Workflows* permission —
+which would also let it change your actual workflows. A folder of its own
+needs no such permission.
+:::
 
 The diagrams are generated from the workflow files alone, with no AI
 involved: the same files always give the same diagrams.
@@ -42,8 +51,8 @@ its block added at the end, a deleted one's block is removed.
 | Pull request | Nothing is committed. A comment shows how the PR changes the diagrams, updated on further pushes. |
 | Manual run | Like a push, on the branch you pick. |
 
-The example below runs on changes to `.github/workflows/` only, and leaves
-out the README itself, so updating it doesn't start another run.
+The example below runs on changes to `.github/workflows/` only. The README
+lives outside that folder, so updating it doesn't start another run.
 
 ::: {.callout-note}
 ## Protected branch
