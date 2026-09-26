@@ -7,7 +7,8 @@ Three workflows propose changes to your package instead of just checking
 it: [DESCRIPTION authors](authors-suggest.qmd),
 [roxygen suggestions](roxygen-suggest.qmd) and
 [test suggestions](test-suggest.qmd). They share how
-their changes reach you.
+their changes reach you. What happens inside the roxygen and test
+workflows, step by step, is shown [under the hood](suggestions-internals.qmd).
 
 ## Suggestions are pull requests, never direct commits
 

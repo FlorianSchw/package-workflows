@@ -45,6 +45,7 @@ website:
           - roxygen-suggest.qmd
           - test-suggest.qmd
           - claude-setup.qmd
+          - suggestions-internals.qmd
           - cleanup-suggestion-branch.qmd
       - section: "Maintenance"
         contents:

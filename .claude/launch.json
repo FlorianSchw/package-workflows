@@ -1,0 +1,11 @@
+{
+  "version": "0.0.1",
+  "configurations": [
+    {
+      "name": "docs",
+      "runtimeExecutable": "quarto",
+      "runtimeArgs": ["preview", "docs", "--port", "4321", "--no-browser", "--no-watch-inputs"],
+      "port": 4321
+    }
+  ]
+}

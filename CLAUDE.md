@@ -92,7 +92,11 @@ the live caller used to validate changes before wider rollout.
   workflow changes automatically; page prose, examples and
   `docs/roadmap.qmd` are updated in a batched docs pass when the user asks
   — until then, note what's needed under "Docs pending" in STILL OPEN.
-  Preview with `quarto preview docs`.
+  `docs/suggestions-internals.qmd` ("Under the hood") has step diagrams
+  and a table of the R functions of the roxygen and test workflows, with
+  source links — update it when adding, renaming or removing a function
+  in `R/functions/` or changing the order of steps. Preview with
+  `quarto preview docs` (`.claude/launch.json` has a `docs` entry).
 
 ## SUGGESTION WORKFLOWS — shared mechanics
 
