@@ -66,6 +66,8 @@ issues?
   possible bugs. Generating, running and proposing new tests works.
 - **The first real release** with the version written to `DESCRIPTION` —
   the release chain has so far only run as a dry run.
+- **[Workflow graphs](workflow-graphs.qmd)**: new; the first real runs are
+  still ahead.
 
 ## Planned
 

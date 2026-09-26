@@ -50,6 +50,7 @@ website:
       - section: "Maintenance"
         contents:
           - workflow-keepalive.qmd
+          - workflow-graphs.qmd
 
 format:
   html:

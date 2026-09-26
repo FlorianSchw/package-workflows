@@ -1,0 +1,76 @@
+---
+title: "Workflow graphs"
+description: "Draws diagrams of a repository's GitHub Actions workflows into .github/workflows/README.md."
+---
+
+`workflow-graphs.yml` draws diagrams of your repository's GitHub Actions
+workflows and keeps them up to date in `.github/workflows/README.md`.
+GitHub shows that file when someone opens the `.github/workflows/` folder —
+right where people look to understand how the repository's automation
+works, without cluttering the README for your package's users.
+
+The diagrams are generated from the workflow files alone, with no AI
+involved: the same files always give the same diagrams.
+
+## What you get
+
+- **An overview**: your workflows grouped by what starts them (a pull
+  request into `dev`, a pull request into `main`, a schedule, …). Each box
+  shows the workflow's name, its file, path filters and further triggers.
+  Dotted arrows show where one workflow starts another.
+- **One diagram per workflow**: its jobs in the order they run, with the
+  result each waits for (success, failure), the reusable workflow a job
+  calls — with owner, repository, file and version — and conditions.
+
+GitHub draws the diagrams itself ([Mermaid](https://mermaid.js.org)), so
+the README is plain text: changes show up as readable diffs.
+
+## Your own text is kept
+
+The diagrams sit between marker comments such as
+`<!-- workflow-graphs:overview:start -->`. Only those blocks are ever
+replaced. The first run writes a short introduction around them; after
+that, everything outside the blocks is yours — add explanations between
+the diagrams, reorder them, rewrite the introduction. A new workflow gets
+its block added at the end, a deleted one's block is removed.
+
+## When it runs
+
+| Event | What happens |
+|---|---|
+| Push to the branch where merges land (e.g. `dev`) | The README is updated and committed directly: `docs: update workflow diagrams`. A `docs:` commit never triggers a release. |
+| Pull request | Nothing is committed. A comment shows how the PR changes the diagrams, updated on further pushes. |
+| Manual run | Like a push, on the branch you pick. |
+
+The example below runs on changes to `.github/workflows/` only, and leaves
+out the README itself, so updating it doesn't start another run.
+
+::: {.callout-note}
+## Protected branch
+If the branch requires pull requests, the direct commit needs to bypass
+that rule: add the [GitHub App](getting-started.qmd#github-app) as a bypass
+actor for that branch, as for `main` in the
+[release](branch-protection.qmd).
+:::
+
+## Chains between workflows
+
+To find where one workflow starts another, the called reusable workflows
+are read too, at the version you reference. Found are `workflow_run`
+triggers, and dispatches sent with `gh api …/dispatches`,
+`gh workflow run` or the common dispatch actions. A dispatch sent in
+another way — or from inside a composite action — shows no arrow. A
+called workflow in a private repository the job can't read is still shown,
+marked "not readable".
+
+## Example
+
+{{< example workflow-graphs.yml >}}
+
+## Secrets
+
+{{< wf-secrets workflow-graphs.yml >}}
+
+## Permissions
+
+{{< wf-permissions workflow-graphs.yml >}}
