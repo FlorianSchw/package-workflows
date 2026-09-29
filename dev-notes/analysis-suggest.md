@@ -332,9 +332,14 @@ Flow:
 
    The tool returns sections and notes per step; enums restrict step ids
    and note packages.
-6. Checks:
+6. Checks (`test_step_scripts()`):
    - `check_ds_calls()` flags parse errors, unknown `ds.*` /
      `datashield.*` functions and unknown arguments;
+   - `check_column_references()` requires every `"object$column"` string
+     to name a plan variable or a `newobj` created by any step. Needed
+     because DSLite (permissive privacy level) returns `NA` with "VALID
+     ANALYSIS" for an unknown column instead of an error, so the test run
+     can't catch invented variables;
    - `run_analysis_scripts()` runs the DSLite setup plus all bot scripts
      in file order via `callr`: `R_CONFIG_ACTIVE=testing`, no project
      `.Rprofile` (renv), no tokens in the environment.
@@ -381,6 +386,33 @@ with dsBase 6.3.5 real:
 - "not yet on servers" packages kept across runs;
 - the renv `.Rprofile` is skipped;
 - a broken plan lists all problems.
+
+**Refactoring pass (2026-09-30).** The entry script's steps became
+functions (`classify_plan_steps()`, `install_study_packages()`,
+`assign_step_numbers()`, `test_step_scripts()`,
+`format_repair_request()`, `update_dependencies_file()`), and both rounds
+now run in one loop instead of closures with `<<-`. Two bugs the stand-in
+answers had hidden were fixed:
+- **Runtime errors were never detected.** The script list carried step
+  ids as names, which `run_analysis_scripts()` kept, so the lookup by path
+  found nothing. It now always names results by path.
+- **Scripts of requested steps without a new version were left out of
+  the test run**, so later steps missed their objects. The run now
+  includes every bot script that has no new version.
+
+Re-tested:
+- a runtime error, and an unknown column, each leading to repair;
+- a step Claude skips: its old script is kept and still runs before the
+  next step;
+- an edited script with a plan change.
+
+**Open (stage 2): `ds.glmSLMA()` fails in the DSLite test run**, locally
+with dsBase 6.3.5, even on the original data (`D`), while `ds.glm()`
+works. Study-level meta-analysis code that works on real servers would
+be rejected. Check in CI whether this is a DSLite limitation and, if so,
+how to handle it (e.g. a list of functions whose test failures only
+become notes). Random mock data also makes `glm.fit` warn about
+convergence; harmless, warnings aren't treated as failures.
 
 **Not yet tested:** a real Claude answer, the pak installs (CRAN/GitHub
 tags), and the PR in CI. That needs the user's test repo created with

@@ -16,7 +16,9 @@ outcome), follow it as far as possible and say so in a `limitation` note.
   study only, use `{{CONNECTIONS}}["<server>"]`.
 - Server-side objects are referred to by name as strings (e.g.
   `"{{SYMBOL}}$BMI"`); new server-side objects are created with the
-  function's `newobj` argument. Keep the aggregate results that come back
+  function's `newobj` argument. Use only the plan's variables as columns;
+  a derived variable must be created with `newobj` before it is used.
+  Keep the aggregate results that come back
   in R objects with clear names (e.g. `bmi_mean <- ds.mean(...)`).
 - Disclosure control: DataSHIELD never returns individual-level data, and
   small cell counts are blocked. Don't try to work around this. Where a
