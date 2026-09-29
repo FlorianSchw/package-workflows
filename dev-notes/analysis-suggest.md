@@ -338,5 +338,24 @@ project by a file at the same path (`resolve_shared_path()`). Candidates:
   - clearly named `config/analysis-*` and `prompts/analysis-*` files;
   - only generic additions to `shared/`; DataSHIELD-specific helpers stay
     in its own folder.
-- **Config schema details:** fields, required vs optional, and validation
-  (fail fast before any Claude call).
+- **Config shape** — first draft in
+  [analysis-suggest-example-config.yml](analysis-suggest-example-config.yml)
+  (CNSIM-based, 2026-09-30). It is expected to change a lot: the user
+  will get input from field experts, and usability will be tuned. Plans
+  differ widely (fields, ids, models, some without tables), so the
+  design keeps flexibility:
+  - **A small fixed core that R validates:** `symbol`, `studies`
+    (server names + server packages), `variables` (shaped like an
+    Opal/Armadillo dictionary: name, label, type, categories/range,
+    role), `package-catalogue`. It is needed for the mock data and the
+    package checks; validated fail-fast before any Claude call.
+  - **Free `steps`:** an ordered list; only `title` is required, any other
+    fields go to Claude as written. One step is one script number
+    (`02_`, `03_`, letters on overflow). Markers use the step's `id`, or
+    else its title; a rename counts as removed + added and gives a PR
+    note, never a deletion.
+  - **No table names:** the login assigns tables to the symbol, and
+    scripts only use the symbol and server names. Those two must match
+    `01_DS_Login.R`; R checks that mechanically
+    (`builder$append(server = …)`, `symbol = …`) without sending the
+    file to Claude.

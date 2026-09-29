@@ -1,0 +1,97 @@
+# Example analysis config for datashield-analysis-suggest (design draft,
+# 2026-09-30). Built on the CNSIM demo data, so it can be tried against
+# the Opal demo servers and DSLite. The shape is expected to change a lot
+# after input from field experts and usability feedback; see
+# dev-notes/analysis-suggest.md ("Config shape").
+#
+# Two parts:
+# - a small fixed CORE (studies, symbol, variables) that R validates: it
+#   is needed for the mock data and the package checks;
+# - free STEPS: an ordered list, each step becomes one script
+#   (02_..., 03_..., letters on overflow). Only `title` is required; any
+#   other fields are passed to Claude as written.
+#
+# Template header for analysts (belongs in the dsAnalysis template):
+# The content of this file is sent to the Claude API to draft your
+# scripts. Don't put anything confidential here.
+
+# ---- CORE --------------------------------------------------------------
+
+project:
+  title: "BMI and diabetes in three cohorts"
+  question: >
+    Is higher BMI associated with a history of diabetes, independent of
+    sex and cholesterol?
+
+symbol: D                         # as assigned in 01_DS_Login.R
+
+studies:                          # server names as in 01_DS_Login.R;
+  - server: study1                # the table name isn't needed here
+    packages: {dsBase: "6.3.2"}   # installed server packages (+ version)
+  - server: study2
+    packages: {dsBase: "6.3.2"}
+  - server: study3
+    packages: {dsBase: "6.3.2"}
+
+package-catalogue: https://packages.datashield.org/packages.json
+
+variables:                        # shaped like an Opal/Armadillo dictionary
+  - name: DIS_DIAB
+    label: History of diabetes
+    type: categorical
+    categories: {"0": no, "1": yes}
+    role: outcome
+  - name: PM_BMI_CONTINUOUS
+    label: Body mass index
+    type: continuous
+    range: [15, 60]
+    role: exposure
+  - name: GENDER
+    type: categorical
+    categories: {"0": male, "1": female}
+    role: confounder
+  - name: LAB_TSC
+    label: Total serum cholesterol
+    type: continuous
+    range: [2, 12]
+    role: confounder
+  - name: MEDI_LPD
+    label: Lipid-lowering medication
+    type: categorical
+    categories: {"0": no, "1": yes}
+    role: confounder
+
+# ---- STEPS (free) ------------------------------------------------------
+
+steps:
+  - id: data_management
+    title: Data management
+    description: >
+      Derive BMI categories from PM_BMI_CONTINUOUS (<25, 25-<30, >=30).
+      Create a complete-case subset for outcome, exposure and confounders.
+
+  - id: descriptives
+    title: Descriptive statistics
+    description: >
+      Table 1 with all variables, overall and by DIS_DIAB, per study and
+      pooled. Number of missing values per variable and study.
+    outputs: ["Table 1 as CSV"]
+
+  - id: main_model                # stage 2
+    title: Main model
+    model: logistic
+    outcome: DIS_DIAB
+    exposure: PM_BMI_CONTINUOUS
+    adjust: [GENDER, LAB_TSC, MEDI_LPD]
+    pooling: [pooled, study-level meta-analysis]
+    outputs:
+      - "Model estimates (OR, 95% CI) as CSV"
+      - "Forest plot of the BMI estimate from the study-level models"
+
+  - id: sensitivity
+    title: Sensitivity analysis
+    description: "Main model without MEDI_LPD."
+
+  - id: figures                   # stage 3
+    title: Figures
+    description: "Histogram of BMI per study."
