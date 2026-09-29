@@ -4,7 +4,8 @@
 # (`other_packages`, server package names; their clients are added by
 # name) plus those the block already lists: their steps may not have been
 # requested this time. They stay until the servers have them.
-# Returns TRUE if the file changed.
+# Returns update_marked_block()'s result ("changed", "unchanged",
+# "damaged").
 update_dependencies_file <- function(path, clients, servers, other_packages, catalogue, settings, texts) {
   start <- settings$markers$dependencies_start
   end <- settings$markers$dependencies_end

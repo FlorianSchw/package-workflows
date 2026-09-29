@@ -472,6 +472,13 @@ Re-tested:
    The entry script is down to wiring (146 lines): the Claude/test loop
    is now `draft_and_test_steps()`, the evaluation
    `settle_step_results()`, and `format_existing_steps()` was extracted.
+2. **Bug:** with a marker line doubled (e.g. a copied block),
+   `update_marked_block()` appended a new block on every run. It now
+   returns "damaged", leaves the file alone and the report says so
+   (`texts$notes$block_damaged`). `step_plan_hash()` leaves out the
+   derived `kind`, so changing the type aliases in the settings no longer
+   rewrites every step. `text_hash()` hashes in memory
+   (`tools::md5sum(bytes =)`, R ≥ 4.5), the same on every platform.
 
 **Open (stage 2): `ds.glmSLMA()` fails in the DSLite test run**, locally
 with dsBase 6.3.5, even on the original data (`D`), while `ds.glm()`

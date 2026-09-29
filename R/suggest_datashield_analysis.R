@@ -129,12 +129,15 @@ steps <- settled$steps
 updated <- character(0)
 if (length(settled$written_files) > 0) {
   replaced <- setdiff(rewritten$path[!file.exists(rewritten$path)], settled$written_files)
-  update_marked_block(paths$main, settings$markers$main_start, settings$markers$main_end,
+  main_block <- update_marked_block(paths$main, settings$markers$main_start, settings$markers$main_end,
     sprintf("source(here::here(\"%s\", \"%s\"))", paths$scripts, basename(sort(find_bot_step_files(paths$scripts)$path))))
   other_packages <- unique(unlist(lapply(steps, function(s) {
     lapply(s$notes, function(n) if (identical(n$kind, "other_package") && nzchar(n$package)) n$package)
   })))
-  update_dependencies_file(paths$dependencies, installed$clients, installed$servers, other_packages, catalogue, settings, texts)
+  deps_block <- update_dependencies_file(paths$dependencies, installed$clients, installed$servers, other_packages, catalogue, settings, texts)
+  for (damaged in c(paths$main, paths$dependencies)[c(main_block, deps_block) == "damaged"]) {
+    notes <- c(notes, fill_template(texts$notes$block_damaged, list(PATH = damaged)))
+  }
   updated <- c(settled$written_files, replaced, mock_paths$written, mock_paths$removed, setup_file, paths$main, paths$dependencies)
 }
 

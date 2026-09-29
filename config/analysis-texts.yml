@@ -64,6 +64,7 @@ notes:
   servers_differ: "The servers in `{{PATH}}` ({{FOUND}}) differ from the plan ({{PLANNED}}). The scripts use the plan's names, e.g. for results per study."
   symbol_differs: "`{{PATH}}` assigns the data to `{{FOUND}}`, the plan says `{{PLANNED}}`. The scripts use `{{PLANNED}}`."
   existing_failed: "Your existing script `{{FILE}}` failed in the test run: {{ERROR}}"
+  block_damaged: "The bot's block in `{{PATH}}` is damaged (a marker line is missing, doubled or out of order), so it was left as it is. Please update it by hand, or remove both marker lines so the bot adds a new block."
 
 # Problems the checks find. Claude gets them in the repair round, and the
 # report shows them as the reason a step wasn't proposed.
