@@ -1,8 +1,10 @@
 # Runs the project's scripts the way main.R does in testing mode
 # (R_CONFIG_ACTIVE = `profile`, the project's test profile): the DSLite
 # setup first (mock data), then `scripts` in order, all in one fresh R
-# session. Returns list(login_error, errors): errors is a character
-# vector named by script path, NA when the script ran through.
+# session. Returns list(login_error, errors, timed_out): errors is a
+# character vector named by script path, NA when the script ran through.
+# If the whole run exceeds `timeout` seconds it is stopped; timed_out is
+# then TRUE, and which script hung is unknown.
 #
 # The session starts without the project's .Rprofile (a dsAnalysis
 # project activates renv there, which would hide the packages installed
@@ -25,7 +27,9 @@ run_analysis_scripts <- function(login_file, scripts, profile, timeout) {
   env <- callr::rcmd_safe_env()
   env[c("ANTHROPIC_API_KEY", "GH_TOKEN", "GITHUB_TOKEN")] <- ""
   tryCatch(
-    callr::r(child, args = list(login_file = login_file, scripts = scripts, profile = profile), user_profile = FALSE, env = env, timeout = timeout),
-    error = function(e) list(login_error = sprintf("The test run failed: %s", conditionMessage(e)), errors = character(0))
+    c(callr::r(child, args = list(login_file = login_file, scripts = scripts, profile = profile), user_profile = FALSE, env = env, timeout = timeout),
+      list(timed_out = FALSE)),
+    callr_timeout_error = function(e) list(login_error = NA_character_, errors = stats::setNames(rep(NA_character_, length(scripts)), scripts), timed_out = TRUE),
+    error = function(e) list(login_error = sprintf("The test run failed: %s", conditionMessage(e)), errors = character(0), timed_out = FALSE)
   )
 }

@@ -22,6 +22,13 @@ test_step_scripts <- function(candidate, answers, reference, variables, login_fi
   if (!is.na(run$login_error)) {
     stop(sprintf("The DSLite test setup (%s) failed: %s", login_file, run$login_error), call. = FALSE)
   }
+  # A run stopped for taking too long can't say which script hung, so
+  # every new script counts as failing (the analyst's own aren't blamed).
+  if (isTRUE(run$timed_out)) {
+    for (id in ids) {
+      problems[[id]] <- c(problems[[id]], fill_template(texts$checks$timeout, list(SECONDS = settings$test_run_timeout_seconds)))
+    }
+  }
   for (id in ids) {
     runtime <- run$errors[candidate[[id]]]
     runtime <- runtime[!is.na(runtime)]

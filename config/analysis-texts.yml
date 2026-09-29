@@ -52,7 +52,7 @@ step:
   edited_plan_changed: "its plan entry changed, but you have edited its script, so it was left as it is."
   removed: "no longer in the plan. Its script was kept; delete it (and its line in `main.R`) if you don't need it."
   no_answer: "not proposed, because Claude returned no code or notes for it. It is requested again on the next run."
-  still_failing: "not proposed, because the code still failed after {{ATTEMPTS}} attempts: {{PROBLEMS}}"
+  still_failing: "not proposed, because the code still failed after {{ATTEMPTS}} attempt(s): {{PROBLEMS}}"
   long_section: "A section of step `{{STEP}}` is longer than {{MAX_LINES}} lines and has a file of its own."
 
 notes:
@@ -75,6 +75,7 @@ checks:
   unknown_argument: "{{FUNCTION}}() has no argument {{GIVEN}} (its arguments: {{ARGUMENTS}})."
   unknown_column: "{{COLUMNS}} refers to a column that is neither a variable of the plan nor created by any step (plan variables: {{VARIABLES}})."
   runtime_error: "Error when running {{FILE}}: {{ERROR}}"
+  timeout: "The test run took longer than {{SECONDS}} seconds and was stopped; the code may loop or do far more work than needed."
 
 report:
   nothing_to_do: "Nothing to do: every step of the plan already has an up-to-date script."

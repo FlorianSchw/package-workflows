@@ -10,7 +10,8 @@
 # `variables` and the test `login_file`.
 # Returns list(answers, candidate, outcome, notes, attempts): Claude's
 # steps and the paths written per step id, the last test outcome, notes
-# for the report, and the number of attempts allowed.
+# for the report, and the number of attempts made (a failed repair call
+# doesn't count).
 draft_and_test_steps <- function(to_write, plan, steps, existing, context, checks, settings, texts) {
   answers <- list()
   candidate <- list()
@@ -19,9 +20,19 @@ draft_and_test_steps <- function(to_write, plan, steps, existing, context, check
   requested <- to_write
   previous <- ""
   attempts <- 1 + settings$repair_rounds
+  made <- 0
 
   for (round in seq_len(attempts)) {
-    for (s in ask_claude_for_scripts(context, requested, previous)) {
+    # A failed call in a repair round keeps what passed so far; only the
+    # first call's failure ends the run.
+    result <- tryCatch(ask_claude_for_scripts(context, requested, previous), error = function(e) {
+      if (round == 1) stop(e)
+      message(sprintf("Claude call in repair round %d failed: %s", round - 1, conditionMessage(e)))
+      NULL
+    })
+    if (is.null(result)) break
+    made <- round
+    for (s in result) {
       id <- s$step_id
       answers[[id]] <- s
       unlink(c(candidate[[id]], existing$path[existing$step == id]))
@@ -45,5 +56,5 @@ draft_and_test_steps <- function(to_write, plan, steps, existing, context, check
   for (f in names(outcome$broken_other)) {
     notes <- c(notes, fill_template(texts$notes$existing_failed, list(FILE = f, ERROR = outcome$broken_other[[f]])))
   }
-  list(answers = answers, candidate = candidate, outcome = outcome, notes = notes, attempts = attempts)
+  list(answers = answers, candidate = candidate, outcome = outcome, notes = notes, attempts = made)
 }

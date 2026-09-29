@@ -493,6 +493,17 @@ Re-tested:
    project's override stops the run with all problems listed. Checked:
    the example config passes the plan checks and gives sensible mock
    data.
+5. **Failures during the run:**
+   - A failed Claude call in a repair round no longer aborts the run:
+     what passed in round 1 is kept, and the report counts only the
+     attempts actually made.
+   - A test run over the timeout (e.g. generated code that loops) no
+     longer ends as "DSLite setup failed". Every new script counts as
+     failing with `texts$checks$timeout` and goes to the repair round;
+     the analyst's own scripts aren't blamed.
+
+   Tested with an endless loop (40 s timeout via a project override:
+   stopped, repaired, proposed) and a failing repair call.
 
 **Open (stage 2): `ds.glmSLMA()` fails in the DSLite test run**, locally
 with dsBase 6.3.5, even on the original data (`D`), while `ds.glm()`
