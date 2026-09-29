@@ -36,6 +36,9 @@ plan_file      <- Sys.getenv("PLAN_FILE", "config/analysis-plan.yml")
 dsanalysis_dir <- Sys.getenv("DSANALYSIS_DIR", ".dsanalysis")
 summary_file   <- Sys.getenv("GITHUB_STEP_SUMMARY")
 paths          <- settings$paths
+# File and profile names the texts mention ({{MAIN}} etc. in analysis-texts.yml).
+names_in_texts <- list(MAIN = paths$main, DEPENDENCIES = paths$dependencies,
+  TESTING = settings$profiles$testing, PRODUCTION = settings$profiles$production)
 
 write_outputs <- function(report, updated) {
   writeLines(updated, "updated_files.txt")
@@ -58,7 +61,7 @@ plan_text <- paste(readLines(plan_file, warn = FALSE), collapse = "\n")
 # --- 2. What to write --------------------------------------------------------------
 
 existing <- find_bot_step_files(paths$scripts)
-classified <- classify_plan_steps(plan, existing, texts)
+classified <- classify_plan_steps(plan, existing, texts, names_in_texts)
 steps <- classified$steps
 to_write <- classified$to_write
 if (length(to_write) == 0) {
@@ -143,6 +146,7 @@ if (length(settled$written_files) > 0) {
 report <- format_analysis_report(list(
   # Unchanged steps, and edited ones whose plan entry didn't change, need no mention.
   steps = Filter(function(s) !s$status %in% c("unchanged", "edited") || !is.null(s$error), steps),
-  notes = unique(notes), tested_with = installed$tested_with, gap_issue_repo = settings$gap_issue_repo
+  notes = unique(notes), tested_with = installed$tested_with, gap_issue_repo = settings$gap_issue_repo,
+  names = names_in_texts
 ), texts)
 write_outputs(report, updated)

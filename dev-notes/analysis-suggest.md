@@ -532,6 +532,12 @@ Re-tested:
    (`connections <<- conns  # bot-suggest: ...`) when the names differ,
    and removes it when they match again. The login check therefore runs
    before the DSLite update.
+4. **Texts no longer hard-code configurable names:** `main.R`,
+   `dependencies.R` and the profile names in `try_it`,
+   `other_package_intro` and the "removed" status are now `{{MAIN}}`,
+   `{{DEPENDENCIES}}`, `{{TESTING}}` and `{{PRODUCTION}}`, filled from
+   the settings (`names_in_texts` in the entry script). Tested with a
+   project profile `testing: dslite`.
 
 **Open (stage 2): `ds.glmSLMA()` fails in the DSLite test run**, locally
 with dsBase 6.3.5, even on the original data (`D`), while `ds.glm()`

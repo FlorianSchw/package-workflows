@@ -8,8 +8,9 @@
 # Steps with scripts that are no longer in the plan are "removed" (note
 # only). Returns list(steps, to_write): `steps` is keyed by step id, each
 # with title, status, files, notes, error (text for the report, from
-# `texts$step`) and hash.
-classify_plan_steps <- function(plan, existing, texts) {
+# `texts$step`, filled with `names`: MAIN etc., see the entry script) and
+# hash.
+classify_plan_steps <- function(plan, existing, texts, names) {
   steps <- list()
   for (s in plan$steps) {
     own <- existing[existing$step == s$id, ]
@@ -23,7 +24,7 @@ classify_plan_steps <- function(plan, existing, texts) {
   }
   ids <- vapply(plan$steps, function(s) s$id, character(1))
   for (gone in setdiff(unique(existing$step), ids)) {
-    steps[[gone]] <- list(title = gone, status = "removed", files = existing$path[existing$step == gone], notes = list(), error = texts$step$removed)
+    steps[[gone]] <- list(title = gone, status = "removed", files = existing$path[existing$step == gone], notes = list(), error = fill_template(texts$step$removed, names))
   }
   to_write <- names(Filter(function(s) s$status %in% c("new", "changed"), steps))
   list(steps = steps, to_write = to_write)

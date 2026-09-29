@@ -3,7 +3,8 @@
 # prefilled issue. A project can change single texts with its own
 # config/analysis-texts.yml holding only those entries; it is merged over
 # these defaults, key by key. {{PLACEHOLDERS}} are filled in by R; keep
-# the ones a text uses.
+# the ones a text uses. {{MAIN}}, {{DEPENDENCIES}}, {{TESTING}} and
+# {{PRODUCTION}} come from the paths and profiles in analysis-suggest.yml.
 
 # Problems in the analysis plan, shown in the job summary before anything
 # else runs. {{LABEL}} names the entry, e.g. "study study1".
@@ -50,7 +51,7 @@ dependencies:
 
 step:
   edited_plan_changed: "its plan entry changed, but you have edited its script, so it was left as it is."
-  removed: "no longer in the plan. Its script was kept; delete it (and its line in `main.R`) if you don't need it."
+  removed: "no longer in the plan. Its script was kept; delete it (and its line in `{{MAIN}}`) if you don't need it."
   no_answer: "not proposed, because Claude returned no code or notes for it. It is requested again on the next run."
   still_failing: "not proposed, because the code still failed after {{ATTEMPTS}} attempt(s): {{PROBLEMS}}"
   long_section: "A section of step `{{STEP}}` is longer than {{MAX_LINES}} lines and has a file of its own."
@@ -83,9 +84,9 @@ report:
   tested_with: "**Tested with:** {{TESTED_WITH}}."
   scripts_heading: "### Scripts"
   notes_only_suffix: " (notes only: not possible with the installed packages)"
-  try_it: "**Try it yourself:** set `R_CONFIG_ACTIVE = 'testing'` in `.Renviron`, restart R and run `main.R`. It uses the same DSLite setup and mock data as this test run. You get the same results if you install the versions listed in `dependencies.R`. Switch back to `production` for the real analysis."
+  try_it: "**Try it yourself:** set `R_CONFIG_ACTIVE = '{{TESTING}}'` in `.Renviron`, restart R and run `{{MAIN}}`. It uses the same DSLite setup and mock data as this test run. You get the same results if you install the versions listed in `{{DEPENDENCIES}}`. Switch back to `{{PRODUCTION}}` for the real analysis."
   other_package_heading: "### Possible with another package"
-  other_package_intro: "Not installed on your study servers. The packages are listed, commented out, in `dependencies.R`."
+  other_package_intro: "Not installed on your study servers. The packages are listed, commented out, in `{{DEPENDENCIES}}`."
   gaps_heading: "### Not possible with any known DataSHIELD package"
   gaps_intro: "The link opens a prefilled issue under your account, so missing functions can be collected. Check the text before you submit it."
   open_issue: "Open issue"

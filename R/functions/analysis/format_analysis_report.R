@@ -1,8 +1,10 @@
 # The suggestion PR's description (and the job summary): what was written,
 # how to try it, what else the plan would need, and what wasn't proposed.
 # `r` is the run record built by the entry script: steps (per step: title,
-# status, files, notes, error), general notes, tested versions, and the
-# repository for issue links. Wording from `texts$report`.
+# status, files, notes, error), general notes, tested versions, the
+# repository for issue links, and `names` (MAIN, DEPENDENCIES, TESTING,
+# PRODUCTION) for the texts that mention files and profiles. Wording from
+# `texts$report`.
 format_analysis_report <- function(r, texts) {
   t <- texts$report
   out <- c(t$intro, "", fill_template(t$tested_with, list(TESTED_WITH = r$tested_with)))
@@ -14,7 +16,7 @@ format_analysis_report <- function(r, texts) {
       out <- c(out, sprintf("- **%s**: %s%s", s$title, paste(sprintf("`%s`", s$files), collapse = ", "),
         if (identical(s$status, "not_possible")) t$notes_only_suffix else ""))
     }
-    out <- c(out, "", t$try_it)
+    out <- c(out, "", fill_template(t$try_it, r$names))
   }
 
   by_kind <- function(kind) {
@@ -22,7 +24,7 @@ format_analysis_report <- function(r, texts) {
   }
   other <- by_kind("other_package")
   if (length(other) > 0) {
-    out <- c(out, "", t$other_package_heading, "", t$other_package_intro, "")
+    out <- c(out, "", t$other_package_heading, "", fill_template(t$other_package_intro, r$names), "")
     for (n in other) out <- c(out, sprintf("- **%s** (`%s`): %s", n$step_title, n$package, n$text))
   }
   gaps <- by_kind("missing_function")
