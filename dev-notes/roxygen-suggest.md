@@ -31,7 +31,11 @@ Entry script: `R/suggest_roxygen.R`. Per file in `files_to_check.txt`:
    same description. On top, a one-line statistic
    (`format_roxygen_summary()`), repeated in the link comment on the
    originating PR. Without a suggestion PR, bugs go to a comment on the
-   originating PR (`comment_once()`), in a sweep only to the log.
+   originating PR (`comment_once()`). In a sweep they go to that month's
+   issue "Roxygen sweep: possible bugs in the code (YYYY-MM)"
+   (`report_sweep_code_issues()`); a rerun comments on the open one
+   instead of opening another. This needs `issues: write`, which callers
+   grant since 2026-09-30 (user's decision); before, it was log only.
 5. `build_roxygen_block()` assembles the block deterministically in
    `tag_order`, taking Claude's text only for accepted fields and the
    original lines for all others; `write_in_place()` swaps it into the file.

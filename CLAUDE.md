@@ -358,6 +358,18 @@ and `CONTRIBUTING.md`); no PRs until a branch model and rules exist.
   (never adapt a test to possibly buggy output, only failing tests are
   updated, nothing without a suggestion PR) in code, documented in the
   decision record. Overridable per repo like the other config files.
+  Decided (2026-09-30): **one file** for roxygen, tests and authors,
+  merged key by key over the defaults like the analysis workflow's config
+  (`read_config_yaml()`). Do it together with switching the other
+  workflows' overrides from "replace the file" to merging, otherwise a
+  project's older copy loses rules added later. The analysis workflow
+  keeps its own settings; only its tool schema descriptions move into the
+  policy file. ~~Open: should roxygen callers grant `issues: write`?~~
+  Done (2026-09-30, user's decision): roxygen callers grant
+  `issues: write`, and possible code bugs from a sweep without a
+  suggestion PR go to a monthly issue (`report_sweep_code_issues()`)
+  instead of the job log. **Docs pending:** the permission in the roxygen
+  page's text and in Getting started, if they list it.
 - **Report routing is code, not config:** where test failures, possible
   bugs, deletion notes and code issues go (PR comment, PR description,
   issue, log) is decided in R (`publish_test_report()`,

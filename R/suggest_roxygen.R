@@ -132,9 +132,8 @@ writeLines(updated_files, "updated_files.txt")
 # one-line statistic on top that the link comment on the originating PR
 # repeats (suggestion_summary.md). Only written when there is a PR, so
 # notes alone never open one. Without a suggestion PR, possible bugs go to
-# a comment on the originating PR (posted once), or in a sweep only to the
-# log (an issue would need `issues: write`, which roxygen callers don't
-# grant).
+# a comment on the originating PR (posted once), or in a sweep to that
+# month's issue (report_sweep_code_issues(); callers grant `issues: write`).
 if (length(updated_files) > 0) {
   summary_line <- format_roxygen_summary(report_files, code_issue_files)
   writeLines(summary_line, "suggestion_summary.md")
@@ -144,6 +143,6 @@ if (length(updated_files) > 0) {
   if (nzchar(pr_number)) {
     comment_once(pr_number, bugs, "possible code bugs")
   } else {
-    message("Possible code bugs (no sweep PR to report them in):\n", bugs)
+    report_sweep_code_issues(bugs)
   }
 }

@@ -51,6 +51,7 @@ jobs:
       id-token: write
       contents: write
       pull-requests: write
+      issues: write         # possible code bugs from a sweep without a suggestion PR
 
     steps:
       - uses: actions/checkout@v7
