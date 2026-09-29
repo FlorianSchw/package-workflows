@@ -479,6 +479,14 @@ Re-tested:
    derived `kind`, so changing the type aliases in the settings no longer
    rewrites every step. `text_hash()` hashes in memory
    (`tools::md5sum(bytes =)`, R ≥ 4.5), the same on every platform.
+3. **Unquoted versions are a plan problem:** YAML reads `dsBase: 6.10`
+   as the number 6.1, so the wrong version would have been installed
+   silently. Versions that can't be compared (`6.3.2-dev`) no longer stop
+   the run; the first study's version is used. The workflow got a
+   concurrency group per branch (quick successive pushes no longer
+   force-push the same bot branch in parallel) and `timeout-minutes: 60`.
+   Checked: mock `.rda` files are byte-identical when nothing changed, so
+   there are no churn commits.
 
 **Open (stage 2): `ds.glmSLMA()` fails in the DSLite test run**, locally
 with dsBase 6.3.5, even on the original data (`D`), while `ds.glm()`

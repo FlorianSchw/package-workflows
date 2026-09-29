@@ -19,7 +19,10 @@ usable_server_packages <- function(plan, texts) {
     }
     version <- versions[[1]]
     if (length(unique(versions)) > 1) {
-      version <- as.character(min(numeric_version(versions)))
+      # Versions that aren't plain numbers (e.g. "6.3.2-dev") can't be
+      # compared; then the first study's version is used.
+      parsed <- numeric_version(versions, strict = FALSE)
+      version <- if (anyNA(parsed)) versions[[1]] else as.character(min(parsed))
       notes <- c(notes, fill_template(texts$notes$package_versions_differ, list(
         PACKAGE = p, VERSIONS = paste(unique(versions), collapse = ", "), LOWEST = version
       )))

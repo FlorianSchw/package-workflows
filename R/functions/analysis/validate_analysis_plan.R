@@ -32,6 +32,9 @@ validate_analysis_plan <- function(plan, types, texts) {
       } else {
         bad <- names(pkgs)[!vapply(pkgs, function(v) (is.character(v) || is.numeric(v)) && length(v) == 1, logical(1))]
         if (length(bad) > 0) add("one_version", LABEL = l, PACKAGES = paste(bad, collapse = ", "))
+        # YAML reads an unquoted 6.10 as the number 6.1: only quoted versions are exact.
+        unquoted <- names(pkgs)[vapply(pkgs, is.numeric, logical(1))]
+        if (length(unquoted) > 0) add("version_quotes", LABEL = l, PACKAGES = paste(unquoted, collapse = ", "))
       }
     }
     servers <- unlist(lapply(studies, function(s) if (is.character(s$server)) s$server))

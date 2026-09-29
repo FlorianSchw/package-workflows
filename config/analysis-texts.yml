@@ -20,6 +20,7 @@ plan:
   server_name: "{{LABEL}}: server must be a plain R name (letters, digits, . and _), as in 01_DS_Login.R."
   packages: "{{LABEL}}: packages must list the installed server packages with their versions, e.g. {dsBase: \"6.3.2\"}."
   one_version: "{{LABEL}}: give one version per package ({{PACKAGES}})."
+  version_quotes: "{{LABEL}}: write versions in quotes, e.g. \"6.10\" ({{PACKAGES}}); without quotes YAML reads 6.10 as the number 6.1."
   duplicate_servers: "studies: server names must be unique ({{NAMES}})."
   no_variables: "variables: list the variables the analysis uses, with name, type and categories or range."
   variable_name: "{{LABEL}}: name must be the variable name as in the data."
@@ -56,7 +57,7 @@ step:
 
 notes:
   package_missing_on_studies: "`{{PACKAGE}}` is not installed on {{STUDIES}}, so it isn't used; functions from it would only work if those studies are left out."
-  package_versions_differ: "`{{PACKAGE}}` has different versions on the studies ({{VERSIONS}}); tested with the lowest, {{LOWEST}}."
+  package_versions_differ: "`{{PACKAGE}}` has different versions on the studies ({{VERSIONS}}); tested with {{LOWEST}} (the lowest, or the first study's if they can't be compared)."
   version_not_found: "`{{PACKAGE}}` {{VERSION}} could not be found; tested with {{INSTALLED}} from `{{REF}}` instead."
   not_installable: "`{{PACKAGE}}` {{VERSION}} could not be installed from CRAN or GitHub, so it wasn't used."
   no_login_file: "No login file at `{{PATH}}`; the scripts assume the connections are called `conns`."
