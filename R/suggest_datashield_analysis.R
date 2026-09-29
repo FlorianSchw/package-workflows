@@ -30,8 +30,6 @@ anthropic_config <- config::get(file = resolve_shared_path("config/claude.yml"))
 # Project files at the same paths are merged over the shared defaults.
 settings <- check_analysis_settings(read_config_yaml("config/analysis-suggest.yml"))
 texts <- read_config_yaml("config/analysis-texts.yml")
-analysis_prompt_template <- read_text_file("prompts/analysis-script-prompt.md")
-repair_prompt_template <- read_text_file("prompts/analysis-repair-prompt.md")
 
 api_key        <- Sys.getenv("ANTHROPIC_API_KEY")
 plan_file      <- Sys.getenv("PLAN_FILE", "config/analysis-plan.yml")
@@ -85,7 +83,7 @@ mock <- generate_mock_data(plan, settings$mock_data)
 mock_paths <- write_mock_data(mock, file.path(paths$mock_data, settings$mock_data$folder))
 login_files <- project_login_files(paths, settings$profiles)
 setup_file <- update_dslite_setup(login_files$testing, dsanalysis_dir, settings$mock_data$folder, names(mock),
-  installed$servers, settings$markers$dslite_mock_data)
+  installed$servers, settings$markers$dslite_mock_data, plan$symbol)
 if (is.null(setup_file)) stop(sprintf("The project needs the dsAnalysis DSLite setup (%s) for the test run.", login_files$testing), call. = FALSE)
 login <- check_login_file(login_files$production, plan, settings$credential_pattern, texts)
 notes <- c(notes, login$notes)
@@ -107,7 +105,8 @@ context <- list(
   max_lines = settings$max_script_lines,
   numbers = assign_step_numbers(to_write, existing, paths$scripts, settings$numbering),
   header_values = list(PLAN_FILE = plan_file, TESTED_WITH = installed$tested_with),
-  repair_template = repair_prompt_template
+  prompt_template = read_text_file("prompts/analysis-script-prompt.md"),
+  repair_template = read_text_file("prompts/analysis-repair-prompt.md")
 )
 checks <- list(
   reference = reference,

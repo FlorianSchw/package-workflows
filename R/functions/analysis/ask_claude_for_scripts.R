@@ -1,12 +1,12 @@
 # Sends the script request to Claude and returns the tool call's steps.
-# `context` holds what every request shares (plan text, symbol,
-# connections, servers, function reference, catalogue text, existing
-# steps, catalogue names, line limit, file number per step); `step_ids`
-# are the steps to write;
-# `previous_attempt` is empty on the first call and, in the repair round,
+# `context` holds what every request shares: the prompt template
+# (prompts/analysis-script-prompt.md), plan text, symbol, connections,
+# servers, function reference, catalogue text and names, existing steps,
+# line limit and file number per step. `step_ids` are the steps to write;
+# `previous_attempt` is empty on the first call and, in a repair round,
 # describes the failed attempt (code and errors) for those steps.
 ask_claude_for_scripts <- function(context, step_ids, previous_attempt = "") {
-  prompt <- fill_template(analysis_prompt_template, list(
+  prompt <- fill_template(context$prompt_template, list(
     CONNECTIONS        = context$connections,
     SYMBOL             = context$symbol,
     SERVERS            = paste(sprintf("`%s`", context$servers), collapse = ", "),

@@ -518,6 +518,12 @@ Re-tested:
      of one per package). If that fails, each package is installed on its
      own as before. Locally only the "already installed" path ran; the
      batch call itself is first exercised in CI.
+2. **Bug: the symbol wasn't synchronised.** dsAnalysis's DSLite template
+   hard-codes `symbol = "D"`, so a plan with another symbol would have
+   failed every step in the test run. `update_dslite_setup()` now sets
+   the plan's symbol there (tested with `symbol: df`). The prompt
+   template now reaches `ask_claude_for_scripts()` through `context` like
+   the repair template, instead of as a hidden global.
 
 **Open (stage 2): `ds.glmSLMA()` fails in the DSLite test run**, locally
 with dsBase 6.3.5, even on the original data (`D`), while `ds.glm()`

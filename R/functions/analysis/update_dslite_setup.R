@@ -11,7 +11,10 @@
 # in the lines above `mock_data_marker` (the library() calls).
 # `mock_folder` is the mock data's folder name (update_MockData() looks
 # for it under utils/mock_data), `servers` the studies it holds files for.
-update_dslite_setup <- function(setup_file, dsanalysis_dir, mock_folder, servers, server_packages, mock_data_marker) {
+# The login's `symbol = "..."` is set to the plan's `symbol`: the template
+# says "D", and neither dsAnalysis function changes it, so a plan with
+# another symbol would otherwise fail every step in the test run.
+update_dslite_setup <- function(setup_file, dsanalysis_dir, mock_folder, servers, server_packages, mock_data_marker, symbol) {
   if (!file.exists(setup_file)) {
     message(sprintf("No DSLite setup at %s — skipping its update.", setup_file))
     return(NULL)
@@ -34,5 +37,7 @@ update_dslite_setup <- function(setup_file, dsanalysis_dir, mock_folder, servers
   missing <- server_packages[!vapply(server_packages, function(p) any(grepl(p, block1, fixed = TRUE)), logical(1))]
   if (length(missing) > 0) env$add_dsPackage(missing)
 
+  lines <- readLines(setup_file, warn = FALSE)
+  writeLines(gsub("symbol\\s*=\\s*\"[^\"]*\"", sprintf("symbol = \"%s\"", symbol), lines), setup_file)
   setup_file
 }
