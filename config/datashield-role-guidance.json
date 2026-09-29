@@ -43,6 +43,48 @@
       "setup, as outdated and replace it with this:"
     ]
   },
+  "utility": {
+    "intro": [
+      "This function is part of a DataSHIELD UTILITY package: it runs on the",
+      "analyst's side but is neither a client wrapper for a server function",
+      "nor server code. Such packages help the analyst, e.g. set up an",
+      "analysis project, create mock data or manage packages. Some of their",
+      "functions work on DataSHIELD connections (a `datasources` argument or",
+      "DSI::datashield.* calls), others only on local files. When documenting:"
+    ],
+    "documentation": {
+      "param": [
+        "for a `datasources` argument or a server-side object name,",
+        "say that it refers to DataSHIELD connections or an object on the",
+        "server; paths and other arguments are plain local R values."
+      ],
+      "return": [
+        "describe what is returned in R, and name the files or",
+        "folders the function creates or changes, if any."
+      ],
+      "details": [
+        "describe side effects on the analyst's machine (files",
+        "written, packages installed, projects opened). Never write",
+        "'Server function called' — utility functions are not client",
+        "wrappers for one server function."
+      ],
+      "examples": [
+        "examples must not write into the user's home or working",
+        "directory: use tempdir() for paths, and pass arguments that keep",
+        "the function from opening a new RStudio project or session."
+      ]
+    },
+    "demo_environment": [
+      "This function works on DataSHIELD connections. Canonical current demo",
+      "environment for the examples field — use this verbatim as the login",
+      "part of the example code (do not add any comment markers, tag labels,",
+      "or wrapper syntax yourself — the script adds that structure). It",
+      "reflects DataSHIELD's typical multi-centric usage (multiple studies",
+      "connected at once). Treat any existing example content that connects",
+      "to only one server, or references a different server or VM setup, as",
+      "outdated and replace it with this:"
+    ]
+  },
   "server": {
     "intro": [
       "This function is part of a DataSHIELD SERVER-side package. Server-side",

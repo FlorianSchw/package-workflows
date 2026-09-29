@@ -295,6 +295,27 @@ and `CONTRIBUTING.md`); no PRs until a branch model and rules exist.
   `maintain-keepalive`. Breaking: every caller's `uses:` path and the
   federation rules' `job_workflow_ref` claims change; docs/examples too.
   Combine with removing `app-id` (both need caller changes).~~
+- **`datashield-type: utility`** (built 2026-09-29, not yet run in CI or
+  end to end). This type covers analyst-side helpers that are neither
+  client nor server, e.g. `FlorianSchw/dsAnalysis` and
+  `dife-bioinformatics/mepr`.
+  - **DSLite per function:** a function uses DSLite only if
+    `uses_ds_connections()` detects connection use: a `datasources`
+    argument, `datashield.*()` or `ds.*()` calls. Such functions follow the
+    client path. Other functions get `utility_local` test guidance: a temp
+    directory, and install, network and RStudio calls mocked. For roxygen
+    they get the `utility` role guidance without the login example.
+  - **Study group:** found through the package or its Depends/Imports.
+  - **Unknown `datashield-type`:** now stops the run
+    (`check_datashield_type()`, the user's choice).
+  - **Checked locally** against the dsAnalysis clone. Details in both
+    dev-notes.
+  - **First real check:** the user's test work on dsAnalysis. Its caller
+    needs `DSLite` and `dsBase` in `DESCRIPTION` (e.g. Suggests) for the
+    connection functions.
+  - **Docs pending:** `test-suggest-datashield.qmd` (utility section),
+    `roxygen-suggest.qmd` (the type), and the input description on those
+    pages. The Under the hood tables are already updated.
 - **Policy file for the bot's rules** (`config/suggestion-policy.yml`):
   today reasons, action↔reason mapping, the `aut`/`ctb` rule, name
   particles and report routing live partly only in R code. Move the

@@ -72,7 +72,7 @@ build_submit_tests_tool <- function(dslite_datasets, max_new_tests) {
 
   dslite_dataset_schema <- list(
     type = "string",
-    description = "For a fresh DSLite client-side setup only: the chosen canned dataset's name from the options given. Empty string for server-side functions, or when reusing an existing setup.R."
+    description = "For a fresh DSLite client-side setup only: the chosen canned dataset's name from the options given. Empty string for server-side functions, functions that don't use DataSHIELD connections, or when reusing an existing setup."
   )
   if (!is.null(dataset_names)) dslite_dataset_schema$enum <- as.list(dataset_names)
 

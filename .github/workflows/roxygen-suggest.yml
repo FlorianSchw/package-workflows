@@ -19,7 +19,7 @@ on:
         type: boolean
         default: false
       datashield-type:
-        description: '"client" or "server" — only used when datashield is true'
+        description: '"client", "server" or "utility" (analyst-side helpers) — required when datashield is true'
         required: false
         type: string
         default: ''

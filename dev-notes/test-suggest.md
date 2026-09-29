@@ -159,6 +159,34 @@ Pitfalls found while building this:
   pkgload registers the namespace before `setup.R` runs, so this also works
   for a client package that isn't installed.
 
+## DataSHIELD utility packages
+
+`datashield-type: utility` (2026-09-29) is for analyst-side helper
+packages, e.g. `FlorianSchw/dsAnalysis` and `dife-bioinformatics/mepr`.
+They are neither client nor server, and they mix two kinds of functions:
+- **Functions using DataSHIELD connections** (`uses_ds_connections()`: a
+  `datasources` argument, `datashield.*()` or `ds.*()` calls), e.g.
+  `initMockdata()`. They take exactly the client path: an existing DSLite
+  setup is reused, otherwise a dataset is offered and a setup file is
+  generated. That setup goes into `setup-dslite.R` when a `setup.R`
+  without DSLite exists, as in dsAnalysis, whose `setup.R` reads
+  `config-testing.yml`. The same `DESCRIPTION` requirement applies: DSLite
+  and the server packages must be installed.
+- **Local functions**, e.g. `initProject()` and `find_script()`, get
+  `utility_local` from `config/test-role-guidance.json`. Real runs happen
+  in a temp directory (`withr::local_tempdir()`, or the package's own temp
+  paths), with assertions on the return value and on the files created.
+  Only calls that install packages, reach the network or open RStudio are
+  replaced, with `local_mocked_bindings()`.
+
+The choice is made per function because it's structural (argument names,
+calls), so the prompt doesn't have to ask Claude to decide.
+`check_datashield_type()` stops the run on an unknown type.
+
+Checked locally against the dsAnalysis clone: detection, role texts, and
+the study group found via `dsBaseClient`. All dsSupportClient functions
+are detected as using connections. Not yet run in CI or end to end.
+
 ## Status
 
 Verified locally (real entry script, only the Anthropic/GitHub APIs mocked):

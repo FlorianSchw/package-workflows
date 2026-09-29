@@ -21,7 +21,7 @@ jobs:
       scan-mode: ${{ github.event_name == 'pull_request' && 'changed' || 'all' }}
       # DataSHIELD packages only:
       # datashield: true
-      # datashield-type: client   # or server
+      # datashield-type: client   # or server, utility
     secrets:
       anthropic-organization-id: ${{ secrets.ANTHROPIC_ORG_ID }}
       anthropic-service-account-id: ${{ secrets.ANTHROPIC_SVAC_ID }}

@@ -38,28 +38,33 @@ pr_number  <- Sys.getenv("PR_NUMBER")  # empty in a sweep
 datashield <- as.logical(Sys.getenv("DATASHIELD", "false"))
 ds_type    <- Sys.getenv("DATASHIELD_TYPE", "")
 
-if (isTRUE(datashield) && !ds_type %in% c("client", "server")) {
-  message("DATASHIELD is true but DATASHIELD_TYPE is not 'client' or 'server' — skipping role-specific guidance.")
-}
+check_datashield_type(datashield, ds_type)
 
 style           <- read_json_config("config/roxygen-style.json", required = TRUE)
 roxygen_review_prompt_template <- read_text_file("prompts/roxygen-review-prompt.md")
 package_name    <- read_package_name()
 
-# Role guidance depends only on the package, not the file — built once.
+# Role guidance depends only on the package — built once. A utility package
+# also gets a variant without the demo login example, for its functions
+# that don't use DataSHIELD connections (chosen per file below); its demo
+# study group is found via the packages it depends on (e.g. dsBaseClient).
 role_text <- ""
+role_text_local <- ""
 if (isTRUE(datashield)) {
   demo_snippet <- NULL
-  if (identical(ds_type, "client")) {
+  if (ds_type %in% c("client", "utility")) {
     example_env <- read_json_config("config/datashield-example-env.json")
-    group <- find_study_group(example_env, package_name)
+    candidates <- if (identical(ds_type, "utility")) c(package_name, read_package_dependencies()) else package_name
+    group <- find_study_group(example_env, candidates)
     if (is.null(group)) {
       message(sprintf("No compatible demo study group found for package '%s' — skipping canonical example guidance.", package_name))
     } else {
       demo_snippet <- build_demo_login_snippet(package_name, group, example_env$server)
     }
   }
-  role_text <- role_guidance(datashield, ds_type, read_json_config("config/datashield-role-guidance.json"), demo_snippet)
+  role_config <- read_json_config("config/datashield-role-guidance.json")
+  role_text <- role_guidance(datashield, ds_type, role_config, demo_snippet)
+  role_text_local <- role_guidance(datashield, ds_type, role_config, NULL)
 }
 
 files <- readLines("files_to_check.txt")
@@ -78,7 +83,8 @@ for (f in files) {
   })
   if (is.null(parsed)) next
 
-  result <- tryCatch(ask_claude_for_review(parsed, select_profile(parsed), role_text), error = function(e) {
+  file_role_text <- if (identical(ds_type, "utility") && !uses_ds_connections(parsed)) role_text_local else role_text
+  result <- tryCatch(ask_claude_for_review(parsed, select_profile(parsed), file_role_text), error = function(e) {
     message(sprintf("Claude call failed for %s: %s", f, conditionMessage(e)))
     NULL
   })

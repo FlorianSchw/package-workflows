@@ -49,7 +49,10 @@ base_ref   <- Sys.getenv("BASE_REF")  # empty in a sweep
 is_sweep   <- !nzchar(pr_number)  # no PR to comment on (all mode)
 datashield <- as.logical(Sys.getenv("DATASHIELD", "false"))
 ds_type    <- Sys.getenv("DATASHIELD_TYPE", "")
-is_client  <- isTRUE(datashield) && identical(ds_type, "client")
+check_datashield_type(datashield, ds_type)
+# Client packages always test against DSLite; utility packages only for
+# functions that use DataSHIELD connections (decided per function below).
+may_use_dslite <- isTRUE(datashield) && ds_type %in% c("client", "utility")
 
 test_review_prompt_template           <- read_text_file("prompts/test-review-prompt.md")
 failure_classification_prompt_template <- read_text_file("prompts/test-failure-classification-prompt.md")
@@ -59,7 +62,7 @@ package_name                          <- read_package_name()
 # DSLite's built-in canned datasets need no server/credentials/per-package
 # matching — unlike datashield-example-env.json, which describes the real
 # Opal demo server for roxygen's usage examples, a different scenario.
-dslite_datasets <- if (is_client) read_json_config("config/dslite-canned-datasets.json")$datasets else NULL
+dslite_datasets <- if (may_use_dslite) read_json_config("config/dslite-canned-datasets.json")$datasets else NULL
 
 files <- readLines("files_to_check.txt")
 files <- files[nzchar(files)]
@@ -108,9 +111,11 @@ for (f in files) {
 
   # Re-checked per function: a DSLite setup generated for an earlier function
   # in this run is reused by later ones.
-  has_existing_setup <- is_client && detect_dslite_setup()
-  offered_datasets <- if (is_client && !has_existing_setup) dslite_datasets else NULL
-  role_text <- build_test_role_guidance(datashield, ds_type, has_existing_setup, offered_datasets, test_role_guidance)
+  uses_connections <- uses_ds_connections(parsed)
+  needs_dslite <- may_use_dslite && (identical(ds_type, "client") || uses_connections)
+  has_existing_setup <- needs_dslite && detect_dslite_setup()
+  offered_datasets <- if (needs_dslite && !has_existing_setup) dslite_datasets else NULL
+  role_text <- build_test_role_guidance(datashield, ds_type, has_existing_setup, offered_datasets, test_role_guidance, uses_connections)
 
   result <- tryCatch(
     ask_claude_for_tests(parsed, existing_test_file, role_text, offered_datasets, format_test_results(baseline), evidence, max_new_tests, test_data),

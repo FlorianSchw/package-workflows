@@ -35,9 +35,11 @@ flowchart TD
 | [`read_json_config()`](https://github.com/FlorianSchw/package-workflows/blob/main/R/functions/shared/read_json_config.R) | Reads a JSON settings file, e.g. the style guide `config/roxygen-style.json`. |
 | [`read_text_file()`](https://github.com/FlorianSchw/package-workflows/blob/main/R/functions/shared/read_text_file.R) | Reads the prompt template `prompts/roxygen-review-prompt.md`. |
 | [`read_package_name()`](https://github.com/FlorianSchw/package-workflows/blob/main/R/functions/shared/read_package_name.R) | Reads the package name from `DESCRIPTION`. |
-| [`find_study_group()`](https://github.com/FlorianSchw/package-workflows/blob/main/R/functions/roxygen/find_study_group.R) | DataSHIELD clients: finds the demo-server study group that fits this package, for ready-made login examples. |
-| [`build_demo_login_snippet()`](https://github.com/FlorianSchw/package-workflows/blob/main/R/functions/roxygen/build_demo_login_snippet.R) | DataSHIELD clients: builds the multi-study login code to use in `@examples`. |
-| [`role_guidance()`](https://github.com/FlorianSchw/package-workflows/blob/main/R/functions/roxygen/role_guidance.R) | DataSHIELD: picks the client or server guidance (e.g. about disclosure control) and adds the login example. |
+| [`check_datashield_type()`](https://github.com/FlorianSchw/package-workflows/blob/main/R/functions/shared/check_datashield_type.R) | DataSHIELD: stops the run if `datashield-type` isn't `client`, `server` or `utility`. |
+| [`read_package_dependencies()`](https://github.com/FlorianSchw/package-workflows/blob/main/R/functions/roxygen/read_package_dependencies.R) | DataSHIELD utility packages: reads `Depends` and `Imports` from `DESCRIPTION`, to find a study group through them (e.g. `dsBaseClient`). |
+| [`find_study_group()`](https://github.com/FlorianSchw/package-workflows/blob/main/R/functions/roxygen/find_study_group.R) | DataSHIELD clients and utility packages: finds the demo-server study group that fits this package, for ready-made login examples. |
+| [`build_demo_login_snippet()`](https://github.com/FlorianSchw/package-workflows/blob/main/R/functions/roxygen/build_demo_login_snippet.R) | DataSHIELD clients and utility packages: builds the multi-study login code to use in `@examples`. |
+| [`role_guidance()`](https://github.com/FlorianSchw/package-workflows/blob/main/R/functions/roxygen/role_guidance.R) | DataSHIELD: picks the client, server or utility guidance (e.g. about disclosure control) and adds the login example. A utility package also gets a version without it, for functions that don't use connections. |
 | [`build_role_guidance_text()`](https://github.com/FlorianSchw/package-workflows/blob/main/R/functions/roxygen/build_role_guidance_text.R) | Turns that guidance from the settings file into a paragraph for the prompt. |
 
 The Claude settings (model, `accept_reasons`, …) come from
@@ -50,6 +52,7 @@ The Claude settings (model, `accept_reasons`, …) come from
 | [`parse_r_file()`](https://github.com/FlorianSchw/package-workflows/blob/main/R/functions/shared/parse_r_file.R) | Finds the first function in the file, its parameters and the roxygen block above it, with every tag and its lines. |
 | [`select_profile()`](https://github.com/FlorianSchw/package-workflows/blob/main/R/functions/roxygen/select_profile.R) | Picks the style guidance for an exported or an internal function (by `@export`). |
 | [`fn_source()`](https://github.com/FlorianSchw/package-workflows/blob/main/R/functions/shared/fn_source.R) | Cuts out the function's source code, so Claude can check the documentation against it. |
+| [`uses_ds_connections()`](https://github.com/FlorianSchw/package-workflows/blob/main/R/functions/shared/uses_ds_connections.R) | DataSHIELD utility packages: whether the function works on DataSHIELD connections (a `datasources` argument, `datashield.*()` or `ds.*()` calls). Only then does its guidance include the login example. |
 
 ## ③ Ask Claude
 

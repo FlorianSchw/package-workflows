@@ -47,6 +47,18 @@ For DataSHIELD packages, `role_guidance()` adds client/server guidance from
 `DESCRIPTION`), the prompt also carries a canonical multi-study Opal login
 example to use in `@examples`.
 
+**Utility packages** (`datashield-type: utility`, 2026-09-29) are
+analyst-side helpers such as dsAnalysis or mepr: project setup, mock data,
+packages. They get their own guidance, which covers side effects, and
+examples that write to `tempdir()`. The login example is included only for
+files whose function uses DataSHIELD connections, judged by
+`uses_ds_connections()`: a `datasources` argument, `datashield.*()` or
+`ds.*()` calls. Their study group is found through the package itself or
+its `Depends`/`Imports` (`read_package_dependencies()`, e.g.
+`dsBaseClient`), so the example environment needn't list every utility
+package. An unknown `datashield-type` stops the run
+(`check_datashield_type()`); it used to be skipped silently.
+
 ## Design decisions
 
 - **Claude never writes final roxygen text** — only fields, which R stitches
