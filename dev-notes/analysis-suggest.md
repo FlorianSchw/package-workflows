@@ -505,6 +505,20 @@ Re-tested:
    Tested with an endless loop (40 s timeout via a project override:
    stopped, repaired, proposed) and a failing repair call.
 
+**Second refactoring cycle (2026-09-30, up to 5 more iterations):**
+1. **The example caller follows the repo's conventions:** secret names
+   (`ANTHROPIC_ORG_ID`, `ANTHROPIC_SVAC_ID`, `ANTHROPIC_FDRL_ANALYSIS`),
+   the optional App secrets, key order.
+   - **File names:** the title part is cut to `max_file_title_chars`
+     (40).
+   - **`assemble_step_files()`** takes `settings` instead of three
+     separate values.
+   - **CRAN installs are batched:** CRAN packages go in one pak call
+     first (`preinstall_from_cran()`, one dependency resolution instead
+     of one per package). If that fails, each package is installed on its
+     own as before. Locally only the "already installed" path ran; the
+     batch call itself is first exercised in CI.
+
 **Open (stage 2): `ds.glmSLMA()` fails in the DSLite test run**, locally
 with dsBase 6.3.5, even on the original data (`D`), while `ds.glm()`
 works. Study-level meta-analysis code that works on real servers would

@@ -17,6 +17,7 @@ check_analysis_settings <- function(settings) {
   need(number(m$decimals) && m$decimals >= 0, "mock_data.decimals must be 0 or more")
   need(text(m$folder), "mock_data.folder must be a folder name")
   need(number(settings$max_script_lines) && settings$max_script_lines >= 20, "max_script_lines must be at least 20 (the header alone takes several lines)")
+  need(number(settings$max_file_title_chars) && settings$max_file_title_chars >= 5, "max_file_title_chars must be at least 5")
   n <- settings$numbering
   need(number(n$first) && n$first >= 1 && number(n$reserved_from) && n$reserved_from > n$first, "numbering.first must be at least 1 and below numbering.reserved_from")
   need(number(settings$repair_rounds) && settings$repair_rounds >= 0, "repair_rounds must be 0 or more")

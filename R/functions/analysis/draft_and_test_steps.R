@@ -37,7 +37,7 @@ draft_and_test_steps <- function(to_write, plan, steps, existing, context, check
       answers[[id]] <- s
       unlink(c(candidate[[id]], existing$path[existing$step == id]))
       built <- assemble_step_files(Find(function(p) identical(p$id, id), plan$steps), s$sections, context$numbers[[id]],
-        steps[[id]]$hash, settings$paths$scripts, settings$max_script_lines, context$header_values, s$notes, texts)
+        steps[[id]]$hash, context$header_values, s$notes, settings, texts)
       for (f in built$files) writeLines(f$lines, f$path)
       candidate[[id]] <- vapply(built$files, function(f) f$path, character(1))
       notes <- c(notes, built$notes)
