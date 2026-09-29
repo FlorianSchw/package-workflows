@@ -28,7 +28,7 @@ walk(list.files(file.path(functions_dir, c("shared", "analysis")), pattern = "\\
 # R_CONFIG_ACTIVE ("datashield-analysis") picks the profile in config/claude.yml.
 anthropic_config <- config::get(file = resolve_shared_path("config/claude.yml"))$anthropic
 # Project files at the same paths are merged over the shared defaults.
-settings <- read_config_yaml("config/analysis-suggest.yml")
+settings <- check_analysis_settings(read_config_yaml("config/analysis-suggest.yml"))
 texts <- read_config_yaml("config/analysis-texts.yml")
 analysis_prompt_template <- read_text_file("prompts/analysis-script-prompt.md")
 repair_prompt_template <- read_text_file("prompts/analysis-repair-prompt.md")

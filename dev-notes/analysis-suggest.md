@@ -487,6 +487,12 @@ Re-tested:
    force-push the same bot branch in parallel) and `timeout-minutes: 60`.
    Checked: mock `.rda` files are byte-identical when nothing changed, so
    there are no churn commits.
+4. **The merged settings are checked** before anything runs
+   (`check_analysis_settings()`): numbers and ranges, paths, markers,
+   variable kinds, a valid credential pattern, `owner/repo`. A typo in a
+   project's override stops the run with all problems listed. Checked:
+   the example config passes the plan checks and gives sensible mock
+   data.
 
 **Open (stage 2): `ds.glmSLMA()` fails in the DSLite test run**, locally
 with dsBase 6.3.5, even on the original data (`D`), while `ds.glm()`
