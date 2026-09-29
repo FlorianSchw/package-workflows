@@ -524,6 +524,14 @@ Re-tested:
    the plan's symbol there (tested with `symbol: df`). The prompt
    template now reaches `ask_claude_for_scripts()` through `context` like
    the repair template, instead of as a hidden global.
+3. **Bug of the same kind: the connections' name.** Scripts use the real
+   login's name for the connections (`check_login_file()`), while the
+   DSLite setup creates `conns`. If an analyst renames them (e.g.
+   `connections <- DSI::datashield.login(...)`), every step failed in the
+   test run. `update_dslite_setup()` now adds a marked alias line
+   (`connections <<- conns  # bot-suggest: ...`) when the names differ,
+   and removes it when they match again. The login check therefore runs
+   before the DSLite update.
 
 **Open (stage 2): `ds.glmSLMA()` fails in the DSLite test run**, locally
 with dsBase 6.3.5, even on the original data (`D`), while `ds.glm()`

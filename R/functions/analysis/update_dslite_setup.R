@@ -13,8 +13,11 @@
 # for it under utils/mock_data), `servers` the studies it holds files for.
 # The login's `symbol = "..."` is set to the plan's `symbol`: the template
 # says "D", and neither dsAnalysis function changes it, so a plan with
-# another symbol would otherwise fail every step in the test run.
-update_dslite_setup <- function(setup_file, dsanalysis_dir, mock_folder, servers, server_packages, mock_data_marker, symbol) {
+# another symbol would otherwise fail every step in the test run. For the
+# same reason, if the real login names its connections differently
+# (`connections`, from check_login_file()) than the DSLite setup does
+# (`conns` in the template), a marked line at the end provides that name.
+update_dslite_setup <- function(setup_file, dsanalysis_dir, mock_folder, servers, server_packages, mock_data_marker, symbol, connections) {
   if (!file.exists(setup_file)) {
     message(sprintf("No DSLite setup at %s — skipping its update.", setup_file))
     return(NULL)
@@ -37,7 +40,12 @@ update_dslite_setup <- function(setup_file, dsanalysis_dir, mock_folder, servers
   missing <- server_packages[!vapply(server_packages, function(p) any(grepl(p, block1, fixed = TRUE)), logical(1))]
   if (length(missing) > 0) env$add_dsPackage(missing)
 
-  lines <- readLines(setup_file, warn = FALSE)
-  writeLines(gsub("symbol\\s*=\\s*\"[^\"]*\"", sprintf("symbol = \"%s\"", symbol), lines), setup_file)
+  lines <- gsub("symbol\\s*=\\s*\"[^\"]*\"", sprintf("symbol = \"%s\"", symbol), readLines(setup_file, warn = FALSE))
+  alias_marker <- "# bot-suggest: the connections' name in the real login file"
+  lines <- lines[!endsWith(lines, alias_marker)]
+  login_call <- regmatches(lines, regexpr("^\\s*[A-Za-z.][A-Za-z0-9._]*\\s*(<<-|<-|=)\\s*(DSI::)?datashield\\.login", lines))
+  own_name <- if (length(login_call) > 0) sub("^\\s*([A-Za-z.][A-Za-z0-9._]*).*$", "\\1", login_call[1]) else connections
+  if (!identical(own_name, connections)) lines <- c(lines, sprintf("%s <<- %s  %s", connections, own_name, alias_marker))
+  writeLines(lines, setup_file)
   setup_file
 }

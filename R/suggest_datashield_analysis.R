@@ -82,11 +82,11 @@ if (length(installed$clients) == 0) {
 mock <- generate_mock_data(plan, settings$mock_data)
 mock_paths <- write_mock_data(mock, file.path(paths$mock_data, settings$mock_data$folder))
 login_files <- project_login_files(paths, settings$profiles)
-setup_file <- update_dslite_setup(login_files$testing, dsanalysis_dir, settings$mock_data$folder, names(mock),
-  installed$servers, settings$markers$dslite_mock_data, plan$symbol)
-if (is.null(setup_file)) stop(sprintf("The project needs the dsAnalysis DSLite setup (%s) for the test run.", login_files$testing), call. = FALSE)
 login <- check_login_file(login_files$production, plan, settings$credential_pattern, texts)
 notes <- c(notes, login$notes)
+setup_file <- update_dslite_setup(login_files$testing, dsanalysis_dir, settings$mock_data$folder, names(mock),
+  installed$servers, settings$markers$dslite_mock_data, plan$symbol, login$connections)
+if (is.null(setup_file)) stop(sprintf("The project needs the dsAnalysis DSLite setup (%s) for the test run.", login_files$testing), call. = FALSE)
 
 
 # --- 5. Claude, checks and test run ---------------------------------------------------
