@@ -25,6 +25,17 @@ test-review:
   accept_reasons: [uncovered_branch, error_handling, edge_case, regression]   # not: other
   max_new_tests: 10   # per function and run; changes to existing tests don't count
 
+datashield-analysis:
+  anthropic:
+    tool_name: submit_analysis_scripts
+    model: claude-opus-5
+    max_tokens: 32000
+    thinking:
+      type: adaptive
+    effort: high
+    fallbacks: default
+    betas: [server-side-fallback-2026-07-01]
+
 test-failure-classification:
   anthropic:
     tool_name: submit_failure_classification

@@ -1,6 +1,7 @@
 # Analysis starter scripts (idea, in design)
 
-Status: **design discussion, nothing built yet** (started 2026-09-29).
+Status: **stage 1 built (2026-09-30), tested locally, not yet run in CI**
+(design started 2026-09-29). See "Implementation" below.
 Name (decided 2026-09-30): **`datashield-analysis-suggest.yml`**.
 Lowercase like all workflow files (in prose it stays "DataSHIELD"). It
 follows the `<thing>-suggest` family, and branches are
@@ -278,6 +279,162 @@ project by a file at the same path (`resolve_shared_path()`). Candidates:
 - the catalogue URL and the issue target repo;
 - file paths: `dependencies.R`, script folder, mock data folder;
 - section order and structure.
+
+## Implementation (stage 1, 2026-09-30)
+
+Files:
+- **Workflow:** `.github/workflows/datashield-analysis-suggest.yml`, with
+  inputs `plan-file` (default `config/analysis-plan.yml`),
+  `dsanalysis-repository` and `dsanalysis-ref`, and the same secrets as
+  the other bot suggestions. The example caller is
+  `examples/datashield-analysis-suggest.yml`: push on the plan file on
+  any branch, plus `workflow_dispatch`. The job skips `bot-suggest/*`
+  refs.
+- **Code:** entry script `R/suggest_datashield_analysis.R`; functions in
+  `R/functions/analysis/`, which use only `shared/`.
+- **Settings:** `config/analysis-suggest.yml` (mock data, line limit,
+  catalogue default, gap issue repo; overridable per project) and the
+  `datashield-analysis` profile in `config/claude.yml` (Opus 5, adaptive
+  thinking). Prompt: `prompts/analysis-script-prompt.md`.
+
+Flow:
+1. `read_analysis_plan()` / `validate_analysis_plan()` fail fast with
+   all core problems. Defaults: symbol `D`, step id from the title.
+2. Each step is classified by its files' marker line
+   (`find_bot_step_files()`):
+   - **new** — no files yet;
+   - **changed** — untouched files, but the plan hash differs;
+   - **unchanged**;
+   - **edited** — never overwritten; a note if its plan entry changed.
+
+   A step whose files exist but that is no longer in the plan is
+   **removed**: note only.
+
+   If nothing is new or changed, there is no Claude call.
+3. Install the usable server packages (`usable_server_packages()`, on
+   all studies, lowest version) and their clients
+   (`install_ds_package()`, via pak: CRAN → tag `v<ver>` → tag `<ver>` →
+   default branch).
+4. Mock data: `generate_mock_data()` → `utils/mock_data/bot-suggest/<server>.rda`.
+   The DSLite setup is updated via dsAnalysis's `update_MockData()` /
+   `add_dsPackage()`, sourced from a checkout (not installed, so its
+   `Remotes` can't clash). `add_dsPackage()` is only called for packages
+   that are really missing, which works around its bug.
+   `check_login_file()`: connections name, credential warning,
+   server/symbol mismatch.
+5. Claude (`ask_claude_for_scripts()`) gets:
+   - the installed client functions with signatures
+     (`client_function_reference()`, ~150 functions for dsBaseClient);
+   - the catalogue: non-retired, not installed, server packages only;
+   - the existing bot scripts;
+   - the plan;
+   - the requested steps with their file numbers.
+
+   The tool returns sections and notes per step; enums restrict step ids
+   and note packages.
+6. Checks:
+   - `check_ds_calls()` flags parse errors, unknown `ds.*` /
+     `datashield.*` functions and unknown arguments;
+   - `run_analysis_scripts()` runs the DSLite setup plus all bot scripts
+     in file order via `callr`: `R_CONFIG_ACTIVE=testing`, no project
+     `.Rprofile` (renv), no tokens in the environment.
+
+   There is one repair round for failing steps, with their code and
+   errors. A still-failing step is not proposed; a changed step keeps its
+   old files.
+7. Output:
+   - **Step files:** `assemble_step_files()` writes `R/NN[a-z]_Title.R`
+     files of at most 150 lines, split between sections.
+   - **Notes-only files:** a step with no code gets a file with its notes
+     as comments, so the gap is visible and the step isn't requested
+     again every run.
+   - **`R/main.R` block:** source lines for all bot scripts.
+   - **`dependencies.R` block** (one block, three parts): packages
+     already listed "not yet on servers" stay until the servers have
+     them.
+   - **Report:** `format_analysis_report()` → `suggestion_report.md`
+     (the PR body) and the job summary.
+   - **PR:** `commit-updated-files` in `changed` mode opens
+     `bot-suggest/analysis/<branch>` → the pushed branch.
+
+Marker formats (an interface; the dsAnalysis template can include the two
+blocks empty):
+- script, first line: `#### bot-suggest: step=<id> plan=<hash> content=<hash>`.
+  `content` covers the rest of the file, so any edit counts. `plan`
+  hashes the step entry plus the core (symbol, studies, variables).
+- `R/main.R`: `#### bot-suggest: scripts (updated by datashield-analysis-suggest)`
+  … `#### bot-suggest: scripts end`.
+- `dependencies.R`: `#### bot-suggest: packages (updated by datashield-analysis-suggest)`
+  … `#### bot-suggest: packages end`.
+
+If a block is missing, it is appended at the end of the file.
+
+Tested locally (2026-09-30) on a project built from the dsAnalysis
+templates, with Claude and the installs replaced by stand-ins and DSLite
+with dsBase 6.3.5 real:
+- first run: 4 steps, a repair round for an invented argument, a
+  notes-only step, and the report with the issue link;
+- no change: no Claude call;
+- edited script + plan change: left alone, with a note;
+- changed step: rewritten under the same number;
+- a failed changed step keeps its old script;
+- "not yet on servers" packages kept across runs;
+- the renv `.Rprofile` is skipped;
+- a broken plan lists all problems.
+
+**Not yet tested:** a real Claude answer, the pak installs (CRAN/GitHub
+tags), and the PR in CI. That needs the user's test repo created with
+dsAnalysis, with the three Anthropic secrets.
+
+## What dsAnalysis needs (checklist for the user, 2026-09-30)
+
+Template (`initProject()`):
+1. Remove the empty placeholders `02_QualityCheck.R`,
+   `03_DescriptiveStatistics.R`, `99_DSLiteLearning.R` (planned by the
+   user).
+2. Add a config template `config/analysis-plan.yml` (decided: in a
+   `config/` folder, the workflow's `plan-file` default), from
+   [analysis-suggest-example-config.yml](analysis-suggest-example-config.yml),
+   with the header saying the content goes to the Claude API.
+3. Add the caller `.github/workflows/datashield-analysis-suggest.yml`, from
+   this repo's `examples/` once built.
+4. `R/main.R`: optionally an empty marked block for the bot's `source()`
+   lines (markers under "Implementation"); without it the bot appends
+   one.
+5. `dependencies.R`: optionally the bot's empty marked block (one block
+   with three parts: tested clients, DSLite server packages, not yet on
+   the servers commented out); without it the bot appends one.
+   Suggestion: `.gitignore` must not exclude `utils/mock_data/`; the bot
+   commits its mock data there.
+
+Interface — keep stable:
+
+6. The step markers in `01_DSLite_Setup.R` (`#### Step 1: …` to
+   `#### Step 7: …`), used by `add_dsPackage()` / `update_MockData()`,
+   and the markers in `main.R` and `dependencies.R`.
+
+Functions:
+
+7. **Bug in `add_dsPackage()`:** when every given package is already
+   present, `new_dsPackage_length` is 0, and the `1:0` loops write
+   `library(Client)` and break block 4. It should be a no-op.
+8. `update_MockData()` fits CI. Pass `table_names` so it doesn't parse
+   `01_DS_Login.R`. Each `.rda` must hold an object named after its server
+   (`study1.rda` → `study1`).
+
+README:
+
+9. The data protection note.
+10. A setup guide: the three secrets, plus "Allow GitHub Actions to create
+    and approve pull requests".
+11. How to try it: `R_CONFIG_ACTIVE = 'testing'`, restart R, run `main.R`.
+
+Package:
+
+12. `DESCRIPTION`: replace `Remotes: datashield/dsBaseClient` with CRAN
+    releases (planned).
+13. For its own test suggestions (`datashield-type: utility`): `DSLite`
+    and `dsBase` in Suggests.
 
 ## Open questions
 

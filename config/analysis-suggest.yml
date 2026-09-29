@@ -1,0 +1,17 @@
+# Settings for datashield-analysis-suggest.yml. A project can override this
+# file with its own copy at the same path (config/analysis-suggest.yml).
+# The analysis plan itself is a different file (config/analysis-plan.yml
+# by default, the workflow's plan-file input).
+
+mock_data:
+  rows_per_study: 1000   # synthetic rows per study for the DSLite test run
+  missing_share: 0.05    # share of missing values per variable
+  seed: 20260930         # same plan, same mock data
+
+max_script_lines: 150    # per script file; longer steps are split into 02a_, 02b_, ...
+
+# Default package catalogue, used when the plan has no package-catalogue entry.
+package_catalogue: https://packages.datashield.org/packages.json
+
+# Repository the "Open issue" links for missing functions point to.
+gap_issue_repo: FlorianSchw/package-workflows

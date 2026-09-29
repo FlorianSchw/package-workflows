@@ -1,0 +1,111 @@
+name: DataSHIELD Analysis Suggestions
+
+on:
+  workflow_call:
+    inputs:
+      plan-file:
+        description: 'The analysis plan, relative to the repository root'
+        required: false
+        type: string
+        default: 'config/analysis-plan.yml'
+      dsanalysis-repository:
+        description: 'Repository of dsAnalysis, whose functions update the DSLite test setup'
+        required: false
+        type: string
+        default: 'FlorianSchw/dsAnalysis'
+      dsanalysis-ref:
+        description: 'Branch or tag of dsAnalysis to use'
+        required: false
+        type: string
+        default: 'main'
+    secrets:
+      anthropic-organization-id:
+        description: 'Anthropic organization ID.'
+        required: true
+      anthropic-service-account-id:
+        description: 'svac_... ID of the service account for this repo.'
+        required: true
+      anthropic-federation-rule-id:
+        description: 'fdrl_... ID of the federation rule for this repo and workflow.'
+        required: true
+      app-client-id:
+        description: 'GitHub App Client ID (Iv23li...); its token lets bot PRs trigger checks (optional).'
+        required: false
+      app-private-key:
+        description: 'Private key of that GitHub App (required with app-client-id).'
+        required: false
+      commit-push-pat:
+        description: 'PAT with contents write, fallback if no App is set (optional).'
+        required: false
+
+jobs:
+  suggest-analysis:
+    if: ${{ !startsWith(github.ref_name, 'bot-suggest/') }}
+    runs-on: ubuntu-latest
+    permissions:
+      id-token: write
+      contents: write
+      pull-requests: write
+
+    steps:
+      - uses: actions/checkout@v7
+
+      - name: Checkout shared scripts
+        uses: actions/checkout@v7
+        with:
+          repository: FlorianSchw/package-workflows
+          ref: main
+          path: .shared-workflows
+
+      - name: Checkout dsAnalysis
+        uses: actions/checkout@v7
+        with:
+          repository: ${{ inputs.dsanalysis-repository }}
+          ref: ${{ inputs.dsanalysis-ref }}
+          path: .dsanalysis
+
+      - uses: r-lib/actions/setup-r@v2
+        with:
+          use-public-rspm: true
+
+      - uses: r-lib/actions/setup-r-dependencies@v2
+        with:
+          packages: >-
+            any::httr2, any::jsonlite, any::purrr, any::config, any::yaml,
+            any::pak, any::callr, any::here, any::stringr, any::DSI, any::DSLite
+
+      - name: Get Anthropic access token
+        id: anthropic_auth
+        uses: FlorianSchw/package-workflows/.github/actions/anthropic-token@main
+        with:
+          organization-id: ${{ secrets.anthropic-organization-id }}
+          service-account-id: ${{ secrets.anthropic-service-account-id }}
+          federation-rule-id: ${{ secrets.anthropic-federation-rule-id }}
+
+      - name: Draft and test the analysis scripts
+        env:
+          R_CONFIG_ACTIVE: datashield-analysis
+          ANTHROPIC_API_KEY: ${{ steps.anthropic_auth.outputs.access-token }}
+          PLAN_FILE: ${{ inputs.plan-file }}
+          DSANALYSIS_DIR: .dsanalysis
+        # --no-init-file: a dsAnalysis project's .Rprofile activates renv,
+        # which would hide the packages installed for this run.
+        run: Rscript --no-init-file .shared-workflows/R/suggest_datashield_analysis.R
+
+      - name: Resolve push token
+        id: push_token
+        uses: FlorianSchw/package-workflows/.github/actions/resolve-push-token@main
+        with:
+          client-id: ${{ secrets.app-client-id }}
+          app-private-key: ${{ secrets.app-private-key }}
+
+      - name: Propose the scripts
+        uses: FlorianSchw/package-workflows/.github/actions/commit-updated-files@main
+        with:
+          scan-mode: changed
+          token: ${{ steps.push_token.outputs.token || secrets.commit-push-pat || secrets.GITHUB_TOKEN }}
+          commit-prefix: 'feat: suggested analysis script'
+          sub-branch-prefix: 'bot-suggest/analysis'
+          sub-pr-title: 'DataSHIELD analysis scripts'
+          sub-pr-body: 'Drafted from your analysis plan by the datashield-analysis-suggest workflow.'
+          pr-body-file: 'suggestion_report.md'

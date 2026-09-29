@@ -82,6 +82,18 @@ the live caller used to validate changes before wider rollout.
     instead (`comment_once()`); the example caller has no PR trigger. Entry
     script `R/workflow_graphs.R`; design in
     [dev-notes/workflow-graphs.md](dev-notes/workflow-graphs.md).
+  - `datashield-analysis-suggest.yml` — for DataSHIELD **analysis
+    projects** created with dsAnalysis, not packages. On a push that
+    changes the analyst's plan (`config/analysis-plan.yml`), it drafts
+    `R/NN_*.R` scripts per plan step. Every DataSHIELD call is checked
+    against the installed client functions. All scripts run in
+    dsAnalysis's testing mode (DSLite + mock data from the plan), with one
+    repair round. What passes is proposed via a `bot-suggest/analysis/*`
+    PR; scripts the analyst edited are never overwritten. Entry script
+    `R/suggest_datashield_analysis.R`, functions in
+    `R/functions/analysis/`, settings `config/analysis-suggest.yml`.
+    Design, marker formats and the dsAnalysis checklist are in
+    [dev-notes/analysis-suggest.md](dev-notes/analysis-suggest.md).
 - Branch-protection rulesets (formerly `rulesets/` + `apply-ruleset.yml`)
   now live in a separate private repo.
 - `.github/actions/` — composite actions: `anthropic-token` (suggestion
@@ -90,11 +102,12 @@ the live caller used to validate changes before wider rollout.
   (plain commit to the current branch, commit message as input;
   `workflow-graphs.yml`, meant for future generated-file workflows too).
 - `R/` — entry scripts `suggest_roxygen.R`, `suggest_tests.R`,
-  `suggest_authors.R`, `workflow_graphs.R` (env/config wiring + main loop
-  only) and `R/functions/` (all logic, one function per file), split into
-  `shared/` (config/prompt files, GitHub API, report layout, reading R
-  files, the Claude call) and one folder per workflow: `roxygen/`,
-  `tests/`, `authors/`, `workflow-graphs/`. Each entry script loads only
+  `suggest_authors.R`, `workflow_graphs.R`, `suggest_datashield_analysis.R`
+  (env/config wiring + main loop only) and `R/functions/` (all logic, one
+  function per file), split into `shared/` (config/prompt files, GitHub
+  API, report layout, reading R files, the Claude call) and one folder per
+  workflow: `roxygen/`, `tests/`, `authors/`, `workflow-graphs/`,
+  `analysis/`. Each entry script loads only
   `shared/` plus its own folder (`purrr::walk()`), so a function used by
   two workflows must move to `shared/` — no calls across workflow
   folders (checked on the 2026-09-26 split). No R inlined in workflow
@@ -316,6 +329,21 @@ and `CONTRIBUTING.md`); no PRs until a branch model and rules exist.
   - **Docs pending:** `test-suggest-datashield.qmd` (utility section),
     `roxygen-suggest.qmd` (the type), and the input description on those
     pages. The Under the hood tables are already updated.
+- **DataSHIELD analysis starter** (`datashield-analysis-suggest.yml`):
+  stage 1 built on 2026-09-30 and tested locally (Claude and the installs
+  replaced by stand-ins, DSLite real). Not yet in CI: a real Claude
+  answer, the pak installs, the PR.
+  - **Test bed:** a GitHub repo created with dsAnalysis, with the three
+    Anthropic secrets. The user will set it up.
+  - **Later stages:** models, figures/tables, and then tuning of the
+    incremental updates.
+  - **dsAnalysis:** its changes are a checklist in
+    [dev-notes/analysis-suggest.md](dev-notes/analysis-suggest.md),
+    including a bug in `add_dsPackage()`.
+  - **Docs pending:** a new sidebar section "Analysis projects" with a
+    page for the workflow (the input tables come from the YAML), and a
+    repo description like "…for R packages and DataSHIELD analysis
+    projects". Also a roadmap entry.
 - **Policy file for the bot's rules** (`config/suggestion-policy.yml`):
   today reasons, action↔reason mapping, the `aut`/`ctb` rule, name
   particles and report routing live partly only in R code. Move the

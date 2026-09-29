@@ -1,0 +1,19 @@
+name: DataSHIELD analysis scripts
+
+on:
+  push:
+    paths:
+      - 'config/analysis-plan.yml'
+  workflow_dispatch:
+
+jobs:
+  suggest-analysis:
+    uses: FlorianSchw/package-workflows/.github/workflows/datashield-analysis-suggest.yml@main
+    permissions:
+      id-token: write
+      contents: write
+      pull-requests: write
+    secrets:
+      anthropic-organization-id: ${{ secrets.ANTHROPIC_ORGANIZATION_ID }}
+      anthropic-service-account-id: ${{ secrets.ANTHROPIC_SERVICE_ACCOUNT_ID }}
+      anthropic-federation-rule-id: ${{ secrets.ANTHROPIC_FEDERATION_RULE_ID }}
