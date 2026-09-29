@@ -464,6 +464,15 @@ Re-tested:
   - the tokens removed from the test run's environment, so no project
     override can give them to generated code.
 
+**Refactoring iterations (2026-09-30, up to 5, each committed):**
+1. Plan-check messages moved to `texts$plan`, so everything the analyst
+   reads is in `analysis-texts.yml`. `utils/mock_data` became
+   `paths$mock_data`, and `update_dslite_setup()` gets the servers
+   instead of listing the folder, sorting in `list.files()`'s byte order.
+   The entry script is down to wiring (146 lines): the Claude/test loop
+   is now `draft_and_test_steps()`, the evaluation
+   `settle_step_results()`, and `format_existing_steps()` was extracted.
+
 **Open (stage 2): `ds.glmSLMA()` fails in the DSLite test run**, locally
 with dsBase 6.3.5, even on the original data (`D`), while `ds.glm()`
 works. Study-level meta-analysis code that works on real servers would

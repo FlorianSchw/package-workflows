@@ -9,7 +9,9 @@
 # there (dev-notes/analysis-suggest.md, dsAnalysis checklist), so it is
 # only called with packages its own check wouldn't find: those not named
 # in the lines above `mock_data_marker` (the library() calls).
-update_dslite_setup <- function(setup_file, dsanalysis_dir, mock_folder, server_packages, mock_data_marker) {
+# `mock_folder` is the mock data's folder name (update_MockData() looks
+# for it under utils/mock_data), `servers` the studies it holds files for.
+update_dslite_setup <- function(setup_file, dsanalysis_dir, mock_folder, servers, server_packages, mock_data_marker) {
   if (!file.exists(setup_file)) {
     message(sprintf("No DSLite setup at %s — skipping its update.", setup_file))
     return(NULL)
@@ -22,8 +24,9 @@ update_dslite_setup <- function(setup_file, dsanalysis_dir, mock_folder, server_
   env <- new.env()
   for (f in sources) sys.source(f, envir = env)
 
-  servers <- sub("\\.rda$", "", list.files(file.path("utils", "mock_data", mock_folder), pattern = "\\.rda$"))
-  env$update_MockData(folder_name = mock_folder, table_names = servers)
+  # update_MockData() pairs the files it lists with these names, in
+  # list.files() order: byte order, as sort(method = "radix") gives.
+  env$update_MockData(folder_name = mock_folder, table_names = sort(servers, method = "radix"))
 
   lines <- readLines(setup_file, warn = FALSE)
   marker_line <- which(lines == mock_data_marker)

@@ -5,6 +5,33 @@
 # these defaults, key by key. {{PLACEHOLDERS}} are filled in by R; keep
 # the ones a text uses.
 
+# Problems in the analysis plan, shown in the job summary before anything
+# else runs. {{LABEL}} names the entry, e.g. "study study1".
+plan:
+  not_found: "Analysis plan not found: {{PATH}}"
+  not_yaml: "{{PATH}} is not valid YAML: {{ERROR}}"
+  not_mapping: "{{PATH}} is empty or not a YAML mapping."
+  problems: "{{PATH}} has {{COUNT}} problem(s):"
+  label_study: "study {{NAME}}"
+  label_variable: "variable {{NAME}}"
+  label_entry: "{{SECTION}}[{{INDEX}}]"
+  symbol: "symbol must be a plain R name, e.g. D."
+  no_studies: "studies: list at least one study, each with a server name and its packages."
+  server_name: "{{LABEL}}: server must be a plain R name (letters, digits, . and _), as in 01_DS_Login.R."
+  packages: "{{LABEL}}: packages must list the installed server packages with their versions, e.g. {dsBase: \"6.3.2\"}."
+  one_version: "{{LABEL}}: give one version per package ({{PACKAGES}})."
+  duplicate_servers: "studies: server names must be unique ({{NAMES}})."
+  no_variables: "variables: list the variables the analysis uses, with name, type and categories or range."
+  variable_name: "{{LABEL}}: name must be the variable name as in the data."
+  variable_type: "{{LABEL}}: type must be one of {{TYPES}}."
+  categories: "{{LABEL}}: categorical variables need at least two categories."
+  range: "{{LABEL}}: range must be [min, max] with min < max."
+  duplicate_variables: "variables: names must be unique ({{NAMES}})."
+  no_steps: "steps: list at least one step with a title."
+  step_title: "{{LABEL}}: every step needs a title."
+  step_id: "step '{{TITLE}}': id may only contain letters, digits, _ and -."
+  duplicate_steps: "steps: ids must be unique ({{NAMES}}); give steps with the same title an explicit id."
+
 script:
   header:
     - "#### {{TITLE}}"

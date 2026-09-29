@@ -11,7 +11,7 @@ mock_data:
   missing_share: 0.05    # share of missing values per variable
   seed: 20260930         # same plan, same mock data
   decimals: 2            # continuous values are rounded to this
-  folder: bot-suggest    # under utils/mock_data/ (where dsAnalysis looks)
+  folder: bot-suggest    # under paths$mock_data
 
 max_script_lines: 150    # per script file; longer steps are split into 02a_, 02b_, ...
 
@@ -30,6 +30,7 @@ paths:
   main: R/main.R
   dependencies: dependencies.R
   project_config: config.yml
+  mock_data: utils/mock_data   # dsAnalysis's update_MockData() expects this folder
   login_production: R/01_DS_Login.R
   login_testing: utils/setup/01_DSLite_Setup.R
 
