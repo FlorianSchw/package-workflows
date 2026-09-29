@@ -27,9 +27,11 @@ walk(list.files(file.path(functions_dir, c("shared", "analysis")), pattern = "\\
 
 # R_CONFIG_ACTIVE ("datashield-analysis") picks the profile in config/claude.yml.
 anthropic_config <- config::get(file = resolve_shared_path("config/claude.yml"))$anthropic
-settings <- yaml::read_yaml(resolve_shared_path("config/analysis-suggest.yml"))
-texts <- yaml::read_yaml(resolve_shared_path("config/analysis-texts.yml"))
+# Project files at the same paths are merged over the shared defaults.
+settings <- read_config_yaml("config/analysis-suggest.yml")
+texts <- read_config_yaml("config/analysis-texts.yml")
 analysis_prompt_template <- read_text_file("prompts/analysis-script-prompt.md")
+repair_prompt_template <- read_text_file("prompts/analysis-repair-prompt.md")
 
 api_key        <- Sys.getenv("ANTHROPIC_API_KEY")
 plan_file      <- Sys.getenv("PLAN_FILE", "config/analysis-plan.yml")
@@ -80,7 +82,7 @@ if (length(installed$clients) == 0) {
 # --- 4. Mock data, DSLite setup, login file -----------------------------------------
 
 mock_paths <- write_mock_data(generate_mock_data(plan, settings$mock_data), file.path("utils", "mock_data", settings$mock_data$folder))
-login_files <- project_login_files(paths)
+login_files <- project_login_files(paths, settings$profiles)
 setup_file <- update_dslite_setup(login_files$testing, dsanalysis_dir, settings$mock_data$folder, installed$servers, settings$markers$dslite_mock_data)
 if (is.null(setup_file)) stop(sprintf("The project needs the dsAnalysis DSLite setup (%s) for the test run.", login_files$testing), call. = FALSE)
 login <- check_login_file(login_files$production, plan, settings$credential_pattern, texts)
@@ -134,11 +136,11 @@ for (round in seq_len(attempts)) {
   # Every other bot script runs too: kept steps, and requested steps that
   # have no new version (yet), so each step finds the objects it needs.
   others <- sort(existing$path[!existing$step %in% names(candidate)])
-  outcome <- test_step_scripts(candidate, answers, reference, plan_variables, login_files$testing, others, settings$test_run_timeout_seconds)
+  outcome <- test_step_scripts(candidate, answers, reference, plan_variables, login_files$testing, others, settings, texts)
   if (length(outcome$problems) == 0 || round == attempts) break
   requested <- names(outcome$problems)
   message(sprintf("Repair round for: %s", paste(requested, collapse = ", ")))
-  previous <- format_repair_request(outcome$problems, answers)
+  previous <- format_repair_request(outcome$problems, answers, repair_prompt_template)
 }
 for (f in names(outcome$broken_other)) {
   notes <- c(notes, fill_template(texts$notes$existing_failed, list(FILE = f, ERROR = outcome$broken_other[[f]])))

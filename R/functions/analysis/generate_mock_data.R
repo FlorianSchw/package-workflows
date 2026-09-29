@@ -14,7 +14,7 @@ generate_mock_data <- function(plan, settings) {
       values <- switch(v$kind,
         continuous = {
           r <- as.numeric(unlist(v$range))
-          round(stats::runif(n, r[1], r[2]), 2)
+          round(stats::runif(n, r[1], r[2]), as.integer(settings$decimals))
         },
         integer = {
           r <- as.integer(unlist(v$range))

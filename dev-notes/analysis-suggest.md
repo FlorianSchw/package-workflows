@@ -438,6 +438,32 @@ Re-tested:
 - an unknown type: its message lists the allowed types;
 - a project override of `analysis-texts.yml` changes the report.
 
+**Third pass (2026-09-30).**
+- **Project config files are merged, not replaced.** Projects' own
+  `config/analysis-suggest.yml` / `analysis-texts.yml` are merged over
+  the shared defaults key by key (`read_config_yaml()`,
+  `utils::modifyList()`). A project writes only what it changes, and a
+  new key in the defaults still reaches projects with an older copy.
+  Found in testing: a stale full copy without the new `checks:` texts
+  crashed the run. This differs from the other workflows, whose
+  overrides (`resolve_shared_path()`) replace the whole file; consider
+  merging there too.
+- **The shared `fill_template()` now stops with a clear message** when a
+  template is missing, instead of "index out of bounds".
+- **Moved out of R:**
+  - the check messages → `texts$checks` (Claude gets them in the repair
+    round; the report shows them as the reason);
+  - the repair-round wording → `prompts/analysis-repair-prompt.md`;
+  - dsAnalysis's profile names (`production` / `testing`) and mock
+    decimals → settings.
+- **All 141 files in `R/functions/` checked:** one function each, named
+  like the file, no other top-level code.
+- **Deliberately still in code:**
+  - the tool schema descriptions, as in roxygen/tests; the planned policy
+    file would move them for all workflows together;
+  - the tokens removed from the test run's environment, so no project
+    override can give them to generated code.
+
 **Open (stage 2): `ds.glmSLMA()` fails in the DSLite test run**, locally
 with dsBase 6.3.5, even on the original data (`D`), while `ds.glm()`
 works. Study-level meta-analysis code that works on real servers would

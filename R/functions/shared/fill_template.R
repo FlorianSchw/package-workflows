@@ -4,6 +4,9 @@
 # can't be mangled. Fails loudly if the template uses a placeholder with no
 # value, rather than silently sending Claude a literal "{{KEY}}".
 fill_template <- function(template, values) {
+  if (!is.character(template) || length(template) != 1) {
+    stop("fill_template() needs one text template; is an entry missing in a config or prompt file?", call. = FALSE)
+  }
   matches <- gregexpr("\\{\\{[A-Z_]+\\}\\}", template)
   found <- regmatches(template, matches)[[1]]
   keys <- substr(found, 3, nchar(found) - 2)

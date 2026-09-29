@@ -93,8 +93,10 @@ the live caller used to validate changes before wider rollout.
     `R/suggest_datashield_analysis.R`, functions in
     `R/functions/analysis/`, settings `config/analysis-suggest.yml`
     (paths, markers, limits, variable types, …), wording
-    `config/analysis-texts.yml`. Both are overridable per project;
-    adjustments go there rather than into R.
+    `config/analysis-texts.yml`, prompts `prompts/analysis-*.md`. A
+    project's own copy of either config is merged over the defaults key
+    by key (`read_config_yaml()`), unlike the other workflows' overrides,
+    which replace the whole file. Adjustments go there rather than into R.
     Design, marker formats and the dsAnalysis checklist are in
     [dev-notes/analysis-suggest.md](dev-notes/analysis-suggest.md).
 - Branch-protection rulesets (formerly `rulesets/` + `apply-ruleset.yml`)

@@ -1,6 +1,7 @@
-# Settings for datashield-analysis-suggest.yml. A project can override this
-# file with its own copy at the same path (config/analysis-suggest.yml);
-# the copy replaces this file completely, so start from a full copy.
+# Settings for datashield-analysis-suggest.yml. A project can change them
+# with its own file at the same path (config/analysis-suggest.yml) that
+# holds only the entries to change; it is merged over these defaults, key
+# by key (a list, e.g. excluded_functions, is replaced as a whole).
 # The analysis plan itself is a different file (config/analysis-plan.yml
 # by default, the workflow's plan-file input). Wording lives in
 # config/analysis-texts.yml.
@@ -9,6 +10,7 @@ mock_data:
   rows_per_study: 1000   # synthetic rows per study for the DSLite test run
   missing_share: 0.05    # share of missing values per variable
   seed: 20260930         # same plan, same mock data
+  decimals: 2            # continuous values are rounded to this
   folder: bot-suggest    # under utils/mock_data/ (where dsAnalysis looks)
 
 max_script_lines: 150    # per script file; longer steps are split into 02a_, 02b_, ...
@@ -30,6 +32,13 @@ paths:
   project_config: config.yml
   login_production: R/01_DS_Login.R
   login_testing: utils/setup/01_DSLite_Setup.R
+
+# Profile names in the project's config.yml: the real login, and the DSLite
+# test setup the test run uses (R_CONFIG_ACTIVE). An interface with the
+# dsAnalysis templates.
+profiles:
+  production: production
+  testing: testing
 
 # Marker lines of the blocks the bot maintains in main.R and
 # dependencies.R. An interface with the dsAnalysis templates: change both

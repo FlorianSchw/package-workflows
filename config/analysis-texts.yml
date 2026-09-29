@@ -1,8 +1,9 @@
 # Wording of datashield-analysis-suggest.yml: script headers, the
 # dependencies.R block, the pull request description, notes and the
-# prefilled issue. Overridable per project like the other config files
-# (a copy at config/analysis-texts.yml replaces this file completely).
-# {{PLACEHOLDERS}} are filled in by R; keep the ones a text uses.
+# prefilled issue. A project can change single texts with its own
+# config/analysis-texts.yml holding only those entries; it is merged over
+# these defaults, key by key. {{PLACEHOLDERS}} are filled in by R; keep
+# the ones a text uses.
 
 script:
   header:
@@ -36,6 +37,15 @@ notes:
   servers_differ: "The servers in `{{PATH}}` ({{FOUND}}) differ from the plan ({{PLANNED}}). The scripts use the plan's names, e.g. for results per study."
   symbol_differs: "`{{PATH}}` assigns the data to `{{FOUND}}`, the plan says `{{PLANNED}}`. The scripts use `{{PLANNED}}`."
   existing_failed: "Your existing script `{{FILE}}` failed in the test run: {{ERROR}}"
+
+# Problems the checks find. Claude gets them in the repair round, and the
+# report shows them as the reason a step wasn't proposed.
+checks:
+  does_not_parse: "The code does not parse: {{ERROR}}"
+  unknown_function: "{{FUNCTION}}() does not exist in the installed client packages, or may not be used."
+  unknown_argument: "{{FUNCTION}}() has no argument {{GIVEN}} (its arguments: {{ARGUMENTS}})."
+  unknown_column: "{{COLUMNS}} refers to a column that is neither a variable of the plan nor created by any step (plan variables: {{VARIABLES}})."
+  runtime_error: "Error when running {{FILE}}: {{ERROR}}"
 
 report:
   nothing_to_do: "Nothing to do: every step of the plan already has an up-to-date script."
