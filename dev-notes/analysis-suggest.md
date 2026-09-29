@@ -1,7 +1,15 @@
 # Analysis starter scripts (idea, in design)
 
 Status: **design discussion, nothing built yet** (started 2026-09-29).
-Working name: `analysis-suggest`. The name is not decided yet.
+Name (decided 2026-09-30): **`datashield-analysis-suggest.yml`**.
+Lowercase like all workflow files (in prose it stays "DataSHIELD"). It
+follows the `<thing>-suggest` family, and branches are
+`bot-suggest/analysis/…`. "initiate" was dropped because the workflow
+keeps proposing updates after the first run; a "gets you started" message
+can go in the docs page title (e.g. "Start a DataSHIELD analysis"). Fix
+the name before the first release: it is part of every caller's `uses:`
+path and the federation rules' `job_workflow_ref` claim. This note keeps
+its file name `analysis-suggest.md`.
 
 ## Idea
 
@@ -49,6 +57,23 @@ README or the script header, not into the code logic.
   close to pre-registration, instead of exploring. The variable names and
   the plan themselves do go to the API; that's the obvious data
   protection point.
+- **Data protection: a note, no opt-in** (decided 2026-09-30). The config
+  content (variable names, levels, studies, tables, the plan) goes to the
+  API; data, credentials and `01_DS_Login.R` never do. The note that the
+  config content is sent to the Claude API, and must not contain anything
+  confidential, belongs in the **config template header and the dsAnalysis
+  README**, not in this repo. The docs page here only points to it.
+  - **Why no `send-to-api` setting:** users are worldwide with different
+    regulations, so it's the project's own decision, like hosting on
+    GitHub. Metadata is increasingly meant to be public anyway (in Europe
+    the EHDS asks studies to publish dataset metadata; the user thinks by
+    2029). And an opt-in would mean analysts editing settings they don't
+    understand.
+- **Design goal: analysts never touch the workflow file.** Everything
+  analysis-related lives in the config; the caller comes from dsAnalysis
+  and just works. Most analysts will have no workflow knowledge, and the
+  secrets setup (GitHub App / PAT) is already a hurdle — see the auth
+  question below.
 - **`.Renviron`** is in `.gitignore` when dsAnalysis creates the project.
   If a user undoes that, it's their responsibility. CI never connects to
   real servers and never uses real credentials.
@@ -264,13 +289,54 @@ project by a file at the same path (`resolve_shared_path()`). Candidates:
   4. incremental updates. Markers and checksums are built in from stage 1.
 - **Example analysis plan:** the user will provide one later; design the
   config fields against it.
-- **Scope of client packages:** only `dsBaseClient` at first, or more?
-- **Data protection:** can variable names and the plan go to the API in
-  the user's projects?
-- **Auth per analysis repo:** one Anthropic service account and federation
-  rule per repo is too much friction for many analysis projects. Needs a
-  prefix/claims rule per org, or a shared service account.
-- **Where it lives:** this repo is described as "for R packages". It would
-  need an "Analysis projects" section.
+- ~~**Scope of client packages**~~ Resolved by the two config fields:
+  the installed server packages per study (only these produce code) and
+  the catalogue URL (only for notes and package locations). Whatever the
+  analyst lists is supported. Stage 1 is developed and tested against
+  `dsBase` / `dsBaseClient`; other packages get checked deliberately once
+  a real use case comes up.
+- ~~**Data protection**~~ Decided: a note in the config template and the
+  dsAnalysis README, no opt-in (see above).
+- ~~**Auth per analysis repo**~~ Decided (2026-09-30): the same as roxygen
+  and tests, to stay flexible while cost models for such services are
+  still being discussed. The caller passes the Anthropic organisation,
+  service account and federation rule IDs as secrets; the GitHub App
+  (`app-client-id` / `app-private-key`) stays optional. So the caller
+  decides who pays. Remaining hurdle: analysts set up three secrets per
+  repo, so the dsAnalysis README needs a step-by-step guide.
+  - **Simplifications for later** (checked against the WIF docs on
+    2026-09-30). None needs a workflow change; only the setup
+    description would change once the cost model is settled.
+    1. **One rule for many repos:** a rule matches a `subject_prefix`
+       with a trailing `*` (e.g. `repo:<org>/*`), exact claims (e.g.
+       `job_workflow_ref` = this workflow at `main`), and/or a CEL
+       `condition` (e.g. `repository_owner` in an allowlist, for personal
+       accounts). With the `job_workflow_ref` match only our reusable
+       workflow's job gets tokens; callers can't add steps to it.
+    2. **The IDs aren't secrets:** org, service account and rule IDs are
+       identifiers; the security is the signed GitHub JWT matching the
+       rule. They could be plain values in the caller dsAnalysis ships.
+    3. **No App needed:** analysis repos normally have no required
+       checks, so `GITHUB_TOKEN`-created PRs are fine. They only need
+       "Allow GitHub Actions to create and approve pull requests" (believed
+       off by default; to verify), which can be set org-wide.
+
+    Always set a workspace spending limit when many repos share one org.
+  - **One model for all users** (user's wish: several models for
+    different user groups would be complicated). Users always enter
+    three secrets. A later central setup (option 1) changes only who
+    issues the values — the same shared values for everyone — not the
+    procedure or the workflow.
+- ~~**Where it lives**~~ Decided for now (2026-09-30): a new docs section
+  "Analysis projects" next to "Bot suggestions", and a repo description
+  like "Reusable GitHub Actions for R packages and DataSHIELD analysis
+  projects". The repo structure may change after feedback, e.g.
+  DataSHIELD-only parts split from the rest. So build the workflow to be
+  easy to move:
+  - entry script `R/suggest_datashield_analysis.R` plus
+    `R/functions/analysis/`, using only `shared/`;
+  - clearly named `config/analysis-*` and `prompts/analysis-*` files;
+  - only generic additions to `shared/`; DataSHIELD-specific helpers stay
+    in its own folder.
 - **Config schema details:** fields, required vs optional, and validation
   (fail fast before any Claude call).
