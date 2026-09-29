@@ -8,15 +8,15 @@
 # Returns list(problems, broken_other): problems per step id with any
 # (only failing steps), and errors of other_files (named by path).
 # Stops if the DSLite setup itself fails: then nothing can be judged.
-test_step_scripts <- function(candidate, answers, reference, variables, login_file, other_files) {
+test_step_scripts <- function(candidate, answers, reference, variables, login_file, other_files, timeout) {
   ids <- names(candidate)
-  code_of <- function(id) paste(vapply(answers[[id]]$sections, function(s) s$code, character(1)), collapse = "\n")
-  all_code <- paste(c(vapply(ids, code_of, character(1)), unlist(lapply(other_files, readLines, warn = FALSE))), collapse = "\n")
+  all_code <- paste(c(vapply(answers[ids], step_code, character(1)), unlist(lapply(other_files, readLines, warn = FALSE))), collapse = "\n")
   problems <- lapply(setNames(ids, ids), function(id) {
-    c(check_ds_calls(code_of(id), reference), check_column_references(code_of(id), all_code, variables))
+    code <- step_code(answers[[id]])
+    c(check_ds_calls(code, reference), check_column_references(code, all_code, variables))
   })
 
-  run <- run_analysis_scripts(login_file, sort(c(other_files, unlist(candidate, use.names = FALSE))))
+  run <- run_analysis_scripts(login_file, sort(c(other_files, unlist(candidate, use.names = FALSE))), timeout)
   if (!is.na(run$login_error)) {
     stop(sprintf("The DSLite test setup (%s) failed: %s", login_file, run$login_error), call. = FALSE)
   }

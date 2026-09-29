@@ -11,7 +11,7 @@ generate_mock_data <- function(plan, settings) {
   studies <- lapply(seq_along(plan$studies), function(i) {
     set.seed(as.integer(settings$seed) + i)
     columns <- lapply(plan$variables, function(v) {
-      values <- switch(v$type,
+      values <- switch(v$kind,
         continuous = {
           r <- as.numeric(unlist(v$range))
           round(stats::runif(n, r[1], r[2]), 2)

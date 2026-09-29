@@ -1,11 +1,12 @@
 # The package catalogue as prompt text: one line per server-side package
 # that isn't retired and isn't already installed, with its description and
 # status. Client packages are left out: notes name the server package (the
-# one the study servers need), its client follows by name. Returns
-# list(text, names); `names` is the enum for other_package notes.
-format_catalogue_for_prompt <- function(catalogue, installed) {
+# one the study servers need), its client (name + `client_suffix`)
+# follows. Returns list(text, names); `names` is the enum for
+# other_package notes.
+format_catalogue_for_prompt <- function(catalogue, installed, client_suffix) {
   keep <- names(catalogue)[vapply(catalogue, function(p) !identical(p$status, "retired"), logical(1))]
-  keep <- setdiff(keep[!grepl("Client$", keep)], installed)
+  keep <- setdiff(keep[!endsWith(keep, client_suffix)], installed)
   if (length(keep) == 0) return(list(text = "(not available)", names = character(0)))
   lines <- vapply(keep, function(n) {
     p <- catalogue[[n]]

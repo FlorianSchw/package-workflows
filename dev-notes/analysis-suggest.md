@@ -292,10 +292,30 @@ Files:
   refs.
 - **Code:** entry script `R/suggest_datashield_analysis.R`; functions in
   `R/functions/analysis/`, which use only `shared/`.
-- **Settings:** `config/analysis-suggest.yml` (mock data, line limit,
-  catalogue default, gap issue repo; overridable per project) and the
-  `datashield-analysis` profile in `config/claude.yml` (Opus 5, adaptive
-  thinking). Prompt: `prompts/analysis-script-prompt.md`.
+- **Settings:** `config/analysis-suggest.yml` holds everything
+  adjustable without code. Both config files are overridable per
+  project, and a copy replaces the file completely. It covers:
+  - mock data (rows, missing share, seed, folder);
+  - line limit, numbering (first number, reserved numbers), repair
+    rounds, test-run timeout;
+  - project paths;
+  - block markers (an interface with dsAnalysis);
+  - variable types with aliases (`numeric`, `binary`, Opal's `decimal`,
+    …) mapped to how mock data is generated;
+  - catalogue URL, client suffix, excluded functions (login/logout),
+    credential pattern, gap issue repo.
+- **Texts:** `config/analysis-texts.yml` holds everything the analyst
+  reads: script header, `dependencies.R` comments, step statuses, notes,
+  PR report and the issue template. Placeholders are `{{KEY}}`, filled
+  with the shared `fill_template()`, which stops if a placeholder has no
+  value.
+- **Claude:** the `datashield-analysis` profile in `config/claude.yml`
+  (Opus 5, adaptive thinking); prompt `prompts/analysis-script-prompt.md`.
+- **Still in code, on purpose:**
+  - the step file marker line (parsed by regex);
+  - the check messages meant for Claude's repair round;
+  - maintainer errors (setup failures);
+  - the install source order.
 
 Flow:
 1. `read_analysis_plan()` / `validate_analysis_plan()` fail fast with
@@ -405,6 +425,18 @@ Re-tested:
 - a step Claude skips: its old script is kept and still runs before the
   next step;
 - an edited script with a plan change.
+
+**Configurability pass (2026-09-30).** The settings and texts described
+above moved out of R. The two checks share `walk_code()` for walking the
+code tree (with the "empty argument" handling in one place), and
+`step_code()` for a step's code. `install_ds_package()` keeps a package
+that is already installed at the right version, e.g. from a cached or
+preinstalled library; dsBase pulls in heavy dependencies.
+
+Re-tested:
+- all scenarios, with a plan using the alias `numeric`;
+- an unknown type: its message lists the allowed types;
+- a project override of `analysis-texts.yml` changes the report.
 
 **Open (stage 2): `ds.glmSLMA()` fails in the DSLite test run**, locally
 with dsBase 6.3.5, even on the original data (`D`), while `ds.glm()`

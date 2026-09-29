@@ -91,7 +91,10 @@ the live caller used to validate changes before wider rollout.
     repair round. What passes is proposed via a `bot-suggest/analysis/*`
     PR; scripts the analyst edited are never overwritten. Entry script
     `R/suggest_datashield_analysis.R`, functions in
-    `R/functions/analysis/`, settings `config/analysis-suggest.yml`.
+    `R/functions/analysis/`, settings `config/analysis-suggest.yml`
+    (paths, markers, limits, variable types, …), wording
+    `config/analysis-texts.yml`. Both are overridable per project;
+    adjustments go there rather than into R.
     Design, marker formats and the dsAnalysis checklist are in
     [dev-notes/analysis-suggest.md](dev-notes/analysis-suggest.md).
 - Branch-protection rulesets (formerly `rulesets/` + `apply-ruleset.yml`)
@@ -343,7 +346,8 @@ and `CONTRIBUTING.md`); no PRs until a branch model and rules exist.
   - **Docs pending:** a new sidebar section "Analysis projects" with a
     page for the workflow (the input tables come from the YAML), and a
     repo description like "…for R packages and DataSHIELD analysis
-    projects". Also a roadmap entry.
+    projects". Also a roadmap entry, and the two new config files in the
+    override table of `docs/suggestions.qmd` ("Adjusting the guidance").
 - **Policy file for the bot's rules** (`config/suggestion-policy.yml`):
   today reasons, action↔reason mapping, the `aut`/`ctb` rule, name
   particles and report routing live partly only in R code. Move the

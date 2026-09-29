@@ -3,8 +3,10 @@
 # checked: the symbol, the studies with their server packages (mock data,
 # installs) and the variables (mock data). Steps only need a title and a
 # unique id; everything else in a step is free and goes to Claude as
-# written. Unknown top-level entries are allowed.
-validate_analysis_plan <- function(plan) {
+# written. Unknown top-level entries are allowed. `types` are the
+# variable types the settings allow; read_analysis_plan() has already set
+# each known type's `kind`.
+validate_analysis_plan <- function(plan, types) {
   problems <- character(0)
   add <- function(...) problems <<- c(problems, sprintf(...))
   is_name <- function(x) is.character(x) && length(x) == 1 && identical(make.names(x), x)
@@ -42,10 +44,9 @@ validate_analysis_plan <- function(plan) {
       label <- if (is.character(v$name)) sprintf("variable %s", v$name) else sprintf("variables[%d]", i)
       if (!is_name(v$name)) add("%s: name must be the variable name as in the data.", label)
       names_seen <- c(names_seen, if (is.character(v$name)) v$name)
-      type <- if (is.character(v$type)) v$type else ""
-      if (!type %in% c("continuous", "integer", "categorical")) {
-        add("%s: type must be continuous, integer or categorical.", label)
-      } else if (type == "categorical") {
+      if (is.null(v$kind)) {
+        add("%s: type must be one of %s.", label, paste(types, collapse = ", "))
+      } else if (v$kind == "categorical") {
         if (length(v$categories) < 2) add("%s: categorical variables need at least two categories.", label)
       } else {
         r <- suppressWarnings(as.numeric(unlist(v$range)))

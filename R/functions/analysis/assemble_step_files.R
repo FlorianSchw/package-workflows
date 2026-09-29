@@ -1,19 +1,17 @@
 # Builds a step's script files from Claude's sections: a marker line, a
-# short header, then each section as "#### <purpose>" plus its code.
-# Files hold at most `max_lines` lines; longer steps are split between
-# sections into 02a_, 02b_, ... A single section longer than the limit
-# gets a file of its own (and a note), never cut in half.
+# short header (`texts$script$header`), then each section as
+# "#### <purpose>" plus its code. Files hold at most `max_lines` lines;
+# longer steps are split between sections into 02a_, 02b_, ... A single
+# section longer than the limit gets a file of its own (and a note),
+# never cut in half.
 # A step with no sections (nothing possible with the installed packages)
 # still gets a file, with its `step_notes` as comments only: the analyst
 # sees the gap where the code would go, and the marker line keeps the step
 # from being requested again until its plan entry changes.
 # Returns list(files = list of list(path, lines), notes).
-assemble_step_files <- function(step, sections, number, plan_hash, max_lines, tested_with, plan_file, step_notes = list()) {
+assemble_step_files <- function(step, sections, number, plan_hash, dir, max_lines, header_values, step_notes, texts) {
   header <- c(
-    sprintf("#### %s", step$title),
-    sprintf("#### Drafted by the datashield-analysis-suggest workflow from %s.", plan_file),
-    "#### A starting point: check and adapt it. The analysis is your responsibility.",
-    sprintf("#### Tested with %s, on mock data in DSLite.", tested_with),
+    vapply(texts$script$header, function(line) fill_template(line, c(list(TITLE = step$title), header_values)), character(1)),
     ""
   )
   blocks <- lapply(sections, function(s) {
@@ -22,7 +20,7 @@ assemble_step_files <- function(step, sections, number, plan_hash, max_lines, te
   })
   if (length(blocks) == 0) {
     blocks <- list(c(
-      "#### No code: this step isn't possible with the packages on your study servers.",
+      texts$script$notes_only,
       vapply(step_notes, function(n) sprintf("#### - %s", gsub("\\s+", " ", n$text)), character(1))
     ))
   }
@@ -37,7 +35,7 @@ assemble_step_files <- function(step, sections, number, plan_hash, max_lines, te
       current <- character(0)
     }
     if (length(b) > budget) {
-      notes <- c(notes, sprintf("A section of step `%s` is longer than %d lines and has a file of its own.", step$id, max_lines))
+      notes <- c(notes, fill_template(texts$step$long_section, list(STEP = step$id, MAX_LINES = max_lines)))
     }
     current <- c(current, b)
   }
@@ -49,7 +47,7 @@ assemble_step_files <- function(step, sections, number, plan_hash, max_lines, te
     body <- c(header, parts[[i]])
     while (length(body) > 0 && body[length(body)] == "") body <- body[-length(body)]
     marker <- sprintf("#### bot-suggest: step=%s plan=%s content=%s", step$id, plan_hash, text_hash(body))
-    list(path = file.path("R", sprintf("%s%s_%s.R", number, letters_used[i], title)), lines = c(marker, body))
+    list(path = file.path(dir, sprintf("%s%s_%s.R", number, letters_used[i], title)), lines = c(marker, body))
   })
   list(files = files, notes = notes)
 }

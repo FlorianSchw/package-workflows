@@ -7,8 +7,9 @@
 #
 # add_dsPackage() breaks the file when every given package is already
 # there (dev-notes/analysis-suggest.md, dsAnalysis checklist), so it is
-# only called with packages its own check wouldn't find.
-update_dslite_setup <- function(setup_file, dsanalysis_dir, mock_folder, server_packages) {
+# only called with packages its own check wouldn't find: those not named
+# in the lines above `mock_data_marker` (the library() calls).
+update_dslite_setup <- function(setup_file, dsanalysis_dir, mock_folder, server_packages, mock_data_marker) {
   if (!file.exists(setup_file)) {
     message(sprintf("No DSLite setup at %s — skipping its update.", setup_file))
     return(NULL)
@@ -25,7 +26,8 @@ update_dslite_setup <- function(setup_file, dsanalysis_dir, mock_folder, server_
   env$update_MockData(folder_name = mock_folder, table_names = servers)
 
   lines <- readLines(setup_file, warn = FALSE)
-  block1 <- lines[seq_len(which(lines == "#### Step 2: Import of mock data files")[1] - 1)]
+  marker_line <- which(lines == mock_data_marker)
+  block1 <- if (length(marker_line) > 0) lines[seq_len(marker_line[1] - 1)] else lines
   missing <- server_packages[!vapply(server_packages, function(p) any(grepl(p, block1, fixed = TRUE)), logical(1))]
   if (length(missing) > 0) env$add_dsPackage(missing)
 

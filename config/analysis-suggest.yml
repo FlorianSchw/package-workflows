@@ -1,17 +1,71 @@
 # Settings for datashield-analysis-suggest.yml. A project can override this
-# file with its own copy at the same path (config/analysis-suggest.yml).
+# file with its own copy at the same path (config/analysis-suggest.yml);
+# the copy replaces this file completely, so start from a full copy.
 # The analysis plan itself is a different file (config/analysis-plan.yml
-# by default, the workflow's plan-file input).
+# by default, the workflow's plan-file input). Wording lives in
+# config/analysis-texts.yml.
 
 mock_data:
   rows_per_study: 1000   # synthetic rows per study for the DSLite test run
   missing_share: 0.05    # share of missing values per variable
   seed: 20260930         # same plan, same mock data
+  folder: bot-suggest    # under utils/mock_data/ (where dsAnalysis looks)
 
 max_script_lines: 150    # per script file; longer steps are split into 02a_, 02b_, ...
 
+numbering:
+  first: 2               # 01 is the login
+  reserved_from: 90      # numbers from here up are left alone (e.g. 99_DSLiteLearning.R)
+
+repair_rounds: 1         # extra Claude rounds for steps that failed the checks
+test_run_timeout_seconds: 1800
+
+# Where things are in a dsAnalysis project. The login files are read from
+# the project's config.yml (login_folder / login_file); these are the
+# fallbacks if it has none.
+paths:
+  scripts: R
+  main: R/main.R
+  dependencies: dependencies.R
+  project_config: config.yml
+  login_production: R/01_DS_Login.R
+  login_testing: utils/setup/01_DSLite_Setup.R
+
+# Marker lines of the blocks the bot maintains in main.R and
+# dependencies.R. An interface with the dsAnalysis templates: change both
+# together.
+markers:
+  main_start: "#### bot-suggest: scripts (updated by datashield-analysis-suggest)"
+  main_end: "#### bot-suggest: scripts end"
+  dependencies_start: "#### bot-suggest: packages (updated by datashield-analysis-suggest)"
+  dependencies_end: "#### bot-suggest: packages end"
+  # dsAnalysis's own marker in 01_DSLite_Setup.R; the lines above it load
+  # the client packages (checked before calling add_dsPackage()).
+  dslite_mock_data: "#### Step 2: Import of mock data files"
+
+# Variable types the plan may use, mapped to how mock data is generated
+# (continuous: uniform within range; integer: whole numbers within range;
+# categorical: one of the categories). Add the wording of your data
+# dictionary here.
+variable_types:
+  continuous: continuous
+  numeric: continuous
+  decimal: continuous
+  integer: integer
+  categorical: categorical
+  factor: categorical
+  binary: categorical
+
 # Default package catalogue, used when the plan has no package-catalogue entry.
 package_catalogue: https://packages.datashield.org/packages.json
+client_suffix: Client    # dsBase -> dsBaseClient
+
+# Installed functions Claude must not use (the login already ran).
+excluded_functions: [datashield.login, datashield.logout]
+
+# A line in the real login file matching this is reported as a possible
+# plain-text credential (case-insensitive; comments are ignored).
+credential_pattern: '(password|pwd|passwd|token|secret)\s*=\s*["''][^"'']+["'']'
 
 # Repository the "Open issue" links for missing functions point to.
 gap_issue_repo: FlorianSchw/package-workflows

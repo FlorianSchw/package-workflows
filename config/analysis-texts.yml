@@ -1,0 +1,65 @@
+# Wording of datashield-analysis-suggest.yml: script headers, the
+# dependencies.R block, the pull request description, notes and the
+# prefilled issue. Overridable per project like the other config files
+# (a copy at config/analysis-texts.yml replaces this file completely).
+# {{PLACEHOLDERS}} are filled in by R; keep the ones a text uses.
+
+script:
+  header:
+    - "#### {{TITLE}}"
+    - "#### Drafted by the datashield-analysis-suggest workflow from {{PLAN_FILE}}."
+    - "#### A starting point: check and adapt it. The analysis is your responsibility."
+    - "#### Tested with {{TESTED_WITH}}, on mock data in DSLite."
+  notes_only: "#### No code: this step isn't possible with the packages on your study servers."
+
+dependencies:
+  clients: "#### Client packages for your studies' server packages (tested)"
+  servers: "#### Server packages, only needed for local testing with DSLite"
+  not_on_servers:
+    - "#### Not yet installed on your study servers. Uncomment once they are, or to"
+    - "#### try them locally with DSLite (see the suggestion PR for what they'd enable):"
+
+step:
+  edited_plan_changed: "its plan entry changed, but you have edited its script, so it was left as it is."
+  removed: "no longer in the plan. Its script was kept; delete it (and its line in `main.R`) if you don't need it."
+  no_answer: "not proposed, because Claude returned no code or notes for it. It is requested again on the next run."
+  still_failing: "not proposed, because the code still failed after {{ATTEMPTS}} attempts: {{PROBLEMS}}"
+  long_section: "A section of step `{{STEP}}` is longer than {{MAX_LINES}} lines and has a file of its own."
+
+notes:
+  package_missing_on_studies: "`{{PACKAGE}}` is not installed on {{STUDIES}}, so it isn't used; functions from it would only work if those studies are left out."
+  package_versions_differ: "`{{PACKAGE}}` has different versions on the studies ({{VERSIONS}}); tested with the lowest, {{LOWEST}}."
+  version_not_found: "`{{PACKAGE}}` {{VERSION}} could not be found; tested with {{INSTALLED}} from `{{REF}}` instead."
+  not_installable: "`{{PACKAGE}}` {{VERSION}} could not be installed from CRAN or GitHub, so it wasn't used."
+  no_login_file: "No login file at `{{PATH}}`; the scripts assume the connections are called `conns`."
+  credentials: "**`{{PATH}}` seems to contain credentials as plain text** (line {{LINES}}). Everyone with access to this repository can read them. Move them to `.Renviron` and read them with `Sys.getenv()`, as the dsAnalysis template does."
+  servers_differ: "The servers in `{{PATH}}` ({{FOUND}}) differ from the plan ({{PLANNED}}). The scripts use the plan's names, e.g. for results per study."
+  symbol_differs: "`{{PATH}}` assigns the data to `{{FOUND}}`, the plan says `{{PLANNED}}`. The scripts use `{{PLANNED}}`."
+  existing_failed: "Your existing script `{{FILE}}` failed in the test run: {{ERROR}}"
+
+report:
+  nothing_to_do: "Nothing to do: every step of the plan already has an up-to-date script."
+  intro: "Starter scripts for your DataSHIELD analysis, drafted from your analysis plan. Each script ran in DSLite on mock data generated from the plan. That checks the code runs, not that the analysis is right: please read and adapt it. The analysis stays your responsibility."
+  tested_with: "**Tested with:** {{TESTED_WITH}}."
+  scripts_heading: "### Scripts"
+  notes_only_suffix: " (notes only: not possible with the installed packages)"
+  try_it: "**Try it yourself:** set `R_CONFIG_ACTIVE = 'testing'` in `.Renviron`, restart R and run `main.R`. It uses the same DSLite setup and mock data as this test run. You get the same results if you install the versions listed in `dependencies.R`. Switch back to `production` for the real analysis."
+  other_package_heading: "### Possible with another package"
+  other_package_intro: "Not installed on your study servers. The packages are listed, commented out, in `dependencies.R`."
+  gaps_heading: "### Not possible with any known DataSHIELD package"
+  gaps_intro: "The link opens a prefilled issue under your account, so missing functions can be collected. Check the text before you submit it."
+  open_issue: "Open issue"
+  limitations_heading: "### Limitations"
+  other_notes_heading: "### Not proposed, and other notes"
+  plan_errors_heading: "### The analysis plan needs fixing"
+
+issue:
+  title: "Missing DataSHIELD function: {{NOTE}}"
+  body: |
+    Reported from the DataSHIELD analysis starter (datashield-analysis-suggest).
+
+    **Analysis step:** {{STEP}}
+
+    **What is missing:** {{NOTE}}
+
+    _Please add what you would need, e.g. the method, its inputs and outputs._

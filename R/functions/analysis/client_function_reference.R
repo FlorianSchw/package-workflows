@@ -4,13 +4,14 @@
 # names, whether it takes `...`) is what check_ds_calls() checks generated
 # code against; `text` is the same, one line per function, for the prompt.
 # Built from the installed versions, so Claude sees exactly the functions
-# the test run can call.
-client_function_reference <- function(packages) {
+# the test run can call. `excluded` (settings) are left out, e.g.
+# datashield.login(): the login already ran, so calls to them are flagged.
+client_function_reference <- function(packages, excluded = character(0)) {
   functions <- list()
   lines <- character(0)
   for (pkg in c(packages, "DSI")) {
     if (!requireNamespace(pkg, quietly = TRUE)) next
-    exports <- sort(getNamespaceExports(pkg))
+    exports <- setdiff(sort(getNamespaceExports(pkg)), excluded)
     if (pkg == "DSI") exports <- grep("^datashield\\.", exports, value = TRUE)
     titles <- rd_titles(pkg)
     lines <- c(lines, "", sprintf("Package %s %s:", pkg, utils::packageVersion(pkg)))

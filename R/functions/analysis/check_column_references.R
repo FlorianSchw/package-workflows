@@ -5,23 +5,16 @@
 # unknown columns: DSLite with the permissive privacy level returns NA
 # for them instead of an error. Returns the problems found.
 check_column_references <- function(code, all_code, variables) {
-  strings_of <- function(text, newobj_only = FALSE) {
-    exprs <- tryCatch(parse(text = text, keep.source = FALSE), error = function(e) NULL)
+  strings_in <- function(text, only_arg = NULL) {
     found <- character(0)
-    visit <- function(x, arg = "") {
-      if (is.character(x) && length(x) == 1 && (!newobj_only || arg == "newobj")) found <<- c(found, x)
-      if (is.call(x)) {
-        args <- as.list(x)[-1]
-        arg_names <- if (is.null(names(args))) rep("", length(args)) else names(args)
-        for (i in seq_along(args)) if (!identical(args[[i]], quote(expr = ))) visit(args[[i]], arg_names[i])
-      }
-    }
-    for (e in exprs) visit(e)
+    walk_code(text, function(x, arg) {
+      if (is.character(x) && length(x) == 1 && (is.null(only_arg) || arg == only_arg)) found <<- c(found, x)
+    })
     found
   }
 
-  known <- c(variables, strings_of(all_code, newobj_only = TRUE))
-  refs <- grep("^[A-Za-z.][A-Za-z0-9._]*\\$[A-Za-z.][A-Za-z0-9._]*$", strings_of(code), value = TRUE)
+  known <- c(variables, strings_in(all_code, only_arg = "newobj"))
+  refs <- grep("^[A-Za-z.][A-Za-z0-9._]*\\$[A-Za-z.][A-Za-z0-9._]*$", strings_in(code), value = TRUE)
   unknown <- unique(refs[!sub("^.*\\$", "", refs) %in% known])
   if (length(unknown) == 0) return(character(0))
   sprintf(
