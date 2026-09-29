@@ -538,6 +538,15 @@ Re-tested:
    `{{DEPENDENCIES}}`, `{{TESTING}}` and `{{PRODUCTION}}`, filled from
    the settings (`names_in_texts` in the entry script). Tested with a
    project profile `testing: dslite`.
+5. **Block updates moved into a function:** `update_project_blocks()`
+   now updates `main.R` and `dependencies.R` and reports damaged blocks,
+   so the entry script is wiring only (144 lines). The dsAnalysis
+   checklist in this note now says the bot also sets the DSLite setup's
+   `symbol` and may append the connections alias line. Left for later:
+   - the tool schema descriptions (policy file, together with the other
+     workflows);
+   - each test round reruns all bot scripts: correct, but it grows with
+     the project.
 
 **Open (stage 2): `ds.glmSLMA()` fails in the DSLite test run**, locally
 with dsBase 6.3.5, even on the original data (`D`), while `ds.glm()`
@@ -576,7 +585,15 @@ Interface — keep stable:
 
 6. The step markers in `01_DSLite_Setup.R` (`#### Step 1: …` to
    `#### Step 7: …`), used by `add_dsPackage()` / `update_MockData()`,
-   and the markers in `main.R` and `dependencies.R`.
+   and the markers in `main.R` and `dependencies.R` (all in the
+   `markers:` settings). The bot also edits the DSLite setup itself:
+   - it sets `symbol = "..."` in its login call to the plan's symbol;
+   - it appends a marked alias line
+     (`<name> <<- conns  # bot-suggest: ...`) when the real login names
+     its connections differently.
+
+   A template change there should keep one `symbol = "..."` and the
+   `<name> <<- DSI::datashield.login(` form.
 
 Functions:
 
