@@ -301,6 +301,19 @@ The analyst clicks it and creates the issue under their own account.
   layout. Labels in the URL are only applied for users with triage rights,
   so the template is the reliable way.
 - **Nothing is lost:** if nobody clicks, the gap is still in the PR comment.
+- **No duplicate issues (added 2026-09-30, the user's request):** before
+  asking Claude, R reads the collection repo's open issues whose title
+  starts like the issue template (`fetch_gap_issues()`, read-only with
+  the job's `GITHUB_TOKEN`, at most `gap_issues_max`, 200). Claude sees
+  them in the prompt and can point a gap to one (`existing_issue`, an
+  enum of those numbers); `verify_note_issues()` checks it. The report
+  then links "Already requested in #12: see what has happened so far,
+  and add your use case there", and offers "Open issue" only for new gaps.
+  - **Matching is semantic (Claude), not by title text:** titles come
+    from Claude's wording and vary. The prompt asks for the same method,
+    not just a related topic.
+  - **Only open issues count:** if a request was closed, e.g. because the
+    function now exists, a new gap links to a new issue.
 - **Target:** configurable (owner/repo). For now one of the user's repos.
   Proposed long-term home: a **dedicated repo in the FederatedMethods
   organisation**, e.g. `FederatedMethods/function-requests`, next to the

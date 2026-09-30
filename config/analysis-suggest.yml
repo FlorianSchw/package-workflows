@@ -89,5 +89,9 @@ excluded_functions: [datashield.login, datashield.logout]
 # plain-text credential (case-insensitive; comments are ignored).
 credential_pattern: '(password|pwd|passwd|token|secret)\s*=\s*["''][^"'']+["'']'
 
-# Repository the "Open issue" links for missing functions point to.
+# Repository the "Open issue" links for missing functions point to. Its
+# open issues on missing functions (title as in texts$issue$title) are
+# shown to Claude, so a gap already requested links to that issue instead
+# of offering a new one; at most this many, newest first.
 gap_issue_repo: FlorianSchw/package-workflows
+gap_issues_max: 200

@@ -32,6 +32,7 @@ settings <- check_analysis_settings(read_config_yaml("config/analysis-suggest.ym
 texts <- read_config_yaml("config/analysis-texts.yml")
 
 api_key        <- Sys.getenv("ANTHROPIC_API_KEY")
+gh_token       <- Sys.getenv("GH_TOKEN")  # read-only here: open gap issues of the collection repo
 plan_file      <- Sys.getenv("PLAN_FILE", "config/analysis-plan.yml")
 dsanalysis_dir <- Sys.getenv("DSANALYSIS_DIR", ".dsanalysis")
 summary_file   <- Sys.getenv("GITHUB_STEP_SUMMARY")
@@ -107,6 +108,8 @@ context <- list(
   catalogue_text = catalogue_prompt$text,
   catalogue_names = catalogue_prompt$names,
   catalogue_functions = catalogue_prompt$functions,
+  # The fixed start of the issue title template marks the gap issues.
+  gap_issues = fetch_gap_issues(settings$gap_issue_repo, sub("\\{\\{.*$", "", texts$issue$title), settings$gap_issues_max),
   existing_steps = format_existing_steps(sort(existing$path[!existing$step %in% to_write])),
   plan_text = plan_text,
   max_lines = settings$max_script_lines,
@@ -131,7 +134,7 @@ notes <- c(notes, drafted$notes)
 # --- 6. Results ------------------------------------------------------------------------
 
 settled <- settle_step_results(steps, to_write, drafted, rewritten, old_content, texts)
-steps <- verify_note_functions(settled$steps, functions, settings$client_suffix)
+steps <- verify_note_issues(verify_note_functions(settled$steps, functions, settings$client_suffix), context$gap_issues)
 updated <- character(0)
 if (length(settled$written_files) > 0) {
   replaced <- setdiff(rewritten$path[!file.exists(rewritten$path)], settled$written_files)
@@ -144,6 +147,7 @@ report <- format_analysis_report(list(
   steps = Filter(function(s) !s$status %in% c("unchanged", "edited") || !is.null(s$error), steps),
   notes = unique(notes), tested_with = installed$tested_with, gap_issue_repo = settings$gap_issue_repo,
   names = names_in_texts,
-  package_status = lapply(catalogue, function(p) p$status)
+  package_status = lapply(catalogue, function(p) p$status),
+  gap_issues = context$gap_issues
 ), texts)
 write_outputs(report, updated)

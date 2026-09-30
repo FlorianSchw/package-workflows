@@ -42,13 +42,20 @@ for it. Add a note instead:
 - `other_package` if a package from the catalogue below would make it
   possible: name the server package and, if one fits, its client
   function from the list;
-- `missing_function` if no known DataSHIELD package offers it.
+- `missing_function` if no known DataSHIELD package offers it. If one of
+  the open issues below already requests the same missing function (the
+  same method, not just a related topic), give its number as
+  `existing_issue`.
 
 ## Known DataSHIELD packages not installed on the studies
 
 Each with its client functions, where known.
 
 {{CATALOGUE}}
+
+## Missing functions already requested (open issues)
+
+{{GAP_ISSUES}}
 
 ## Steps already in the project
 

@@ -5,7 +5,9 @@
 # repository for issue links, `names` (MAIN, DEPENDENCIES, TESTING,
 # PRODUCTION) for the texts that mention files and profiles, and
 # `package_status` (package -> catalogue status) for "other package"
-# notes. Wording from `texts$report`.
+# notes, and `gap_issues` (fetch_gap_issues()): a missing function already
+# requested links to that issue instead of offering a new one. Wording
+# from `texts$report`.
 format_analysis_report <- function(r, texts) {
   t <- texts$report
   out <- c(t$intro, "", fill_template(t$tested_with, list(TESTED_WITH = r$tested_with)))
@@ -38,7 +40,13 @@ format_analysis_report <- function(r, texts) {
   if (length(gaps) > 0) {
     out <- c(out, "", t$gaps_heading, "", t$gaps_intro, "")
     for (n in gaps) {
-      out <- c(out, sprintf("- **%s**: %s [%s](%s)", n$step_title, n$text, t$open_issue, gap_issue_link(r$gap_issue_repo, n$step_title, n$text, texts)))
+      issue <- r$gap_issues[as.character(r$gap_issues$number) == (n$existing_issue %||% ""), ]
+      link <- if (nrow(issue) == 1) {
+        fill_template(t$already_requested, list(LINK = sprintf("[#%s](%s)", issue$number, issue$url)))
+      } else {
+        sprintf("[%s](%s)", t$open_issue, gap_issue_link(r$gap_issue_repo, n$step_title, n$text, texts))
+      }
+      out <- c(out, sprintf("- **%s**: %s %s", n$step_title, n$text, link))
     }
   }
   limits <- by_kind("limitation")

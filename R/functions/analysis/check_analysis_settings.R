@@ -45,6 +45,7 @@ check_analysis_settings <- function(settings) {
   need(text(settings$credential_pattern) && !inherits(tryCatch(suppressWarnings(grepl(settings$credential_pattern, "")), error = identity), "error"),
     "credential_pattern must be a valid regular expression")
   need(text(settings$gap_issue_repo) && grepl("^[A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+$", settings$gap_issue_repo), "gap_issue_repo must be owner/repo")
+  need(number(settings$gap_issues_max) && settings$gap_issues_max >= 0, "gap_issues_max must be 0 or more")
 
   if (length(problems) > 0) {
     stop(paste(c("config/analysis-suggest.yml (with the project's own settings merged in) has problems:", paste("-", problems)), collapse = "\n"), call. = FALSE)

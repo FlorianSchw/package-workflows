@@ -6,12 +6,16 @@
 # (`catalogue_names`, retired packages already removed) and client
 # function names from the function catalogue (`catalogue_functions`).
 # Whether the function belongs to that package is checked afterwards
-# (verify_note_functions()).
-build_analysis_tool <- function(step_ids, catalogue_names, catalogue_functions) {
+# (verify_note_functions()). For "missing_function" notes, the numbers of
+# the open gap issues (`gap_issue_numbers`) let Claude point to an issue
+# that already requests it (checked by verify_note_issues()).
+build_analysis_tool <- function(step_ids, catalogue_names, catalogue_functions, gap_issue_numbers) {
   note_package <- list(type = "string", description = "For kind other_package: the catalogue package that would make this possible (server package name). Empty string otherwise.")
   if (length(catalogue_names) > 0) note_package$enum <- as.list(c("", catalogue_names))
   note_function <- list(type = "string", description = "For kind other_package: the client function of that package, from the catalogue list, that would do it. Empty string if none fits or for other kinds.")
   if (length(catalogue_functions) > 0) note_function$enum <- as.list(c("", catalogue_functions))
+  note_issue <- list(type = "string", description = "For kind missing_function: the number of an open issue from the list that already requests the same missing function (same method, not just a similar topic). Empty string if none matches or for other kinds.")
+  note_issue$enum <- as.list(c("", as.character(gap_issue_numbers)))
 
   list(
     description = "Submit the analysis script steps as plain code sections and notes. Never assemble files, headers or markers yourself; R does that.",
@@ -46,9 +50,10 @@ build_analysis_tool <- function(step_ids, catalogue_names, catalogue_functions) 
                     kind = list(type = "string", enum = list("other_package", "missing_function", "limitation"), description = "other_package: a catalogue package would make it possible. missing_function: no known DataSHIELD package offers it. limitation: possible, but restricted (e.g. no individual-level diagnostics because of disclosure control)."),
                     package = note_package,
                     `function` = note_function,
+                    existing_issue = note_issue,
                     text = list(type = "string", description = "One or two sentences for the analyst: what is affected and why.")
                   ),
-                  required = list("kind", "package", "function", "text")
+                  required = list("kind", "package", "function", "existing_issue", "text")
                 )
               )
             ),
