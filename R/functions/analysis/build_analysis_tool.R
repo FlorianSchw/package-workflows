@@ -3,10 +3,15 @@
 # checks the calls and runs them. Enums keep the answer inside what exists:
 # step ids from the plan (`step_ids`, only the steps asked for) and, for
 # "possible with another package" notes, package names from the catalogue
-# (`catalogue_names`, retired packages already removed).
-build_analysis_tool <- function(step_ids, catalogue_names) {
+# (`catalogue_names`, retired packages already removed) and client
+# function names from the function catalogue (`catalogue_functions`).
+# Whether the function belongs to that package is checked afterwards
+# (verify_note_functions()).
+build_analysis_tool <- function(step_ids, catalogue_names, catalogue_functions) {
   note_package <- list(type = "string", description = "For kind other_package: the catalogue package that would make this possible (server package name). Empty string otherwise.")
   if (length(catalogue_names) > 0) note_package$enum <- as.list(c("", catalogue_names))
+  note_function <- list(type = "string", description = "For kind other_package: the client function of that package, from the catalogue list, that would do it. Empty string if none fits or for other kinds.")
+  if (length(catalogue_functions) > 0) note_function$enum <- as.list(c("", catalogue_functions))
 
   list(
     description = "Submit the analysis script steps as plain code sections and notes. Never assemble files, headers or markers yourself; R does that.",
@@ -40,9 +45,10 @@ build_analysis_tool <- function(step_ids, catalogue_names) {
                   properties = list(
                     kind = list(type = "string", enum = list("other_package", "missing_function", "limitation"), description = "other_package: a catalogue package would make it possible. missing_function: no known DataSHIELD package offers it. limitation: possible, but restricted (e.g. no individual-level diagnostics because of disclosure control)."),
                     package = note_package,
+                    `function` = note_function,
                     text = list(type = "string", description = "One or two sentences for the analyst: what is affected and why.")
                   ),
-                  required = list("kind", "package", "text")
+                  required = list("kind", "package", "function", "text")
                 )
               )
             ),

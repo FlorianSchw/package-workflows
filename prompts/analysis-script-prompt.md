@@ -40,10 +40,13 @@ utils, grDevices and graphics are also available.
 If a step needs something these packages don't offer, don't write code
 for it. Add a note instead:
 - `other_package` if a package from the catalogue below would make it
-  possible (name the server package);
+  possible: name the server package and, if one fits, its client
+  function from the list;
 - `missing_function` if no known DataSHIELD package offers it.
 
-## Package catalogue (not installed)
+## Known DataSHIELD packages not installed on the studies
+
+Each with its client functions, where known.
 
 {{CATALOGUE}}
 

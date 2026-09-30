@@ -228,15 +228,53 @@ README or the script header, not into the code logic.
   `FederatedMethods/packages` (`package_list.csv` + DESCRIPTION / GitHub /
   CRAN). On 2026-09-29 it had 70 packages with name, description, status,
   links, version and dependencies. Its `functions` field exists but is
-  empty everywhere, so for now judgements are at package level only.
+  empty everywhere.
+- **Function catalogue (added 2026-09-30):** the user extracts every
+  function of the known packages into `datashield_functions_metadata.json`
+  (per function: package, name, `architecture_type` client/server,
+  `function_type` aggregate/assign/hybrid, title, description; `category`
+  and `status` still empty). For now it's in `FlorianSchw/packages`; a PR
+  into `FederatedMethods/packages` is open. Setting `function_catalogue`
+  holds the raw URL; only that line changes when it moves.
+  - **Contents on 2026-09-30:** 1110 functions in 66 packages, of which
+    340 client functions in 21 client packages.
+  - **In the prompt:** `read_function_catalogue()` keeps the exported
+    client functions (placeholder "XXXX" texts removed).
+    `format_catalogue_for_prompt()` lists each package the studies don't
+    have with its client functions (~15,000 characters: 38 packages, 206
+    functions).
+  - **In notes:** "other_package" notes name a function too; the tool has
+    an enum of catalogue function names, and `verify_note_functions()`
+    clears a function that doesn't belong to the named package.
+- **Package status filter (added 2026-09-30, the user's idea):** which
+  catalogue packages may be suggested depends on their status:
+  `production`, `development`, `unknown` (no status given), `retired`.
+  - **Defaults and overrides:** setting `package_status` (default
+    `[production]`), overridden by the plan's optional `package-status`
+    list. It is the analyst's choice how much risk to accept, so it sits
+    in the plan like `package-catalogue`.
+  - **What it filters:** only suggestions (the prompt's package and
+    function list, and the enums), never the studies' installed packages.
+  - **Checks:** unknown values are a plan problem; `retired` gives a note
+    in the report.
+  - **Report:** the status stands next to the package, e.g. "Survival
+    analysis — `dsSurvival` (production), `ds.coxph.SLMA()`: …".
+  - **Sizes on 2026-09-30:** 33 production, 19 development, 10 unknown,
+    8 retired packages. `[production]` offers 18 packages / 150
+    functions; with development 29 / 163; with unknown 38 / 206.
+  - **Side effect:** with `[production]`, more requests become gaps
+    (issue links), even when a development package offers them.
+    Intended: the gap collection shouldn't count work in progress as
+    covered.
 - **The output falls into three categories:**
   1. **Possible now** (installed server packages): code, checked and run
      on mock data. Only this category produces code.
   2. **Possible with another package:** only a note in the PR. Claude may
      only name catalogue packages (an enum in the tool schema), and R
-     checks that the package exists and isn't `retired`. Until the
-     catalogue has function lists these are hints, not guarantees.
-     Possible later: install the package in CI and try it in DSLite.
+     checks that the package exists and isn't `retired`. With the
+     function catalogue, notes can name the concrete client function,
+     checked against the catalogue. They are still not tested. Possible
+     later: install the package in CI and try it in DSLite.
   3. **Not possible with any known package (a gap):** described in the PR
      comment, plus the issue link below.
 

@@ -69,7 +69,18 @@ variable_types:
 
 # Default package catalogue, used when the plan has no package-catalogue entry.
 package_catalogue: https://packages.datashield.org/packages.json
+# The functions of the known DataSHIELD packages (title, description,
+# client/server). For now in FlorianSchw/packages; intended to move to
+# FederatedMethods/packages (PR open).
+function_catalogue: https://raw.githubusercontent.com/FlorianSchw/packages/main/datashield_functions_metadata.json
 client_suffix: Client    # dsBase -> dsBaseClient
+
+# Which catalogue packages may be suggested as "possible with another
+# package", by their status in the catalogue: production, development,
+# unknown (no status given) or retired. Only affects suggestions, never
+# the packages the studies have installed. The plan can override it with
+# its own package-status list.
+package_status: [production]
 
 # Installed functions Claude must not use (the login already ran).
 excluded_functions: [datashield.login, datashield.logout]

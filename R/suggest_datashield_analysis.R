@@ -74,8 +74,11 @@ message(sprintf("Steps to write: %s", paste(to_write, collapse = ", ")))
 
 usable <- usable_server_packages(plan, texts)
 catalogue <- read_package_catalogue(if (is.null(plan$`package-catalogue`)) settings$package_catalogue else plan$`package-catalogue`)
+functions <- read_function_catalogue(settings$function_catalogue)
+# Which catalogue packages may be suggested: the plan's package-status, else the settings'.
+statuses <- unlist(if (is.null(plan$`package-status`)) settings$package_status else plan$`package-status`)
 installed <- install_study_packages(usable$packages, catalogue, settings$client_suffix, texts)
-notes <- c(usable$notes, installed$notes)
+notes <- c(usable$notes, installed$notes, if ("retired" %in% statuses) texts$notes$retired_included)
 if (length(installed$clients) == 0) {
   stop("No client package could be installed for the studies' server packages; see the messages above.", call. = FALSE)
 }
@@ -95,7 +98,7 @@ if (is.null(setup_file)) stop(sprintf("The project needs the dsAnalysis DSLite s
 # --- 5. Claude, checks and test run ---------------------------------------------------
 
 reference <- client_function_reference(installed$clients, unlist(settings$excluded_functions))
-catalogue_prompt <- format_catalogue_for_prompt(catalogue, c(installed$servers, installed$clients), settings$client_suffix)
+catalogue_prompt <- format_catalogue_for_prompt(catalogue, functions, c(installed$servers, installed$clients), settings$client_suffix, statuses)
 context <- list(
   connections = login$connections,
   symbol = plan$symbol,
@@ -103,6 +106,7 @@ context <- list(
   function_reference = reference$text,
   catalogue_text = catalogue_prompt$text,
   catalogue_names = catalogue_prompt$names,
+  catalogue_functions = catalogue_prompt$functions,
   existing_steps = format_existing_steps(sort(existing$path[!existing$step %in% to_write])),
   plan_text = plan_text,
   max_lines = settings$max_script_lines,
@@ -127,7 +131,7 @@ notes <- c(notes, drafted$notes)
 # --- 6. Results ------------------------------------------------------------------------
 
 settled <- settle_step_results(steps, to_write, drafted, rewritten, old_content, texts)
-steps <- settled$steps
+steps <- verify_note_functions(settled$steps, functions, settings$client_suffix)
 updated <- character(0)
 if (length(settled$written_files) > 0) {
   replaced <- setdiff(rewritten$path[!file.exists(rewritten$path)], settled$written_files)
@@ -139,6 +143,7 @@ report <- format_analysis_report(list(
   # Unchanged steps, and edited ones whose plan entry didn't change, need no mention.
   steps = Filter(function(s) !s$status %in% c("unchanged", "edited") || !is.null(s$error), steps),
   notes = unique(notes), tested_with = installed$tested_with, gap_issue_repo = settings$gap_issue_repo,
-  names = names_in_texts
+  names = names_in_texts,
+  package_status = lapply(catalogue, function(p) p$status)
 ), texts)
 write_outputs(report, updated)

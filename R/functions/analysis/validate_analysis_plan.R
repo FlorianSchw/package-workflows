@@ -3,7 +3,8 @@
 # itself relies on is checked: the symbol, the studies with their server
 # packages (mock data, installs) and the variables (mock data). Steps only
 # need a title and a unique id; everything else in a step is free and goes
-# to Claude as written. Unknown top-level entries are allowed. `types` are
+# to Claude as written. An optional `package-status` list may only use
+# package_statuses(). Unknown top-level entries are allowed. `types` are
 # the variable types the settings allow; read_analysis_plan() has already
 # set each known type's `kind`.
 validate_analysis_plan <- function(plan, types, texts) {
@@ -76,6 +77,11 @@ validate_analysis_plan <- function(plan, types, texts) {
     }
     ids <- unlist(lapply(steps, function(s) if (is.list(s) && is.character(s$id)) s$id))
     if (anyDuplicated(ids)) add("duplicate_steps", NAMES = duplicated_of(ids))
+  }
+
+  statuses <- plan$`package-status`
+  if (!is.null(statuses) && (!is.character(unlist(statuses)) || !all(unlist(statuses) %in% package_statuses()))) {
+    add("package_status", ALLOWED = paste(package_statuses(), collapse = ", "), FOUND = paste(unlist(statuses), collapse = ", "))
   }
 
   problems

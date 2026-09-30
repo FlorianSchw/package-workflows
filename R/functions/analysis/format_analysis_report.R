@@ -2,9 +2,10 @@
 # how to try it, what else the plan would need, and what wasn't proposed.
 # `r` is the run record built by the entry script: steps (per step: title,
 # status, files, notes, error), general notes, tested versions, the
-# repository for issue links, and `names` (MAIN, DEPENDENCIES, TESTING,
-# PRODUCTION) for the texts that mention files and profiles. Wording from
-# `texts$report`.
+# repository for issue links, `names` (MAIN, DEPENDENCIES, TESTING,
+# PRODUCTION) for the texts that mention files and profiles, and
+# `package_status` (package -> catalogue status) for "other package"
+# notes. Wording from `texts$report`.
 format_analysis_report <- function(r, texts) {
   t <- texts$report
   out <- c(t$intro, "", fill_template(t$tested_with, list(TESTED_WITH = r$tested_with)))
@@ -25,7 +26,13 @@ format_analysis_report <- function(r, texts) {
   other <- by_kind("other_package")
   if (length(other) > 0) {
     out <- c(out, "", t$other_package_heading, "", fill_template(t$other_package_intro, r$names), "")
-    for (n in other) out <- c(out, sprintf("- **%s** (`%s`): %s", n$step_title, n$package, n$text))
+    for (n in other) {
+      # The package's catalogue status next to it, so a development package
+      # isn't mistaken for an established one.
+      pkg <- sprintf("`%s` (%s)", n$package, r$package_status[[n$package]] %||% "unknown")
+      where <- if (nzchar(n[["function"]] %||% "")) sprintf("%s, `%s()`", pkg, n[["function"]]) else pkg
+      out <- c(out, sprintf("- **%s** — %s: %s", n$step_title, where, n$text))
+    }
   }
   gaps <- by_kind("missing_function")
   if (length(gaps) > 0) {

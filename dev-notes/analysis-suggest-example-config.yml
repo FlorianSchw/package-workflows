@@ -35,6 +35,12 @@ studies:                          # server names as in 01_DS_Login.R;
 
 package-catalogue: https://packages.datashield.org/packages.json
 
+# Which other DataSHIELD packages may be suggested for steps your study
+# servers can't do yet, by their status in the catalogue: production,
+# development, unknown (no status given), retired. Default: [production].
+# Add development if you'd consider packages that are still being built.
+package-status: [production]
+
 variables:                        # shaped like an Opal/Armadillo dictionary
   - name: DIS_DIAB
     label: History of diabetes

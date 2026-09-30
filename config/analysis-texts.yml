@@ -33,6 +33,7 @@ plan:
   step_title: "{{LABEL}}: every step needs a title."
   step_id: "step '{{TITLE}}': id may only contain letters, digits, _ and -."
   duplicate_steps: "steps: ids must be unique ({{NAMES}}); give steps with the same title an explicit id."
+  package_status: "package-status may only list {{ALLOWED}} (found: {{FOUND}})."
 
 script:
   header:
@@ -66,6 +67,7 @@ notes:
   servers_differ: "The servers in `{{PATH}}` ({{FOUND}}) differ from the plan ({{PLANNED}}). The scripts use the plan's names, e.g. for results per study."
   symbol_differs: "`{{PATH}}` assigns the data to `{{FOUND}}`, the plan says `{{PLANNED}}`. The scripts use `{{PLANNED}}`."
   existing_failed: "Your existing script `{{FILE}}` failed in the test run: {{ERROR}}"
+  retired_included: "The plan's package-status includes `retired`, so retired packages may be suggested. They are no longer maintained; check before relying on one."
   block_damaged: "The bot's block in `{{PATH}}` is damaged (a marker line is missing, doubled or out of order), so it was left as it is. Please update it by hand, or remove both marker lines so the bot adds a new block."
 
 # Problems the checks find. Claude gets them in the repair round, and the

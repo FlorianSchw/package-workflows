@@ -1,8 +1,9 @@
 # Sends the script request to Claude and returns the tool call's steps.
 # `context` holds what every request shares: the prompt template
 # (prompts/analysis-script-prompt.md), plan text, symbol, connections,
-# servers, function reference, catalogue text and names, existing steps,
-# line limit and file number per step. `step_ids` are the steps to write;
+# servers, function reference, catalogue text, package and function
+# names, existing steps, line limit and file number per step. `step_ids`
+# are the steps to write;
 # `previous_attempt` is empty on the first call and, in a repair round,
 # describes the failed attempt (code and errors) for those steps.
 ask_claude_for_scripts <- function(context, step_ids, previous_attempt = "") {
@@ -18,6 +19,6 @@ ask_claude_for_scripts <- function(context, step_ids, previous_attempt = "") {
     MAX_LINES          = as.character(context$max_lines),
     PREVIOUS_ATTEMPT   = previous_attempt
   ))
-  result <- call_claude_tool(anthropic_config, build_analysis_tool(step_ids, context$catalogue_names), prompt)
+  result <- call_claude_tool(anthropic_config, build_analysis_tool(step_ids, context$catalogue_names, context$catalogue_functions), prompt)
   Filter(function(s) s$step_id %in% step_ids, result$steps)
 }

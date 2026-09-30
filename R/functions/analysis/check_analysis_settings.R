@@ -36,6 +36,10 @@ check_analysis_settings <- function(settings) {
   need(length(kinds) > 0 && all(kinds %in% c("continuous", "integer", "categorical")),
     "variable_types must map type names to continuous, integer or categorical")
   need(text(settings$package_catalogue), "package_catalogue must be a URL")
+  need(text(settings$function_catalogue), "function_catalogue must be a URL")
+  statuses <- unlist(settings$package_status)
+  need(length(statuses) > 0 && all(statuses %in% package_statuses()),
+    sprintf("package_status must list some of: %s", paste(package_statuses(), collapse = ", ")))
   need(text(settings$client_suffix), "client_suffix must be text, e.g. Client")
   need(is.null(settings$excluded_functions) || is.character(unlist(settings$excluded_functions)), "excluded_functions must be a list of function names")
   need(text(settings$credential_pattern) && !inherits(tryCatch(suppressWarnings(grepl(settings$credential_pattern, "")), error = identity), "error"),

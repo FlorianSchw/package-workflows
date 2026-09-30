@@ -1,17 +1,29 @@
-# The package catalogue as prompt text: one line per server-side package
-# that isn't retired and isn't already installed, with its description and
-# status. Client packages are left out: notes name the server package (the
-# one the study servers need), its client (name + `client_suffix`)
-# follows. Returns list(text, names); `names` is the enum for
-# other_package notes.
-format_catalogue_for_prompt <- function(catalogue, installed, client_suffix) {
-  keep <- names(catalogue)[vapply(catalogue, function(p) !identical(p$status, "retired"), logical(1))]
+# The DataSHIELD packages the studies don't have yet, as prompt text: one
+# line per server-side package whose catalogue status is in `statuses`
+# (the plan's or the settings' package-status), not installed, with its
+# status and description, followed by its client package's functions from
+# the function catalogue (`functions`, read_function_catalogue()) with
+# their titles. Notes name the server package (the one the study servers
+# need); its client is the name + `client_suffix`. Packages only in the
+# function catalogue count as status "unknown".
+# Returns list(text, names, functions): `names` and `functions` are the
+# enums for other_package notes.
+format_catalogue_for_prompt <- function(catalogue, functions, installed, client_suffix, statuses) {
+  status_of <- function(n) if (is.null(catalogue[[n]])) "unknown" else catalogue[[n]]$status
+  from_functions <- sub(paste0(client_suffix, "$"), "", unique(functions$package[endsWith(functions$package, client_suffix)]))
+  keep <- unique(c(names(catalogue), from_functions))
   keep <- setdiff(keep[!endsWith(keep, client_suffix)], installed)
-  if (length(keep) == 0) return(list(text = "(not available)", names = character(0)))
-  lines <- vapply(keep, function(n) {
-    p <- catalogue[[n]]
-    status <- if (nzchar(p$status)) sprintf(" [%s]", p$status) else ""
-    sprintf("- %s%s: %s", n, status, p$description)
-  }, character(1))
-  list(text = paste(lines, collapse = "\n"), names = keep)
+  keep <- keep[vapply(keep, status_of, character(1)) %in% statuses]
+  if (length(keep) == 0) return(list(text = "(none)", names = character(0), functions = character(0)))
+
+  offered <- functions[functions$package %in% paste0(keep, client_suffix), ]
+  lines <- unlist(lapply(sort(keep), function(n) {
+    description <- if (is.null(catalogue[[n]])) "" else catalogue[[n]]$description
+    own <- offered[offered$package == paste0(n, client_suffix), ]
+    c(
+      sprintf("- %s [%s]: %s", n, status_of(n), description),
+      if (nrow(own) > 0) sprintf("    - %s()%s", own$function_name, ifelse(nzchar(own$title), paste0(": ", own$title), ""))
+    )
+  }))
+  list(text = paste(lines, collapse = "\n"), names = keep, functions = sort(unique(offered$function_name)))
 }
