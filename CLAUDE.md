@@ -411,13 +411,11 @@ and `CONTRIBUTING.md`); no PRs until a branch model and rules exist.
   and teardown code. Category meanings: `config/test-categories.json`.
   Decisions and implementation in
   [dev-notes/test-suggest.md](dev-notes/test-suggest.md).
-  **Docs pending:**
-  - `test-suggest.qmd`: test files per function, categorised naming, the
-    `dslite-setup` input in the prose (the table is generated);
-  - `test-suggest-datashield.qmd`: how an existing setup is followed,
-    `dslite-setup` modes, "Functions not tested" in the report;
-  - `suggestions.qmd` override table: `config/test-categories.json`;
-  - roadmap "Recent changes".
+  ~~**Docs pending**~~ Done 2026-10-01: `test-suggest.qmd#test-files`,
+  `test-suggest-datashield.qmd#connecting` (the `dslite-setup` modes),
+  "What Claude gets" in `test-suggest-review.qmd`, the override table in
+  `suggestions.qmd`, the example caller, and "Recent changes" in the
+  roadmap.
 - **Policy file for the bot's rules** (`config/suggestion-policy.yml`):
   today reasons, action↔reason mapping, the `aut`/`ctb` rule, name
   particles and report routing live partly only in R code. Move the

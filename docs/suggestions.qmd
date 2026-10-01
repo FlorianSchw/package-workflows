@@ -169,6 +169,7 @@ path** in your repository. It is used instead of the shared one:
 | `config/claude.yml` | Claude model, request settings and `accept_reasons` |
 | `config/report-style.yml` | Heading levels and spacing of the suggestion reports |
 | `config/roxygen-style.json` | Roxygen tag order and per-tag guidance |
+| `config/test-categories.json` | Meanings of test file categories (`test-<category>-<function>.R`), see [test files](test-suggest.qmd#test-files) |
 | `config/test-role-guidance.json` | Testing strategy given to Claude |
 | `config/workflow-outcomes.yml` | What workflows produce, for the [workflow graphs](workflow-graphs.qmd) |
 | `prompts/*.md` | The full prompts sent to Claude |

@@ -29,12 +29,43 @@ test**, and proposes only what passes as a [suggestion PR](suggestions.qmd).
   `Config/testthat/edition: 3` (only when the test runner is created; an
   existing suite keeps its edition).
 
-One test file per function is assumed: `tests/testthat/test-<function>.R`.
 How Claude decides — what it is shown, the quality rules, the safeguards
 for existing tests and how failures are classified — is on
 [How tests are reviewed](test-suggest-review.qmd). Functions of DataSHIELD
 packages that work on DataSHIELD connections run their tests against
 DSLite, see [DataSHIELD packages](test-suggest-datashield.qmd).
+
+## Test files {#test-files}
+
+Your test files are found in either of two naming schemes:
+
+- **`tests/testthat/test-<function>.R`**, the usual one;
+- **`test-<category>-<function>.R`**, with several files per function,
+  each for one purpose: e.g. `test-arg-ds.mean.R` for argument checks
+  and `test-smk-ds.mean.R` for smoke tests, as in the DataSHIELD base
+  packages.
+
+All of a function's test files are run and reviewed together, and each
+change stays in its own file. Names are matched exactly: tests of
+`ds.meanByClass` are never taken for tests of `ds.mean`.
+
+**Where new tests go** depends on the scheme, which is recognised
+automatically. If at least half of your test files (and at least three)
+are named by category, Claude picks a category for each new test from the
+ones your repository uses, and the test goes into
+`test-<category>-<function>.R`; the file is created if needed. Otherwise
+new tests go into `test-<function>.R`.
+
+What the common categories mean (`arg`, `smk`, `disc`, `math`, …) is
+explained to Claude in `config/test-categories.json`; a category without
+an entry is shown with your existing files of that category as examples.
+You can replace the list with your own
+([per repository](suggestions.qmd#adjusting-the-guidance)).
+
+New tests are added before a file's clean-up at the end, such as a
+`test_that("shutdown", …)` block or a disconnect, so they can use what the
+file sets up at its start. A new file follows how your other test files
+are built, e.g. connecting at the top and disconnecting at the end.
 
 ## The report
 
@@ -45,7 +76,10 @@ description then lists, grouped per test file in collapsible sections:
 - **Changes to existing tests**, each with its reason;
 - **Existing tests to look at** — reported tests and failing tests left
   unchanged;
-- in a sweep, **generated tests that failed**.
+- in a sweep, **generated tests that failed**;
+- for DataSHIELD packages with `dslite-setup: never`, **functions not
+  tested** because the tests have no way to connect (only listed when
+  there is a report anyway).
 
 Heading sizes and spacing can be adjusted in `config/report-style.yml`
 ([per repository](suggestions.qmd#adjusting-the-guidance)). Without a
@@ -55,7 +89,7 @@ sweep or a push without a PR, as an issue.
 ## Sweep scope {#sweep-scope}
 
 A [sweep](suggestions.qmd#sweeps) doesn't review every function every
-month. It takes the functions whose file or test file changed within
+month. It takes the functions whose file or test files changed within
 `sweep-lookback-days` (default 35), plus a rotating share of the rest, so
 that each function comes up at least once every `sweep-rotation-months`
 (default 6). Set `sweep-rotation-months: 0` to review all functions in

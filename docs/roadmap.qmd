@@ -24,6 +24,15 @@ may be closed without review until this is set up.
 
 **October 2026**
 
+- **Test suggestions find all test files of a function**, also
+  `test-<category>-<function>.R` as in the DataSHIELD base packages. In a
+  repository named that way, new tests go into the file of the category
+  Claude picks. See [test files](test-suggest.qmd#test-files).
+- **Tests connect the way yours already do.** A DSLite test setup is now
+  only created if your tests have no way to connect yet; set with the new
+  input [`dslite-setup`](test-suggest-datashield.qmd#connecting). If your
+  tests connect via Opal or Armadillo and you want the DSLite setup
+  anyway, set `dslite-setup: create`.
 - **Bot suggestions on push, and only what's new.** The roxygen, test and
   author suggestions can also run on pushes to your working branches.
   After a pull request's first run, they review only what is new since the

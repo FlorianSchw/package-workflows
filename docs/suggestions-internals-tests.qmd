@@ -42,7 +42,7 @@ flowchart TD
 | [`summarize_test_data()`](https://github.com/FlorianSchw/package-workflows/blob/main/R/functions/tests/summarize_test_data.R) | Describes the test data those files create, so Claude can check concrete values; never fails the run. |
 | [`collect_test_data()`](https://github.com/FlorianSchw/package-workflows/blob/main/R/functions/tests/collect_test_data.R) | Does the actual work in a separate R process: loads your package, runs the support files, and lists each table's rows, columns, types, missing values and factor level counts (also tables inside a DSLite server). |
 
-## ② Read the function and its test file
+## ② Read the function and its test files
 
 | Function | What it does |
 |---|---|

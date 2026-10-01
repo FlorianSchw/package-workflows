@@ -11,14 +11,20 @@ careful reasoning than documentation.
 
 ## What Claude gets
 
-Besides the function and its test file:
+Besides the function and all its [test files](test-suggest.qmd#test-files):
 
+- **How your test files are named**, and for categories what each one
+  means.
 - **The results of the existing tests**, run before anything is changed.
-- **The history**: when the function and its test file last changed, and
+- **The history**: when the function and each test file last changed, and
   in the changes under review (a PR or push) whether the function changed
-  without its test — with the diff.
+  without its tests — with the diff.
 - **Your test support files** (`tests/testthat/setup*.R`, `helper*.R`)
-  verbatim, so the tests use your own objects and helper functions.
+  and the files they `source()` verbatim, so the tests use your own
+  objects, connection helpers and helper functions. Together they are
+  capped at 60,000 characters; files beyond that are named, not shown.
+- **For a function without tests**, one or two typical test files of
+  other functions, as examples of how your package writes tests.
 - **The structure of the test data** those files create: for each table
   its rows, columns, types and missing values, and for factors the counts
   per level. The level counts are the only data values sent to Claude.

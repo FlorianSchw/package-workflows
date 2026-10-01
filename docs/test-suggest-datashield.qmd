@@ -5,11 +5,11 @@ description: "How the test suggestions test DataSHIELD client and utility packag
 
 Client-side functions of a DataSHIELD package need a DataSHIELD server to
 run. With `datashield: true`, the [test suggestions](test-suggest.qmd)
-run such tests against [DSLite](https://github.com/datashield/DSLite), an
-in-process server. Which functions that applies to depends on
-`datashield-type`:
+test them the way your tests already connect, or else against
+[DSLite](https://github.com/datashield/DSLite), an in-process server.
+Which functions need a connection depends on `datashield-type`:
 
-| `datashield-type` | Tested against DSLite | Other functions |
+| `datashield-type` | Tested with a DataSHIELD connection | Other functions |
 |---|---|---|
 | `client` | every function | — |
 | `utility` | functions that work on DataSHIELD connections: a `datasources` argument, or `datashield.*()` / `ds.*()` calls | tested locally, see below |
@@ -18,16 +18,28 @@ in-process server. Which functions that applies to depends on
 Any other value stops the run with an error, so a typo can't silently
 change the testing strategy.
 
-## The DSLite setup
+## How the tests connect {#connecting}
 
-- An **existing DSLite setup** in any `tests/testthat/setup*.R` or
-  `helper*.R` is reused, with your own connection names, symbols and
-  helpers.
-- Otherwise one is **created** with one of DSLite's bundled datasets, in
-  `tests/testthat/setup.R`, or in `setup-dslite.R` if a `setup.R`
-  without DSLite already exists. Your `setup.R` is never touched.
+If your tests already connect to DataSHIELD, **new tests connect the same
+way**: through DSLite, Opal or Armadillo, once in a setup file or in each
+test file through your own helper functions. The workflow looks for that
+anywhere under `tests/testthat/`, and Claude sees your setup and helper
+files together with the files they `source()`, e.g. connection helpers in
+a subfolder.
 
-Claude sees the structure of the test data inside the DSLite server, see
+Whether a **DSLite setup is created** is set with `dslite-setup`:
+
+| `dslite-setup` | A DSLite setup is created … |
+|---|---|
+| `auto` (default) | only if the tests show no way to connect yet |
+| `create` | unless the tests already use DSLite, e.g. while moving from Opal to DSLite |
+| `never` | never. Functions that need a connection, in a package whose tests can't connect, are not tested and are listed in the report. |
+
+A created setup uses one of DSLite's bundled datasets and goes into
+`tests/testthat/setup.R`, or into `setup-dslite.R` if a `setup.R` without
+DSLite already exists. Your `setup.R` is never touched.
+
+Claude sees the structure of the test data inside a DSLite server, see
 [what Claude gets](test-suggest-review.qmd#what-claude-gets).
 
 ::: {.callout-important}

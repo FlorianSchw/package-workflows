@@ -26,6 +26,7 @@ jobs:
       # DataSHIELD packages only:
       # datashield: true
       # datashield-type: client   # or server, utility
+      # dslite-setup: auto        # create a DSLite test setup only if the tests can't connect yet
     secrets:
       anthropic-organization-id: ${{ secrets.ANTHROPIC_ORG_ID }}
       anthropic-service-account-id: ${{ secrets.ANTHROPIC_SVAC_ID }}
