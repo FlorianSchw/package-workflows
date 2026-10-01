@@ -29,7 +29,11 @@ flowchart LR
 ```
 
 Checks and suggestions only act if there is something to report; a PR
-without changes to `R/` skips the suggestion workflows entirely.
+without changes to `R/` skips the suggestion workflows entirely. After the
+first run, each further push to the PR is reviewed on its own, and an open
+suggestion PR collects the new suggestions. With a `push` trigger, the
+same works on working branches without a PR, see
+[how suggestions work](suggestions.qmd#what-gets-reviewed).
 
 ## Release: `dev` into `main`
 

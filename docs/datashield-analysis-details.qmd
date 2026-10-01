@@ -1,0 +1,108 @@
+---
+title: "Analysis plan and checks"
+description: "The analysis plan's fields, how the scripts are checked and tested, and the settings of the analysis scripts workflow."
+---
+
+Background for the [DataSHIELD analysis scripts](datashield-analysis-suggest.qmd).
+You don't need it to get started.
+
+## The plan's fields
+
+| Field | Required | Meaning |
+|---|---|---|
+| `symbol` | no (default `D`) | The data frame the login assigns on the servers, as in `R/01_DS_Login.R` |
+| `studies` | yes | One entry per study: `server` (the server name, as in your login file) and `packages`, the DataSHIELD **server** packages installed there with their versions, e.g. `{dsBase: "6.3.2"}` |
+| `variables` | yes | One entry per variable: `name`, `type`, `categories` (categorical) or `range: [min, max]` (continuous, integer); optionally `label` and `role` (outcome, exposure, confounder, …) |
+| `steps` | yes | The analysis, in order: each step needs a `title`; `id` and any other fields are optional |
+| `package-catalogue` | no | Where the list of known DataSHIELD packages comes from (default: [packages.datashield.org](https://packages.datashield.org)) |
+| `package-status` | no (default `[production]`) | Which other packages may be suggested, by their status: `production`, `development`, `unknown`, `retired` |
+| `project` | no | Title and research question, passed on as context |
+
+- **Versions in quotes:** write `"6.10"`, not `6.10`. YAML reads `6.10`
+  without quotes as the number 6.1, so the plan check reports it.
+- **Variable types:** `continuous`, `integer` or `categorical`, or the
+  words of your data dictionary: `numeric`, `decimal`, `factor` and
+  `binary` are understood too.
+- **Client packages** aren't listed: the matching client is derived from
+  each server package (`dsBase` → `dsBaseClient`), at the same version.
+- **Table names** aren't needed: the scripts only use the symbol and the
+  server names. If those differ from your login file, the report says so.
+
+## How the scripts are checked
+
+1. **The plan:** the core is checked before anything else runs; all
+   problems are listed at once.
+2. **Packages:** a server package counts only if every study has it. If
+   versions differ, the lowest is tested. Packages are installed from
+   CRAN where they're published, otherwise from GitHub (a tag
+   `v<version>` or `<version>`, else the default branch). A version that
+   can't be found is reported.
+3. **Calls:** every `ds.*()` and `datashield.*()` call must be a function
+   of the installed client packages, with only its own argument names.
+4. **Columns:** every `"object$column"` must be a variable of the plan or
+   created by a step (`newobj`). This check matters because DSLite, in its
+   permissive test setting, returns `NA` for an unknown column instead of
+   an error.
+5. **The test run:** your DSLite setup and all bot scripts run in file
+   order, in a fresh R session, without your project's `.Rprofile` and
+   without any tokens. A run that takes too long counts as failing.
+6. **Repair:** steps that fail get one more round with their problems.
+   Steps that still fail aren't proposed, and a changed step keeps its
+   previous script.
+
+## Steps that can't be written yet
+
+The workflow knows the DataSHIELD packages from the
+[package catalogue](https://packages.datashield.org) and their functions
+from a [function catalogue](https://github.com/FlorianSchw/packages)
+(moving to [FederatedMethods](https://github.com/FederatedMethods/packages)).
+Claude sees the client functions of the packages your studies don't have
+yet, filtered by `package-status`:
+
+- **Possible with another package:** the report names the server package,
+  its status and the client function, e.g. "`dsSurvival` (production),
+  `ds.coxph.SLMA()`". Its client package is listed, commented out, in
+  `dependencies.R`. Uncomment it once your study servers have the
+  package, or to try it locally in DSLite.
+- **Not possible with any known package:** if an open issue already
+  requests that function, the report links to it, so you can see what has
+  happened and add your use case. Otherwise it offers a prefilled "Open
+  issue" link. The issue is opened under your account, after you've seen
+  its text; nothing is posted automatically.
+
+The packages and functions Claude may name are checked against the
+catalogues, so it can't invent one.
+
+## Your project's files
+
+The bot only touches its own parts:
+
+- **Its scripts** in `R/`. Each starts with a marker line that records
+  what it was made from, so an edited script is recognised and left
+  alone.
+- **One marked block each in `R/main.R` and `dependencies.R`.** If a
+  marker is missing or doubled, the file is left alone and the report
+  says so.
+- **`utils/mock_data/bot-suggest/`** and the DSLite setup
+  (`utils/setup/01_DSLite_Setup.R`), updated with dsAnalysis's own
+  functions. The bot also sets the setup's `symbol` to the plan's, and,
+  if your login file names its connections differently than `conns`,
+  adds one line for that name.
+
+Your login file is read only to compare the server names and the symbol
+and to warn about plain-text credentials. It is never sent and never
+changed.
+
+## Settings
+
+Two files control the workflow:
+
+| File | Controls |
+|---|---|
+| `config/analysis-suggest.yml` | Mock data (rows, missing values, seed), the 150-line limit, file numbering, repair rounds, test-run timeout, paths, block markers, variable types, catalogues, the default `package-status`, the repository for missing-function issues |
+| `config/analysis-texts.yml` | Everything the report, the scripts' headers and the notes say |
+
+To change something for your project, put a file at the same path that
+holds **only the entries you change**. Unlike the package workflows'
+files, it is merged over the defaults key by key, so later additions to
+the defaults still reach you.

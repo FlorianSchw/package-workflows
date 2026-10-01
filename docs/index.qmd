@@ -1,13 +1,14 @@
 ---
 title: "package-workflows"
-subtitle: "Reusable GitHub Actions workflows for R packages"
+subtitle: "Reusable GitHub Actions workflows for R packages and DataSHIELD analysis projects"
 ---
 
 This repository holds **reusable workflows** (`on: workflow_call`) for R
 package repositories: checks, releases, and bot suggestions for
-documentation, tests and contributor credits. Each package repository only
-needs thin *caller* files that point here, so CI logic is written once
-instead of being copied into every repository.
+documentation, tests and contributor credits. For DataSHIELD **analysis
+projects**, a workflow drafts tested starter scripts from an analysis
+plan. Each repository only needs thin *caller* files that point here, so
+CI logic is written once instead of being copied into every repository.
 
 A caller is a normal workflow file in your repository whose job `uses:` a
 workflow from here:
@@ -41,9 +42,10 @@ need is very welcome, see [Roadmap and open questions](roadmap.qmd).
 | | [Author suggestions](authors-suggest.qmd) | Credits the contributors of a pull request in `DESCRIPTION` |
 | | [Roxygen suggestions](roxygen-suggest.qmd) | Claude reviews and rewrites roxygen2 documentation |
 | | [Test suggestions](test-suggest.qmd) | Claude reviews and writes testthat tests; only passing ones are proposed |
-| | [Claude setup](claude-setup.qmd) | Keyless Claude API access for the two workflows above |
+| | [Claude setup](claude-setup.qmd) | Keyless Claude API access for the two workflows above and the analysis scripts |
 | | [Cleanup suggestion branch](cleanup-suggestion-branch.qmd) | Deletes bot branches once their PR is closed |
 | | [Under the hood](suggestions-internals.qmd) | How the roxygen and test suggestions work, step by step |
+| Analysis projects | [DataSHIELD analysis scripts](datashield-analysis-suggest.qmd) | Drafts starter scripts from your analysis plan, tested on mock data in DSLite |
 | Workflow upkeep | [Workflow keepalive](workflow-keepalive.qmd) | Keeps scheduled workflows from being disabled after 60 days of inactivity |
 | | [Workflow graphs](workflow-graphs.qmd) | Writes an overview of your workflows — table and diagrams — into `.github/workflow-graphs/README.md` |
 

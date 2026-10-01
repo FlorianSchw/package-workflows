@@ -15,7 +15,8 @@ Besides the function and its test file:
 
 - **The results of the existing tests**, run before anything is changed.
 - **The history**: when the function and its test file last changed, and
-  in a PR whether the function changed without its test — with the diff.
+  in the changes under review (a PR or push) whether the function changed
+  without its test — with the diff.
 - **Your test support files** (`tests/testthat/setup*.R`, `helper*.R`)
   verbatim, so the tests use your own objects and helper functions.
 - **The structure of the test data** those files create: for each table

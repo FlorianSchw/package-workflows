@@ -34,7 +34,8 @@ differs.
 flowchart TD
   subgraph prep ["Prepare"]
     direction LR
-    trig(["PR, schedule<br/>or manual run"]) --> files["Choose files"]
+    trig(["PR, push, schedule<br/>or manual run"]) --> scope["Decide scope"]
+    scope --> files["Choose files"]
     files --> setup["Install R and your<br/>package's dependencies"]
     setup --> token["Get a short-lived<br/>Claude token"]
   end
@@ -49,11 +50,12 @@ flowchart TD
 
 | Step | Done by | What it does |
 |---|---|---|
-| Choose files | workflow step (shell) | In a PR: the `R/*.R` files the PR changed. In a sweep: all of them (roxygen), or the recently changed ones plus a rotating share (tests, see [sweep scope](test-suggest.qmd#sweep-scope)). Writes `files_to_check.txt`; with no files, all later steps are skipped. |
+| Decide scope | [`resolve-suggestion-scope`](https://github.com/FlorianSchw/package-workflows/tree/main/.github/actions/resolve-suggestion-scope) action | From the event alone: skip (bot branch, tag, deleted branch, fork, Dependabot), or which mode (new changes or sweep) and which branch to check out. |
+| Choose files | workflow step (shell), `determine-changes.sh` | In a PR or push: the `R/*.R` files of the commits [new since the last run](suggestions.qmd#what-gets-reviewed), from the suggestion PR's marker, the PR's base or the push's previous state. Commits from other branches and the bot's own are left out. In a sweep: all files (roxygen), or the recently changed ones plus a rotating share (tests, see [sweep scope](test-suggest.qmd#sweep-scope)). Writes `files_to_check.txt`; with no files, all later steps are skipped. |
 | Claude token | [`anthropic-token`](https://github.com/FlorianSchw/package-workflows/tree/main/.github/actions/anthropic-token) action | Trades GitHub's identity token for a short-lived Claude token, see [Claude setup](claude-setup.qmd). |
 | R script | `R/suggest_roxygen.R`, `R/suggest_tests.R` | Everything below. Rewrites files in place and lists them in `updated_files.txt`; writes the PR description (`suggestion_report.md`) and the summary line (`suggestion_summary.md`). |
 | Push token | [`resolve-push-token`](https://github.com/FlorianSchw/package-workflows/tree/main/.github/actions/resolve-push-token) action | A GitHub App token, so your required checks run on the suggestion PR. |
-| Commit and PR | [`commit-updated-files`](https://github.com/FlorianSchw/package-workflows/tree/main/.github/actions/commit-updated-files) action | Commits exactly the listed files, opens or updates the suggestion PR, and comments on your PR. See [how suggestions work](suggestions.qmd). |
+| Commit and PR | [`commit-updated-files`](https://github.com/FlorianSchw/package-workflows/tree/main/.github/actions/commit-updated-files) action | Commits exactly the listed files, opens the suggestion PR or adds to the open one, records the reviewed commit, and comments on your PR. See [how suggestions work](suggestions.qmd). |
 
 ## Step by step
 

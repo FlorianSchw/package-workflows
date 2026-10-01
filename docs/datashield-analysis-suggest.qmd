@@ -1,0 +1,128 @@
+---
+title: "DataSHIELD analysis scripts"
+description: "Drafts tested starter scripts for a DataSHIELD analysis from the analysis plan you write."
+---
+
+`datashield-analysis-suggest.yml` is for **analysis projects**, not
+packages: projects set up with
+[dsAnalysis](https://github.com/FlorianSchw/dsAnalysis). You describe
+your analysis in a plan file, `config/analysis-plan.yml`: the studies,
+the variables and the steps. Each change to that file drafts starter
+scripts with the right DataSHIELD calls, **tests them on mock data**, and
+proposes them as a [suggestion PR](suggestions.qmd).
+
+::: {.callout-important}
+## A starting point, not the analysis
+The scripts help you get started with DataSHIELD. They run, but that
+doesn't make the analysis right: read and adapt them. The analysis stays
+your responsibility.
+:::
+
+The plan describes what you want to do before the data is involved, close
+to a pre-registration. Claude never sees your data, only the plan.
+
+## How it works
+
+```{mermaid}
+flowchart TD
+  subgraph prep ["Prepare"]
+    direction LR
+    push(["Push that changes<br/>the analysis plan"]) --> check["Check the plan"]
+    check --> pkgs["Install the studies'<br/>DataSHIELD packages"]
+    pkgs --> mock["Mock data<br/>from the plan"]
+  end
+  subgraph draft ["Draft and test"]
+    direction LR
+    claude["Claude drafts<br/>the steps"] --> verify["Check every call,<br/>run all scripts in DSLite"]
+    verify -- "fails: one repair round" --> claude
+    verify -- "passes" --> pr["Suggestion PR"]
+  end
+  prep --> draft
+```
+
+- **The plan is checked first:** all problems are listed at once, before
+  anything is installed or sent.
+- **The studies' server packages are installed,** at the versions you
+  list, together with the matching client packages.
+- **Mock data is generated from your variables:** their names, types,
+  categories and ranges, so the scripts use your real variable names.
+- **Every DataSHIELD call is checked** against the functions and arguments
+  of the installed client packages. Every column has to be a variable of
+  your plan or one a step creates.
+- **All scripts run** in your project's testing mode: dsAnalysis's DSLite
+  setup with the mock data. A failing step gets one repair round; if it
+  still fails, it isn't proposed.
+
+Details: [analysis plan and checks](datashield-analysis-details.qmd).
+
+## The analysis plan
+
+{{< example analysis-plan.yml config/analysis-plan.yml >}}
+
+The **core** (`symbol`, `studies`, `variables`) is fixed, because the mock
+data and the package checks rely on it. The **steps** are free: only a
+title is required, and everything else is passed on as you wrote it.
+Plans can look completely different.
+
+## What you get
+
+- **A script per step,** in `R/`: `02_DataManagement.R`,
+  `03_DescriptiveStatistics.R`, …, at most 150 lines each. A longer step
+  is split between its sections into `02a_…`, `02b_…`.
+- **A notes-only script** for a step that isn't possible with your
+  studies' packages, saying why and what would be needed.
+- **`R/main.R` and `dependencies.R`** each get a marked block that the bot
+  maintains: the `source()` lines of its scripts, and the packages to
+  install.
+- **Mock data** in `utils/mock_data/bot-suggest/`, and your DSLite setup
+  pointed at it. To try the scripts, set
+  `R_CONFIG_ACTIVE = 'testing'` in `.Renviron`, restart R and run
+  `R/main.R`. That's the same setup the test run used.
+- **A report** in the pull request:
+  - the tested package versions;
+  - steps that would be **possible with another DataSHIELD package**,
+    naming the package and its function, with the package's status
+    (e.g. production);
+  - steps **not possible with any known package**, with a link to an
+    existing request for that function, or to open a new one;
+  - limitations, and notes on your setup, e.g. credentials written into
+    your login file.
+
+**Your edits are safe:**
+- a script you changed is never overwritten, even when its step changes
+  in the plan; the report says so;
+- a step removed from the plan keeps its script.
+
+## Before you start
+
+- **The project** must have been set up with dsAnalysis, which provides
+  the testing mode and the DSLite setup.
+- **Claude access:** three secrets and a federation rule for this
+  workflow, see [Claude setup](claude-setup.qmd).
+- **Pull requests:** either a [GitHub App](getting-started.qmd#github-app)
+  or PAT, or the repository setting "Allow GitHub Actions to create and
+  approve pull requests" (Settings → Actions → General).
+
+::: {.callout-note}
+## What leaves your project
+The plan's content is sent to the Claude API: variable names, categories,
+study names and the steps. Your data, credentials and your login file
+(`R/01_DS_Login.R`) are never sent. Don't put anything confidential in the
+plan.
+:::
+
+## Example
+
+{{< example datashield-analysis-suggest.yml >}}
+
+## Inputs
+
+{{< wf-inputs datashield-analysis-suggest.yml >}}
+
+## Secrets
+
+{{< wf-secrets datashield-analysis-suggest.yml >}}
+
+## Permissions
+
+{{< wf-permissions datashield-analysis-suggest.yml >}}

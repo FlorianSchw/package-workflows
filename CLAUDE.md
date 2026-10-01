@@ -127,7 +127,9 @@ the live caller used to validate changes before wider rollout.
 - `docs/` — Quarto site, published to GitHub Pages by `publish-docs.yml`
   (the only non-reusable workflow). One page per workflow, grouped in the
   sidebar via `docs/_quarto.yml` (sections: Getting started, Pull request
-  checks, Release, Bot suggestions, Workflow upkeep; Roadmap last). A long
+  checks, Release, Bot suggestions, Analysis projects, Workflow upkeep;
+  Roadmap last, whose "Recent changes" section serves as release notes).
+  A long
   page gets sub-pages as a nested sidebar section whose `href` is the main
   page: Test suggestions (`test-suggest-review.qmd`,
   `test-suggest-datashield.qmd`), Under the hood
@@ -345,9 +347,9 @@ and `CONTRIBUTING.md`); no PRs until a branch model and rules exist.
   - **First real check:** the user's test work on dsAnalysis. Its caller
     needs `DSLite` and `dsBase` in `DESCRIPTION` (e.g. Suggests) for the
     connection functions.
-  - **Docs pending:** `test-suggest-datashield.qmd` (utility section),
-    `roxygen-suggest.qmd` (the type), and the input description on those
-    pages. The Under the hood tables are already updated.
+  - ~~**Docs pending:**~~ Done in the docs pass of 2026-10-01:
+    `test-suggest-datashield.qmd` (now "DataSHIELD packages", with a
+    utility section), `roxygen-suggest.qmd` (a table of the three types).
 - **DataSHIELD analysis starter** (`datashield-analysis-suggest.yml`):
   stage 1 built on 2026-09-30 and tested locally (Claude and the installs
   replaced by stand-ins, DSLite real). Not yet in CI: a real Claude
@@ -359,16 +361,27 @@ and `CONTRIBUTING.md`); no PRs until a branch model and rules exist.
   - **dsAnalysis:** its changes are a checklist in
     [dev-notes/analysis-suggest.md](dev-notes/analysis-suggest.md),
     including a bug in `add_dsPackage()`.
-  - **Docs pending:** a new sidebar section "Analysis projects" with a
-    page for the workflow (the input tables come from the YAML), and a
-    repo description like "…for R packages and DataSHIELD analysis
-    projects". Also a roadmap entry, and the two new config files in the
-    override table of `docs/suggestions.qmd` ("Adjusting the guidance").
+  - ~~**Docs pending:**~~ Done in the docs pass of 2026-10-01:
+    - sidebar section "Analysis projects" with
+      `datashield-analysis-suggest.qmd` (main page) and
+      `datashield-analysis-details.qmd` (plan fields, checks, catalogues,
+      project files, settings);
+    - the plan template as `examples/analysis-plan.yml`, shown via
+      `{{< example FILE TARGET >}}`;
+    - site and index description "…for R packages and DataSHIELD analysis
+      projects" (the GitHub repo description itself is the user's to
+      change);
+    - roadmap, Claude setup, Getting started.
+
+    The analysis config files are described on the details page; the
+    override table in `suggestions.qmd` only points there, because they
+    merge instead of replace.
 - **Unified trigger model for roxygen, tests and authors** (built
   2026-10-01, tested locally in sandbox repos, **not yet in CI** — re-test
-  on dsSupportClient, the list is in the dev-note; **Docs pending**: the
-  three pages' trigger sections, examples, suggestions page, release
-  note): support push runs, review only what's new since
+  on dsSupportClient, the list is in the dev-note; ~~**Docs pending**~~
+  done 2026-10-01: `suggestions.qmd#what-gets-reviewed`, the three pages,
+  examples, Overview, Under the hood, release note as "Recent changes"
+  in `docs/roadmap.qmd`): support push runs, review only what's new since
   the last run (PR opened → whole PR; later pushes and plain pushes →
   `before..after`). The bot branch is built on instead of rebuilt
   (`open-suggestion-pr: add | replace`), with one concurrency group per
@@ -398,8 +411,9 @@ and `CONTRIBUTING.md`); no PRs until a branch model and rules exist.
   Done (2026-09-30, user's decision): roxygen callers grant
   `issues: write`, and possible code bugs from a sweep without a
   suggestion PR go to a monthly issue (`report_sweep_code_issues()`)
-  instead of the job log. **Docs pending:** the permission in the roxygen
-  page's text and in Getting started, if they list it.
+  instead of the job log. ~~**Docs pending:**~~ Done 2026-10-01: the
+  roxygen page's report section, and the "Recent changes" in the roadmap
+  (as a required caller change).
 - **Report routing is code, not config:** where test failures, possible
   bugs, deletion notes and code issues go (PR comment, PR description,
   issue, log) is decided in R (`publish_test_report()`,

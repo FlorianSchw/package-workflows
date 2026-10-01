@@ -1,14 +1,20 @@
 ---
 title: "Author suggestions"
-description: "Credits the contributors of a pull request in DESCRIPTION."
+description: "Credits the authors of new commits, from a pull request or a push, in DESCRIPTION."
 aliases:
   - check-description-authors.html
 ---
 
-`authors-suggest.yml` looks at every commit of the pull request
-and checks whether its author is credited in `DESCRIPTION`. What's missing
-is proposed as a [suggestion PR](suggestions.qmd) into your branch, titled
-"Update contributors in DESCRIPTION".
+`authors-suggest.yml` looks at every new commit and checks whether its
+author is credited in `DESCRIPTION`:
+- **on a pull request:** all of the PR's commits when it is opened, then
+  each further push's commits;
+- **on a push,** if your caller adds that trigger: that push's commits.
+
+What's missing is proposed as a [suggestion PR](suggestions.qmd) into your
+branch, titled "Update contributors in DESCRIPTION". Commits merged in from
+another branch (e.g. `dev`) and the bot's own commits don't count, see
+[what gets reviewed](suggestions.qmd#what-gets-reviewed).
 
 ## Roles
 
@@ -22,8 +28,10 @@ Merge commits don't count. The suggestion PR's description gives the
 reason for each change, e.g. "added as `aut` (changed `R/ds.rse.R`)".
 
 ::: {.callout-important}
-Trigger the workflow on **all** pull requests, without a `paths` filter.
-Otherwise contributors who only touch tests or docs are never seen.
+Trigger the workflow on **all** pull requests (and pushes, if you add
+them), without a `paths` filter. Otherwise contributors who only touch
+tests or docs are never seen. Schedules and manual runs do nothing: there
+is no sweep for authors.
 :::
 
 ## Names

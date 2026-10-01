@@ -20,7 +20,43 @@ can't be handled properly. Please open an issue instead — pull requests
 may be closed without review until this is set up.
 :::
 
+## Recent changes {#recent-changes}
+
+**October 2026**
+
+- **Bot suggestions on push, and only what's new.** The roxygen, test and
+  author suggestions can also run on pushes to your working branches.
+  After a pull request's first run, they review only what is new since the
+  last run, and an open suggestion PR collects the new suggestions instead
+  of being rebuilt. See [how suggestions work](suggestions.qmd#what-gets-reviewed).
+  - **Manual runs:** "Run workflow" now sweeps the branch you choose,
+    not always `dev`.
+  - **Sweep branch names** include the branch:
+    `bot-suggest/<kind>-sweep-<branch>-YYYY-MM`. An open sweep PR of the
+    current month under the old name is left behind once and can be
+    closed.
+  - **No change needed** in existing callers; the `scan-mode` line in
+    the examples is no longer needed.
+- **Roxygen callers need `issues: write`.** Possible code bugs found in a
+  sweep without a suggestion PR now go to a monthly issue instead of
+  only the job log. **Add `issues: write`** to the roxygen caller's
+  `permissions`, or GitHub refuses to start the run.
+- **New: [DataSHIELD analysis scripts](datashield-analysis-suggest.qmd)**
+  for analysis projects set up with dsAnalysis.
+- **New `datashield-type: utility`** for analyst-side helper packages,
+  in the [roxygen](roxygen-suggest.qmd#datashield-packages) and
+  [test](test-suggest-datashield.qmd#utility) suggestions. An unknown
+  `datashield-type` now stops the run.
+
 ## Open questions
+
+### The analysis plan
+
+The [analysis plan](datashield-analysis-details.qmd#the-plans-fields) is a
+first draft, and its shape will change with experience.
+
+*Feedback wanted:* fields a real analysis plan needs, and what is easy or
+hard to fill in.
 
 ### Versioning
 
@@ -69,6 +105,12 @@ issues?
 - ~~**[Workflow graphs](workflow-graphs.qmd)**: new; the first real runs
   are still ahead.~~ Running on a first repository; the layout is still
   being refined.
+- **Suggestions on push**, and building on an open suggestion PR: tested
+  locally; the first real runs are still ahead.
+- **[DataSHIELD analysis scripts](datashield-analysis-suggest.qmd)**:
+  tested locally with real DSLite runs; the first real runs, with Claude
+  and the package installs, are still ahead.
+- **`datashield-type: utility`**: the first real runs are still ahead.
 
 ## Planned
 
@@ -79,3 +121,7 @@ issues?
 - **Caching for R CMD check**, to speed up repeated runs.
 - **Real coverage data** for the test suggestions, e.g. how much each
   proposed test adds.
+- **Analysis scripts, next stages:** models with the assumption checks
+  DataSHIELD allows, then figures and tables as files.
+- **The bots' rules in one readable settings file**, e.g. which reasons
+  lead to a proposal and where reports go, adjustable per repository.

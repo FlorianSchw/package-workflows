@@ -1,26 +1,56 @@
 ---
-title: "DataSHIELD client packages"
-description: "How the test suggestions run client-side tests against an in-process DSLite server."
+title: "DataSHIELD packages"
+description: "How the test suggestions test DataSHIELD client and utility packages, against an in-process DSLite server where needed."
 ---
 
 Client-side functions of a DataSHIELD package need a DataSHIELD server to
-run. With `datashield: true` and `datashield-type: client`, the
-[test suggestions](test-suggest.qmd) run their tests against
-[DSLite](https://github.com/datashield/DSLite), an in-process server:
+run. With `datashield: true`, the [test suggestions](test-suggest.qmd)
+run such tests against [DSLite](https://github.com/datashield/DSLite), an
+in-process server. Which functions that applies to depends on
+`datashield-type`:
+
+| `datashield-type` | Tested against DSLite | Other functions |
+|---|---|---|
+| `client` | every function | — |
+| `utility` | functions that work on DataSHIELD connections: a `datasources` argument, or `datashield.*()` / `ds.*()` calls | tested locally, see below |
+| `server` | — | tested like any R package |
+
+Any other value stops the run with an error, so a typo can't silently
+change the testing strategy.
+
+## The DSLite setup
 
 - An **existing DSLite setup** in any `tests/testthat/setup*.R` or
   `helper*.R` is reused, with your own connection names, symbols and
   helpers.
 - Otherwise one is **created** with one of DSLite's bundled datasets, in
-  `tests/testthat/setup.R` — or in `setup-dslite.R` if a `setup.R`
-  without DSLite already exists, which is never touched.
+  `tests/testthat/setup.R`, or in `setup-dslite.R` if a `setup.R`
+  without DSLite already exists. Your `setup.R` is never touched.
 
-Claude sees the structure of the test data inside the DSLite server — see
+Claude sees the structure of the test data inside the DSLite server, see
 [what Claude gets](test-suggest-review.qmd#what-claude-gets).
 
 ::: {.callout-important}
 DSLite takes the server functions from the **installed server packages**.
 List them (e.g. `dsBase`), together with `DSLite` and `testthat`, in your
-`DESCRIPTION` — for example under `Suggests` — so the workflow installs
+`DESCRIPTION`, for example under `Suggests`, so the workflow installs
 them. Otherwise every test fails as `env_misconfiguration`.
 :::
+
+## Utility packages {#utility}
+
+Utility packages help the analyst rather than wrap a server function: they
+set up analysis projects, create mock data or manage packages. Their
+functions that don't work on connections are tested for real on the local
+machine:
+
+- **In a temporary directory** (`withr::local_tempdir()`, or your
+  setup's own temporary paths), never in the user's home or working
+  directory;
+- **Asserting on the return value and on the files** the function creates
+  and their content;
+- **Mocking only what must not run in a test:** installing packages,
+  network access or opening an RStudio project, with
+  `testthat::local_mocked_bindings()`;
+- **Using your setup files' objects and settings**, e.g. a test
+  configuration read in `setup.R`.

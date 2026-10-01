@@ -3,7 +3,9 @@
 --   {{< wf-inputs FILE >}}       inputs table of .github/workflows/FILE
 --   {{< wf-secrets FILE >}}      secrets table of .github/workflows/FILE
 --   {{< wf-permissions FILE >}}  permissions the caller job must grant
---   {{< example FILE >}}         examples/FILE as a copyable code block
+--   {{< example FILE [TARGET] >}} examples/FILE as a copyable code block,
+--                                labelled .github/workflows/FILE or TARGET
+--                                (where the file goes in your repository)
 -- The workflow YAML is parsed by pandoc itself (as a YAML metadata block),
 -- which keeps descriptions as Markdown, e.g. `code` renders as code.
 
@@ -123,11 +125,12 @@ return {
   end,
   ["example"] = function(args)
     local file = pandoc.utils.stringify(args[1])
+    local target = args[2] and pandoc.utils.stringify(args[2]) or (".github/workflows/" .. file)
     local text = read_file(repo_path("examples", file)):gsub("%s+$", "")
     -- Quarto adds its filename header before shortcodes are resolved, so
     -- build the same markup it would produce.
-    local header = pandoc.RawBlock("html", '<div class="code-with-filename-file"><pre><strong>.github/workflows/'
-      .. file .. '</strong></pre></div>')
+    local header = pandoc.RawBlock("html", '<div class="code-with-filename-file"><pre><strong>'
+      .. target .. '</strong></pre></div>')
     return pandoc.Blocks({
       pandoc.Div({ header, pandoc.CodeBlock(text, pandoc.Attr("", { "yaml" })) }, pandoc.Attr("", { "code-with-filename" })),
     })

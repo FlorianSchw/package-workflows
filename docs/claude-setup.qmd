@@ -1,10 +1,11 @@
 ---
 title: "Claude setup"
-description: "Keyless Claude API access for the roxygen and test suggestion workflows."
+description: "Keyless Claude API access for the roxygen and test suggestions and the analysis scripts."
 ---
 
 The [roxygen](roxygen-suggest.qmd) and [test](test-suggest.qmd)
-suggestion workflows call the Claude API **without a stored API key**. They
+suggestion workflows and the [analysis scripts](datashield-analysis-suggest.qmd)
+call the Claude API **without a stored API key**. They
 use [Workload Identity Federation](https://platform.claude.com/docs/en/manage-claude/workload-identity-federation):
 the job proves its identity with GitHub's OIDC token and gets a
 short-lived Anthropic token in exchange. Nothing secret is stored — the
@@ -27,7 +28,7 @@ separately.
 
 | In the Claude Console | One per | Why |
 |---|---|---|
-| Workspace | workflow type — e.g. `suggest-docs`, `suggest-tests` | Separate usage and spend limits per workflow type |
+| Workspace | workflow type — e.g. `suggest-docs`, `suggest-tests`, `suggest-analysis` | Separate usage and spend limits per workflow type |
 | Service account | repository | The *Cost* page can group by service account, i.e. by repository |
 | Federation rule | repository × workflow | Each rule only admits one workflow file of one repository |
 
@@ -35,15 +36,18 @@ separately.
 
 In the Claude Console under **Settings → Workload identity**:
 
-1. **Workspaces** — create the two workspaces once.
-2. **Service account** — create one for the repository and add it to both
-   workspaces.
+1. **Workspaces** — create a workspace once for each workflow type you
+   use: the two package workflows, and the analysis scripts if you use
+   them.
+2. **Service account** — create one for the repository and add it to each
+   workspace it uses.
 3. **Federation rules** — create one per workflow, with GitHub Actions as
    the provider:
    - *Subject prefix*: `repo:<owner>/<repo>:*`
    - *Claim* `job_workflow_ref`:
      `FlorianSchw/package-workflows/.github/workflows/roxygen-suggest.yml@refs/heads/main`
-     (or `test-suggest.yml` for the test rule)
+     (or `test-suggest.yml` for the test rule,
+     `datashield-analysis-suggest.yml` for the analysis rule)
    - *Target*: the repository's service account, in the matching workspace
 4. **Secrets** — store in the repository:
 
@@ -53,6 +57,7 @@ In the Claude Console under **Settings → Workload identity**:
    | `ANTHROPIC_SVAC_ID` | The service account's `svac_...` ID |
    | `ANTHROPIC_FDRL_ROXYGEN` | The roxygen rule's `fdrl_...` ID |
    | `ANTHROPIC_FDRL_TESTS` | The test rule's `fdrl_...` ID |
+   | `ANTHROPIC_FDRL_ANALYSIS` | The analysis rule's `fdrl_...` ID (analysis projects) |
 
 ::: {.callout-warning}
 ## Don't mix up the rule IDs

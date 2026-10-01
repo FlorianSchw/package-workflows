@@ -3,9 +3,11 @@ title: "Roxygen suggestions"
 description: "Claude reviews and rewrites roxygen2 documentation."
 ---
 
-`roxygen-suggest.yml` has Claude review each changed function's roxygen2
-block for completeness and accuracy against its code, and proposes an
-improved block as a [suggestion PR](suggestions.qmd).
+`roxygen-suggest.yml` has Claude review the roxygen2 block of each function
+whose file is new in a pull request or push (see
+[what gets reviewed](suggestions.qmd#what-gets-reviewed)), for
+completeness and accuracy against its code. It proposes an improved block
+as a [suggestion PR](suggestions.qmd).
 
 ## What it changes
 
@@ -43,7 +45,10 @@ bug". The description then shows, in collapsible sections:
   Claude's proposed text — adopt one by hand if it's worth it;
 - **Possible bugs in the code** that Claude noticed while checking the
   documentation against the code. Nothing in the code is changed. Without
-  a suggestion PR, these are posted as a comment on your PR.
+  a suggestion PR, these are posted as a comment on your PR, or, in a
+  sweep or a push without a PR, collected in one issue per month
+  ("Roxygen sweep: possible bugs in the code (YYYY-MM)"). That's why the
+  caller grants `issues: write`.
 
 Heading sizes and spacing can be adjusted in `config/report-style.yml`
 ([per repository](suggestions.qmd#adjusting-the-guidance)); GitHub
@@ -52,10 +57,23 @@ and blank lines.
 
 ## DataSHIELD packages
 
-With `datashield: true`, Claude gets role-specific guidance for client or
-server packages (`datashield-type`), e.g. about disclosure control. Client
-packages listed in `config/datashield-example-env.json` also get a
-ready-made multi-study login to the Opal demo server for their examples.
+With `datashield: true`, Claude gets role-specific guidance, chosen with
+`datashield-type`:
+
+| `datashield-type` | For | Guidance |
+|---|---|---|
+| `client` | client packages | functions that send calls to the servers, e.g. what is returned locally vs. computed server-side |
+| `server` | server packages | functions that compute on the servers' data |
+| `utility` | analyst-side helper packages, e.g. for setting up analysis projects or mock data | side effects on the analyst's machine; examples that write only to `tempdir()` |
+
+- **Login example:** client packages listed in
+  `config/datashield-example-env.json` get a ready-made multi-study login
+  to the Opal demo server for their examples. Utility packages get it
+  through the client packages they depend on (e.g. `dsBaseClient`), and
+  only for functions that work on DataSHIELD connections (a `datasources`
+  argument, or `datashield.*()` / `ds.*()` calls).
+- **Typos stop the run:** any other `datashield-type` stops it with an
+  error, so a typo can't silently drop the guidance.
 
 ## Example
 

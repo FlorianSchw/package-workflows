@@ -7,7 +7,7 @@ shortcodes:
 
 website:
   title: "package-workflows"
-  description: "Reusable GitHub Actions workflows for R packages"
+  description: "Reusable GitHub Actions workflows for R packages and DataSHIELD analysis projects"
   repo-url: https://github.com/FlorianSchw/package-workflows
   repo-actions: [source, issue]
   page-navigation: true
@@ -56,6 +56,12 @@ website:
             contents:
               - suggestions-internals-roxygen.qmd
               - suggestions-internals-tests.qmd
+      - section: "Analysis projects"
+        contents:
+          - section: "DataSHIELD analysis scripts"
+            href: datashield-analysis-suggest.qmd
+            contents:
+              - datashield-analysis-details.qmd
       - section: "Workflow upkeep"
         contents:
           - workflow-keepalive.qmd

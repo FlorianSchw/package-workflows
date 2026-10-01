@@ -12,9 +12,11 @@ test**, and proposes only what passes as a [suggestion PR](suggestions.qmd).
 
 ## What it does
 
-- **Every function is reviewed**, whether it already has tests or not —
-  the changed ones in a PR, and in a [sweep](#sweep-scope) the recently
-  changed ones plus a rotating share of the rest.
+- **Every function is reviewed**, whether it already has tests or not:
+  - in a pull request or push, those in files that are
+    [new since the last run](suggestions.qmd#what-gets-reviewed);
+  - in a [sweep](#sweep-scope), the recently changed ones plus a rotating
+    share of the rest.
 - **New tests only where they add value** — at most 10 per function, each
   with a stated reason, see [what gets proposed](suggestions.qmd#what-gets-proposed).
 - **Existing tests are reviewed too**: outdated ones are updated, obsolete
@@ -30,9 +32,9 @@ test**, and proposes only what passes as a [suggestion PR](suggestions.qmd).
 One test file per function is assumed: `tests/testthat/test-<function>.R`.
 How Claude decides — what it is shown, the quality rules, the safeguards
 for existing tests and how failures are classified — is on
-[How tests are reviewed](test-suggest-review.qmd). DataSHIELD client
-packages run their tests against DSLite, see
-[DataSHIELD client packages](test-suggest-datashield.qmd).
+[How tests are reviewed](test-suggest-review.qmd). Functions of DataSHIELD
+packages that work on DataSHIELD connections run their tests against
+DSLite, see [DataSHIELD packages](test-suggest-datashield.qmd).
 
 ## The report
 
@@ -47,8 +49,8 @@ description then lists, grouped per test file in collapsible sections:
 
 Heading sizes and spacing can be adjusted in `config/report-style.yml`
 ([per repository](suggestions.qmd#adjusting-the-guidance)). Without a
-suggestion PR, the report is posted as a comment on your PR, or in a sweep
-as one issue.
+suggestion PR, the report is posted as a comment on your PR, or, in a
+sweep or a push without a PR, as an issue.
 
 ## Sweep scope {#sweep-scope}
 
