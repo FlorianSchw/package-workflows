@@ -1,11 +1,13 @@
 # The test workflow's report (see publish_test_report() for where it goes),
 # laid out like the roxygen report: a section per kind with its count —
 # "Changes to existing tests (n)", "Existing tests to look at (n)",
-# "Generated tests that failed (n)" — and in each a collapsible group per
-# test file. `changes`, `notes` and `failures` are named lists, test file
-# path -> entries (Markdown lines, or blocks from format_test_failure()).
+# "Generated tests that failed (n)", "Functions not tested (n)" — and in
+# each a collapsible group per file. `changes`, `notes`, `failures` and
+# `untested` are named lists, file path (test file; function file for
+# `untested`) -> entries (Markdown lines, or blocks from
+# format_test_failure()).
 # Heading levels and spacing come from config/report-style.yml.
-format_test_report <- function(summary_line, changes, notes, failures) {
+format_test_report <- function(summary_line, changes, notes, failures, untested = list()) {
   style <- report_style()
   section <- function(title, entries, intro, sep = character(0)) {
     if (length(entries) == 0) return(character(0))
@@ -23,7 +25,8 @@ format_test_report <- function(summary_line, changes, notes, failures) {
     if (!is.null(summary_line)) c(paste("**Summary:**", summary_line), ""),
     section("Changes to existing tests", changes, "Each change passed a real run. Check the reasons before merging."),
     section("Existing tests to look at", notes, "Not changed automatically."),
-    section("Generated tests that failed", failures, "Not proposed; each needs a look.", sep = c("", "---", ""))
+    section("Generated tests that failed", failures, "Not proposed; each needs a look.", sep = c("", "---", "")),
+    section("Functions not tested", untested, "They need DataSHIELD connections, but the tests have no way to connect and `dslite-setup` is `never`.")
   )
   paste(body, collapse = "\n")
 }

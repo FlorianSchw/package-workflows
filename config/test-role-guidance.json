@@ -6,12 +6,15 @@
   ],
   "client_existing_setup": [
     "This function works on DataSHIELD connections (client side). The",
-    "package's test setup and helper files (shown further below) already",
-    "establish a DSLite connection. Use exactly the connection object, data",
-    "symbol, tables and helper functions they define, under the names they",
-    "use — do NOT write your own login/connection code, and do NOT assume",
-    "data beyond what those files assign. Leave dslite_dataset empty — it",
-    "is not used when reusing an existing setup."
+    "package's tests already connect to DataSHIELD servers: follow how they",
+    "connect, as shown in the test files, the setup and helper files and the",
+    "files those source (all further below). The connection may be made once",
+    "in the setup, or in each test file through the package's own helper",
+    "functions, which then also disconnect at the end. Use exactly the",
+    "connection objects, data symbols, tables and helper functions the package",
+    "defines, under the names it uses — do NOT write your own login code, and",
+    "do NOT assume data beyond what those files assign. Leave dslite_dataset",
+    "empty — it is not used when reusing an existing setup."
   ],
   "client_new_setup": {
     "intro": [

@@ -16,7 +16,12 @@
 # derived from the SAME list build_test_role_guidance() presents in the
 # prompt, so the allowed values can never drift from what Claude was
 # actually offered.
-build_submit_tests_tool <- function(dslite_datasets, max_new_tests) {
+#
+# categories (detect_test_scheme(), categorised repositories only) adds a
+# category per new test; existing_file_names (the function's test files)
+# restricts which file a decision on an existing test names. A new test
+# file can get top-level setup and teardown code (new_test_file_content()).
+build_submit_tests_tool <- function(dslite_datasets, max_new_tests, categories = NULL, existing_file_names = character(0)) {
   code_fields <- list(
     setup_code = list(type = "string", description = "Raw runnable R code needed only for this specific test (e.g. extra assigns), beyond the shared connection/setup. Empty string if nothing extra is needed."),
     assertions_code = list(type = "string", description = "Raw runnable R code containing the actual expect_*() assertion(s) for this test. No comment markers, no test_that() wrapper — the script adds that.")
@@ -39,10 +44,21 @@ build_submit_tests_tool <- function(dslite_datasets, max_new_tests) {
     ), code_fields),
     required = list("description", "reason", "setup_code", "assertions_code")
   )
+  if (length(categories) > 0) {
+    test_item_schema$properties$category <- list(
+      type = "string", enum = as.list(categories),
+      description = "The test file category this test belongs to (see the categories in the prompt); the script writes the test into test-<category>-<function>.R."
+    )
+    test_item_schema$required <- c(test_item_schema$required, list("category"))
+  }
+
+  test_file_schema <- list(type = "string", description = "The file name of the test, e.g. test-ds.mean.R, exactly as shown.")
+  if (length(existing_file_names) > 0) test_file_schema$enum <- as.list(existing_file_names)
 
   existing_item_schema <- list(
     type = "object",
     properties = c(list(
+      test_file = test_file_schema,
       description = list(type = "string", description = "The existing test_that() description, copied exactly."),
       action = list(
         type = "string",
@@ -61,7 +77,7 @@ build_submit_tests_tool <- function(dslite_datasets, max_new_tests) {
       ),
       explanation = list(type = "string", description = "One or two sentences why, citing the evidence (history, diff, failure output).")
     ), code_fields),
-    required = list("description", "action", "reason", "explanation", "setup_code", "assertions_code")
+    required = list("test_file", "description", "action", "reason", "explanation", "setup_code", "assertions_code")
   )
 
   dataset_names <- if (!is.null(dslite_datasets)) {
@@ -81,6 +97,8 @@ build_submit_tests_tool <- function(dslite_datasets, max_new_tests) {
     properties = list(
       needs_tests = list(type = "boolean", description = "Whether new tests would add real value. False if the existing tests already cover the function's behavior well."),
       dslite_dataset = dslite_dataset_schema,
+      file_setup_code = list(type = "string", description = "Only if the package's test files connect or set up at their top level, outside test_that() (e.g. a connect helper at the start of each file): that top-level code for the start of a test file that doesn't exist yet. Empty string otherwise."),
+      file_teardown_code = list(type = "string", description = "The matching top-level clean-up for the end of such a new test file (e.g. the disconnect helper). Empty string otherwise."),
       tests = list(
         type = "array",
         description = sprintf("Up to %d new test_that() blocks. Never duplicates an existing test.", max_new_tests),
@@ -93,7 +111,7 @@ build_submit_tests_tool <- function(dslite_datasets, max_new_tests) {
         items = existing_item_schema
       )
     ),
-    required = list("needs_tests", "dslite_dataset", "tests", "existing_tests")
+    required = list("needs_tests", "dslite_dataset", "file_setup_code", "file_teardown_code", "tests", "existing_tests")
   )
 
   list(

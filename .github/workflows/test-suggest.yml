@@ -38,6 +38,11 @@ on:
         required: false
         type: string
         default: ''
+      dslite-setup:
+        description: 'For functions using DataSHIELD connections: "auto" (create a DSLite test setup only if the tests have no way to connect yet), "create" (create one unless the tests already use DSLite) or "never"'
+        required: false
+        type: string
+        default: 'auto'
     secrets:
       anthropic-organization-id:
         description: 'Anthropic organization ID.'
@@ -111,8 +116,11 @@ jobs:
               git log --since="$LOOKBACK_DAYS days ago" --name-only --format= -- R tests/testthat | sort -u > recent_files.txt
               slot=$(( ($(date +%Y) * 12 + 10#$(date +%m)) % ROTATION ))
               while IFS= read -r f; do
-                test_file="tests/testthat/test-$(basename "$f" .R).R"
-                if grep -qxF -e "$f" -e "$test_file" recent_files.txt \
+                # Its test files: test-<name>.R or test-<category>-<name>.R.
+                # (R names contain no regex characters besides the dot.)
+                name=$(basename "$f" .R | sed 's/[.]/[.]/g')
+                if grep -qxF -e "$f" recent_files.txt \
+                   || grep -qxE "tests/testthat/test-([A-Za-z0-9_]+-)?${name}[.]R" recent_files.txt \
                    || [ $(( $(printf '%s' "$f" | cksum | cut -d' ' -f1) % ROTATION )) -eq "$slot" ]; then
                   echo "$f"
                 fi
@@ -158,6 +166,7 @@ jobs:
           BASE_REV: ${{ steps.files.outputs.base_rev }}
           DATASHIELD: ${{ inputs.datashield }}
           DATASHIELD_TYPE: ${{ inputs.datashield-type }}
+          DSLITE_SETUP: ${{ inputs.dslite-setup }}
         run: Rscript .shared-workflows/R/suggest_tests.R
 
       - name: Resolve push token

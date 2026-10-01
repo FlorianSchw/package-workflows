@@ -11,13 +11,20 @@ Function name: {{FUNCTION_NAME}}
 Function source:
 {{FUNCTION_SOURCE}}
 
-Existing test file for this function ("(none yet)" means there is none):
-{{EXISTING_TEST_FILE}}
+Existing test files for this function ("(none yet)" means there are none):
+{{EXISTING_TEST_FILES}}
 
-Test setup and helper files, run by testthat before every test file.
-Use exactly the objects, data symbols and helper functions they define —
-don't invent your own:
+How this repository names its test files:
+{{TEST_FILE_SCHEME}}
+
+Test setup and helper files, run by testthat before every test file, and
+the files they source. Use exactly the objects, data symbols, connection
+helpers and helper functions they define — don't invent your own:
 {{TEST_SUPPORT_FILES}}
+
+Example test files of other functions, showing how this package writes
+its tests — follow how they connect, set up and clean up:
+{{EXAMPLE_TEST_FILES}}
 
 Structure of the test data those files create (rows, columns, types,
 missing values, factor level counts) — use it for concrete assertions:
@@ -52,6 +59,13 @@ Quality rules for every test you write:
 - The description states exactly what is asserted, and nothing it
   doesn't assert.
 
+New tests are added to an existing test file before its clean-up (e.g. a
+"shutdown" test or a disconnect at the end), so they can use what the
+file sets up at its start. For a test file that doesn't exist yet: if the
+package's test files connect or set up at their top level, outside
+`test_that()`, give that code as file_setup_code and the matching
+clean-up as file_teardown_code; otherwise leave both empty.
+
 ## Existing tests
 
 List in existing_tests only the tests that need action; leave out tests
@@ -73,7 +87,8 @@ that are fine.
   be written differently.
 - Passing tests are not rewritten.
 
-Copy each existing test's description exactly. Fill setup_code and
+Name each existing test's file (test_file) and copy its description
+exactly. Fill setup_code and
 assertions_code only for "update"; use empty strings otherwise.
 
 Call the submit_tests tool with your result. Do not write any prose

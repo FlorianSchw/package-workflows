@@ -1,22 +1,33 @@
 # Sends the test-review request to Claude and returns the submit_tests
 # tool call's input — individual structured fields only, never assembled
-# test_that() syntax. Besides the function and its test file, Claude gets
-# the test setup/helper files verbatim (to use the package's own objects
-# and helpers), the structure of the test data they create
-# (summarize_test_data()), the existing tests' current results and the history
-# evidence, to judge failing tests (outdated vs. possible bug).
-ask_claude_for_tests <- function(parsed, existing_test_file, role_text, dslite_datasets, test_results, evidence, max_new_tests, test_data) {
+# test_that() syntax. Besides the function and its test files, Claude gets
+# the test setup/helper files and the files they source verbatim (to use
+# the package's own objects, connection helpers and helpers), example test
+# files of other functions when this one has none yet, how the repository
+# names its test files, the structure of the test data
+# (summarize_test_data()), the existing tests' current results and the
+# history evidence, to judge failing tests (outdated vs. possible bug).
+# `context` bundles the per-run and per-function inputs; see
+# R/suggest_tests.R.
+ask_claude_for_tests <- function(parsed, context) {
   prompt <- fill_template(test_review_prompt_template, list(
-    ROLE_GUIDANCE         = role_text,
-    EXISTING_TEST_FILE    = if (nzchar(existing_test_file$content)) existing_test_file$content else "(none yet)",
-    TEST_SUPPORT_FILES    = format_test_support_files(test_support_files()),
-    TEST_DATA             = test_data,
-    EXISTING_TEST_RESULTS = test_results,
-    HISTORY_EVIDENCE      = evidence,
+    ROLE_GUIDANCE         = context$role_text,
+    TEST_FILE_SCHEME      = context$scheme_text,
+    EXISTING_TEST_FILES   = format_test_files(context$test_files, "(none yet)"),
+    EXAMPLE_TEST_FILES    = format_test_files(context$examples, "(not needed: the function has tests)", max_chars = 8000),
+    TEST_SUPPORT_FILES    = format_test_support_files(context$support_files),
+    TEST_DATA             = context$test_data,
+    EXISTING_TEST_RESULTS = context$test_results,
+    HISTORY_EVIDENCE      = context$evidence,
     FUNCTION_SOURCE       = fn_source(parsed),
     FUNCTION_NAME         = parsed$fn_name,
-    MAX_NEW_TESTS         = as.character(max_new_tests)
+    MAX_NEW_TESTS         = as.character(context$max_new_tests)
   ))
 
-  call_claude_tool(anthropic_config, build_submit_tests_tool(dslite_datasets, max_new_tests), prompt)
+  tool <- build_submit_tests_tool(
+    context$dslite_datasets, context$max_new_tests,
+    categories = context$categories,
+    existing_file_names = vapply(context$test_files, function(f) basename(f$path), character(1))
+  )
+  call_claude_tool(anthropic_config, tool, prompt)
 }

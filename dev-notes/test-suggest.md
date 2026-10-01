@@ -12,10 +12,12 @@ config and R conventions (see `CLAUDE.md`).
 
 Entry script: `R/suggest_tests.R`. Per function file in `files_to_check.txt`:
 
-1. `parse_r_file()` → function name + source; `find_existing_test_file()`
-   looks for `tests/testthat/test-<function>.R`; `parse_test_file()` finds
-   its `test_that()` blocks (R's parser; only uniquely named blocks on
-   their own lines are editable).
+1. `parse_r_file()` → function name + source; `find_test_files()` finds
+   all its test files — `tests/testthat/test-<function>.R`, plus
+   `test-<category>-<function>.R` in a categorised repository
+   (`detect_test_scheme()`, once per run, see "Test file schemes" below);
+   `parse_test_file()` finds their `test_that()` blocks (R's parser; only
+   uniquely named blocks on their own lines are editable).
 2. Every function is reviewed, tested or not (see
    [suggestion-thresholds.md](suggestion-thresholds.md)); a sweep selects
    which functions (see "Sweep scope" below).
@@ -30,9 +32,17 @@ Entry script: `R/suggest_tests.R`. Per function file in `files_to_check.txt`:
    a temporary DSLite session), else plain data frames: rows, columns,
    types, missing values, factor level counts. No other values. A file
    failing partway still yields the tables created before, with a note.
-4. For DataSHIELD client packages, `detect_dslite_setup()` checks for an
-   existing DSLite setup in any `tests/testthat/setup*.R` / `helper*.R`;
-   those files go to Claude verbatim (objects, symbols, helpers).
+4. For functions needing DataSHIELD connections,
+   `detect_connection_approaches()` looks for any way the tests already
+   connect (DSLite, DSOpal, DSMolgenisArmadillo, a DSI login) anywhere
+   under `tests/testthat/`, and `decide_dslite_setup()` applies the
+   `dslite-setup` input: create a DSLite setup, follow the existing
+   approach, or (never + nothing found) leave the function untested and
+   list it in the report. The `setup*.R` / `helper*.R` files and the
+   files they `source()` (`test_sourced_files()`) go to Claude verbatim
+   (objects, symbols, connection helpers), within a total of 60000
+   characters; for a function without tests also one or two typical test
+   files of other functions (`example_test_files()`).
 5. `ask_claude_for_tests()` (profile `test-review`: Opus 5 with adaptive
    thinking; prompt `prompts/test-review-prompt.md`, guidance
    `config/test-role-guidance.json`) returns fields only, never assembled
@@ -46,10 +56,14 @@ Entry script: `R/suggest_tests.R`. Per function file in `files_to_check.txt`:
    `setup-dslite.R` if a `setup.R` without DSLite already exists, so that
    file is never touched. *Revisable (2026-09-25):* `setup.R` first to
    avoid cluttering packages with files; revisit after feedback.
-7. `rewrite_test_content()` builds a candidate file (updates in place,
-   deletions, new tests appended; everything else line for line),
-   `write_test_file()` writes it and `run_test_blocks()` runs it with the
-   package loaded from source.
+7. Per touched test file (`apply_test_file_changes()`):
+   `rewrite_test_content()` builds a candidate (updates in place,
+   deletions, new tests inserted before a clean-up at the end —
+   `test_insert_line()` — else appended; everything else line for line;
+   a new file via `new_test_file_content()`, with Claude's top-level
+   `file_setup_code` / `file_teardown_code` where the package's files
+   connect that way), `write_test_file()` writes it and
+   `run_test_blocks()` runs it with the package loaded from source.
 8. The file is rewritten from the *original* with only what passed: failed
    new tests are left out, a failed update keeps the original test and is
    reported. A generated DSLite setup is kept only if a new test passed.
@@ -186,6 +200,118 @@ calls), so the prompt doesn't have to ask Claude to decide.
 Checked locally against the dsAnalysis clone: detection, role texts, and
 the study group found via `dsBaseClient`. All dsSupportClient functions
 are detected as using connections. Not yet run in CI or end to end.
+
+## Test file schemes and existing setups (designed and built 2026-10-01)
+
+Looked at dsBaseClient and dsBase (2026-10-01):
+
+| | dsBaseClient | dsBase |
+|---|---|---|
+| Files | 318 `test-<category>-<function>.R` | 92, same scheme |
+| Categories | `arg` 95, `smk` 118, `disc`/`discctrl`, `math`, `expt`, `perf`, `datachk`, `*_bug`/`*_dgr` variants | mainly `smk`, plus `arg`, `disc`, `perf` |
+| Per function | several files (`ds.mean`: arg, smk, disc, math, expt, perf) | several (`meanDS`: smk, disc, perf) |
+| Setup | `setup.R` loads DSLite, DSOpal and DSMolgenisArmadillo and sources `connection_to_datasets/*.R`; driver switchable via `options(default_driver)` (DSLite by default) | local unit tests; disclosure settings in `setup.R` |
+| Connecting | each test file calls `connect.studies.dataset.cnsim(...)` and disconnects | — |
+
+**Problems today:**
+- **Only `test-<function>.R` is looked for,** so in these repositories every
+  function counts as untested. Existing tests are never reviewed, new ones
+  duplicate them in a new `test-ds.mean.R`, and the sweep's "recently
+  changed" rule misses test changes.
+- **dsBaseClient's setup is recognised only by luck** (`setup.R` mentions
+  DSLite). Claude doesn't see the sourced connection files, nor that every
+  test connects itself, and the "existing setup" guidance wrongly says the
+  setup connects.
+- **DSLite is imposed:** a package whose tests connect differently (Opal,
+  Armadillo, inside the test files) without DSLite or a login in
+  `setup*`/`helper*` gets a `setup-dslite.R`.
+
+**Decisions:**
+1. **All of a function's test files:** `test-<function>.R` and
+   `test-<anything>-<function>.R`, with the function name escaped and
+   matched to the end (`ds.mean` ≠ `ds.meanByClass`). They are run and
+   reviewed together, and each change to an existing test stays in its
+   own file. The sweep's rotation step uses the same pattern.
+2. **Scheme recognised automatically, no input** (user's decision: it's
+   a single-ecosystem convention, an input only if it becomes more
+   widespread). If most test files follow
+   `test-<category>-<function>.R` with a recurring set of categories, the
+   repository is "categorised". Otherwise `test-<function>.R` stays as
+   today.
+3. **New tests in a categorised repository:** Claude names a category
+   per test, an enum of the repository's categories; R checks it and
+   writes the test into `test-<category>-<function>.R`, creating the file
+   if needed (the user agreed to option A, one file per purpose). So an
+   untested function in dsBaseClient gets e.g. `test-smk-<function>.R`
+   and `test-arg-<function>.R`.
+4. **Category meanings:** a config list (`test_categories`, with
+   defaults for the DataSHIELD categories `arg`, `smk`, `disc`, …),
+   overridable per repository. Categories found but not listed reach
+   Claude as their abbreviation plus the existing files as examples.
+5. **DSLite only where nothing is recognisable:** new input
+   `dslite-setup`:
+   - `auto` (default): create a DSLite setup only if the package's tests
+     show no approach to connecting: DSLite, DSOpal,
+     DSMolgenisArmadillo, a `datashield.login` / `newDSLoginBuilder`,
+     anywhere under `tests/testthat/`, not only in `setup*`/`helper*`;
+   - `create`: the repository consciously wants DSLite. A setup is
+     created if there's no DSLite one, even next to another approach
+     (old tests e.g. via Opal, new ones via DSLite during a switch);
+   - `never`: never create one. Functions needing connections without
+     a recognisable setup are reported, not tested.
+6. **Claude sees how the tests connect:**
+   - the files that `setup*`/`helper*` `source()`, e.g.
+     `connection_to_datasets/*.R`;
+   - for a function without tests, one or two existing test files of
+     other functions as examples of the house style;
+   - the "existing setup" guidance no longer claims the setup connects:
+     "follow how the existing tests connect".
+
+**Implementation (built 2026-10-01, not yet in CI):**
+- **Scheme:** `detect_test_scheme(package_function_names())`: a file is
+  categorised if it is `test-<cat>-<fn>.R` with `cat` of letters, digits
+  and `_`, and `fn` a top-level function in `R/`; the repository is
+  categorised with ≥ 3 such files and ≥ half of all test files.
+  A file whose whole name is a function (`test-read-config.R` with
+  `read_config()` or `read.config()`) is not categorised, so it doesn't
+  become a "read" test of `config()`. Finding files works the same in
+  both kinds of repository (user's request): `test-<fn>.R` is always
+  found, also in a categorised one, and a plain repository's occasional
+  `test-arg-<fn>.R` is found too. Only the placement of new tests
+  differs: by category only in a categorised repository, else
+  `test-<fn>.R`. dsBaseClient: categorised, 14 categories, `ds.mean` has
+  7 files.
+- **Placement:** `category` enum in the tool schema (categorised only); an
+  unknown category is dropped. `test_file` names the file of each
+  decision on an existing test (enum of the function's files); with a
+  single file a missing or unknown name falls back to it, otherwise the
+  decision is ignored.
+- **Files that set up at their top level** (dsBaseClient: connect at the
+  start, `test_that("shutdown")` and a disconnect at the end): new tests
+  go after the last non-clean-up block (`test_insert_line()`); a new file
+  gets Claude's `file_setup_code` / `file_teardown_code`. Not foreseen in
+  the design, found while building.
+- **Meanings:** `config/test-categories.json` (`arg`, `smk`, `disc`,
+  `discctrl`, `math`, `expt`, `perf`, `datachk`), replaced as a whole by
+  a project's own copy like the other JSON configs; the `_bug` / `_dgr`
+  variants are not described (unclear meaning) and reach Claude as names
+  with a pointer to their files.
+- **`dslite-setup: never`** with no way to connect: the function is
+  logged and listed in the report ("Functions not tested"), but doesn't
+  make a report on its own — the repository chose it, and a comment or
+  issue every run would be noise.
+- **Prompt size:** support plus sourced files are capped at 60000
+  characters in total; dsBaseClient's come to ~59600 (~15k tokens per
+  function, Opus). Watch the cost on a first real run.
+- **Sweep rotation:** a function counts as recently changed if
+  `test-<name>.R` or `test-<cat>-<name>.R` changed (`<name>` from the file
+  name, as before).
+- **Tested locally** (real entry script, Claude and GitHub mocked): helpers
+  against the dsBaseClient clone; a categorised sandbox (insertion before
+  shutdown, deletion in the right file, new file with top-level setup,
+  unknown file/category dropped, failing test classified, example files
+  for an untested function); a plain sandbox (unchanged behaviour); all
+  `dslite-setup` values incl. a typo and Opal found in a subfolder.
 
 ## Status
 

@@ -393,6 +393,31 @@ and `CONTRIBUTING.md`); no PRs until a branch model and rules exist.
   on manual runs and `dev` on schedules; sweep branch names include the
   base. Decisions, consequences and the test list are in
   [dev-notes/suggestions-trigger-model.md](dev-notes/suggestions-trigger-model.md).
+- **Test workflow: test file schemes and existing setups** (designed
+  and built 2026-10-01, tested locally with mocked Claude, **not yet in
+  CI**; first real check: a repository named by category, e.g. a
+  dsBaseClient fork). The case: dsBaseClient/dsBase use
+  `test-<category>-<function>.R` (`arg`, `smk`, `disc`, …, several files per
+  function), and we only find `test-<function>.R`. The design:
+  - find all of a function's test files;
+  - recognise the scheme automatically (no input), with new tests placed
+    per category by Claude (enum) and category meanings from config;
+  - `dslite-setup: auto | create | never` (`auto`: only when no approach
+    to connecting is recognisable anywhere under `tests/testthat/`);
+  - show Claude the sourced connection helpers and example tests.
+
+  Added while building: new tests go before a file's clean-up
+  ("shutdown" test, disconnect), and a new file can get top-level setup
+  and teardown code. Category meanings: `config/test-categories.json`.
+  Decisions and implementation in
+  [dev-notes/test-suggest.md](dev-notes/test-suggest.md).
+  **Docs pending:**
+  - `test-suggest.qmd`: test files per function, categorised naming, the
+    `dslite-setup` input in the prose (the table is generated);
+  - `test-suggest-datashield.qmd`: how an existing setup is followed,
+    `dslite-setup` modes, "Functions not tested" in the report;
+  - `suggestions.qmd` override table: `config/test-categories.json`;
+  - roadmap "Recent changes".
 - **Policy file for the bot's rules** (`config/suggestion-policy.yml`):
   today reasons, action↔reason mapping, the `aut`/`ctb` rule, name
   particles and report routing live partly only in R code. Move the
@@ -467,6 +492,13 @@ and `CONTRIBUTING.md`); no PRs until a branch model and rules exist.
     `Co-authored-by:` trailers.
   - **README update workflow:** a new workflow that keeps a package's
     README up to date — scope to be clarified.
+  - **Several functions per `.R` file** (e.g. `utils.R`): skipped for now
+    (user's decision, 2026-10-01). `parse_r_file()` only takes the first
+    function, for roxygen and tests alike. If revisited, the open points
+    are: review only the changed functions in PR/push runs, write blocks
+    back bottom-up, how to handle undocumented internal helpers (`@noRd`
+    or skip), shared docs (`@rdname`/`@describeIn`), and tests per
+    function.
   - **Workflow graphs** (new reusable workflow, built 2026-09-26): tested
     locally against dsSupportClient's workflow files (block handling,
     idempotency, chain detection). First CI run on
