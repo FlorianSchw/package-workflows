@@ -350,6 +350,19 @@ and `CONTRIBUTING.md`); no PRs until a branch model and rules exist.
     repo description like "…for R packages and DataSHIELD analysis
     projects". Also a roadmap entry, and the two new config files in the
     override table of `docs/suggestions.qmd` ("Adjusting the guidance").
+- **Unified trigger model for roxygen, tests and authors** (designed
+  2026-10-01, not built): support push runs, review only what's new since
+  the last run (PR opened → whole PR; later pushes and plain pushes →
+  `before..after`). The bot branch is built on instead of rebuilt
+  (`open-suggestion-pr: add | replace`), with one concurrency group per
+  branch and `scan-mode: auto`. The "reviewed up to" state is a hidden
+  marker in the open bot PR's description, otherwise the event's
+  `before`; a dropped run while no bot PR is open is an accepted gap.
+  Edge cases: merges from other branches, merged bot PRs,
+  rebases, deletions, tags, forks, Dependabot. `sweep-base` defaults to the chosen branch
+  on manual runs and `dev` on schedules; sweep branch names include the
+  base. Decisions, consequences and the test list are in
+  [dev-notes/suggestions-trigger-model.md](dev-notes/suggestions-trigger-model.md).
 - **Policy file for the bot's rules** (`config/suggestion-policy.yml`):
   today reasons, action↔reason mapping, the `aut`/`ctb` rule, name
   particles and report routing live partly only in R code. Move the
