@@ -59,7 +59,7 @@ that are fine.
 
 - A **failing** test: decide from the evidence *why* it fails.
   - The function's behavior was changed on purpose — for example the diff
-    of this pull request changes its contract, and the function changed
+    of the changes under review changes its contract, and the function changed
     after the test — and the test still expects the old behavior: action
     "update", reason "contract_changed". Give the corrected body; the test
     keeps its description.

@@ -1,0 +1,49 @@
+name: 'Resolve Suggestion Scope'
+description: >-
+  Decides, from the event alone and before any checkout, whether a
+  suggestion run should do anything, in which mode, and on which branch.
+  Skips (with a notice) deleted branches, tags, PRs from forks, Dependabot
+  and the bot's own bot-suggest/* branches. scan-mode "auto": PR or push ->
+  changed, schedule or manual run -> sweep. The logic is in
+  resolve-suggestion-scope.sh next to this file; design in
+  dev-notes/suggestions-trigger-model.md.
+inputs:
+  scan-mode:
+    description: '"auto", "changed" or "all".'
+    required: false
+    default: 'auto'
+  sweep-base:
+    description: 'Sweep branch; empty: the chosen branch on manual runs, dev on schedules.'
+    required: false
+    default: ''
+  allow-sweep:
+    description: '"false" for workflows without a sweep (authors): schedule and manual runs are skipped.'
+    required: false
+    default: 'true'
+outputs:
+  skip:
+    description: '"true" if the run should do nothing.'
+    value: ${{ steps.scope.outputs.skip }}
+  mode:
+    description: '"changed" or "all" (empty when skipped).'
+    value: ${{ steps.scope.outputs.mode }}
+  ref:
+    description: 'Branch to check out.'
+    value: ${{ steps.scope.outputs.ref }}
+  branch:
+    description: 'The branch the run is about (PR head or pushed branch; the sweep base in a sweep).'
+    value: ${{ steps.scope.outputs.branch }}
+runs:
+  using: 'composite'
+  steps:
+    - name: Resolve scope
+      id: scope
+      shell: bash
+      env:
+        SCAN_MODE: ${{ inputs.scan-mode }}
+        SWEEP_BASE: ${{ inputs.sweep-base }}
+        ALLOW_SWEEP: ${{ inputs.allow-sweep }}
+        HEAD_REF: ${{ github.head_ref }}
+        REF_NAME: ${{ github.ref_name }}
+        ACTOR: ${{ github.actor }}
+      run: bash "$GITHUB_ACTION_PATH/resolve-suggestion-scope.sh"

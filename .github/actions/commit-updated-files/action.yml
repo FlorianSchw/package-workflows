@@ -1,10 +1,12 @@
 name: 'Commit Updated Files'
 description: >-
   Commits exactly the files listed in the manifest and proposes them as a PR.
-  "changed": per-file commits on a sub-branch, PR back into the current branch,
-  so its author reviews them. "all": one commit on a dated sweep branch,
-  PR against sweep-base. No-op when nothing actually changed. The logic is in
-  commit-updated-files.sh next to this file.
+  "changed": per-file commits on the bot branch of the current branch, PR
+  back into it, so its author reviews them; an open bot PR is built on
+  (or rebuilt, see open-suggestion-pr / rebuild), and its description
+  carries a "reviewed up to" marker. "all": one commit on a dated sweep
+  branch of the sweep base, PR against it. No-op when nothing actually
+  changed. The logic is in commit-updated-files.sh next to this file.
 inputs:
   scan-mode:
     description: '"changed" or "all".'
@@ -37,8 +39,19 @@ inputs:
   origin-pr-number:
     description: '"changed" mode: PR to notify with a link when a new sub-PR is opened (optional).'
     required: false
+  reviewed-sha:
+    description: '"changed" mode: the commit this run reviewed, kept as a marker in the bot PR (optional).'
+    required: false
+  open-suggestion-pr:
+    description: '"changed" mode: "add" builds on an open bot PR, "replace" rebuilds it.'
+    required: false
+    default: 'add'
+  rebuild:
+    description: '"changed" mode: "true" if the branch history was rewritten, so the bot branch must be rebuilt.'
+    required: false
+    default: 'false'
   sweep-branch-prefix:
-    description: '"all" mode: branch name prefix; "-YYYY-MM" is appended.'
+    description: '"all" mode: branch name prefix; "-<sweep base>-YYYY-MM" is appended.'
     required: false
   sweep-commit-message:
     description: '"all" mode: commit message.'
@@ -69,6 +82,9 @@ runs:
         SUB_PR_TITLE: ${{ inputs.sub-pr-title }}
         SUB_PR_BODY: ${{ inputs.sub-pr-body }}
         ORIGIN_PR_NUMBER: ${{ inputs.origin-pr-number }}
+        REVIEWED_SHA: ${{ inputs.reviewed-sha }}
+        OPEN_SUGGESTION_PR: ${{ inputs.open-suggestion-pr }}
+        REBUILD: ${{ inputs.rebuild }}
         SWEEP_BRANCH_PREFIX: ${{ inputs.sweep-branch-prefix }}
         SWEEP_COMMIT_MESSAGE: ${{ inputs.sweep-commit-message }}
         SWEEP_PR_TITLE: ${{ inputs.sweep-pr-title }}

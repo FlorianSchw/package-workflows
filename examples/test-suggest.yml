@@ -4,6 +4,10 @@ on:
   pull_request:
     branches: [dev]
     paths: ['R/**']
+  # Optional: also on pushes to your working branches (main left out).
+  # push:
+  #   branches-ignore: [main]
+  #   paths: ['R/**']
   schedule:
     - cron: '0 7 1 * *'   # monthly sweep of the whole package
   workflow_dispatch:
@@ -16,9 +20,9 @@ jobs:
       pull-requests: write
       issues: write
     uses: FlorianSchw/package-workflows/.github/workflows/test-suggest.yml@main
-    with:
-      # PRs check only changed files; scheduled and manual runs sweep everything.
-      scan-mode: ${{ github.event_name == 'pull_request' && 'changed' || 'all' }}
+    # PR or push: only what is new since the last run. Schedule: sweep of dev;
+    # manual run: sweep of the branch chosen in "Run workflow".
+    # with:
       # DataSHIELD packages only:
       # datashield: true
       # datashield-type: client   # or server, utility

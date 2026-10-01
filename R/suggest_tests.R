@@ -45,8 +45,8 @@ api_key    <- Sys.getenv("ANTHROPIC_API_KEY")
 gh_token   <- Sys.getenv("GH_TOKEN")
 repo       <- Sys.getenv("GITHUB_REPOSITORY")
 pr_number  <- Sys.getenv("PR_NUMBER")
-base_ref   <- Sys.getenv("BASE_REF")  # empty in a sweep
-is_sweep   <- !nzchar(pr_number)  # no PR to comment on (all mode)
+base_rev   <- Sys.getenv("BASE_REV")  # state before this run's changes; empty in a sweep
+is_sweep   <- !nzchar(pr_number)  # no PR to comment on (a sweep, or a push without a PR)
 datashield <- as.logical(Sys.getenv("DATASHIELD", "false"))
 ds_type    <- Sys.getenv("DATASHIELD_TYPE", "")
 check_datashield_type(datashield, ds_type)
@@ -107,7 +107,7 @@ for (f in files) {
   existing_test_file <- find_existing_test_file(function_name)
   blocks <- if (existing_test_file$exists) parse_test_file(existing_test_file$content) else list()
   baseline <- if (existing_test_file$exists) run_quietly(existing_test_file$path, sprintf("existing tests for %s", function_name)) else list()
-  evidence <- build_test_evidence(f, existing_test_file$path, base_ref)
+  evidence <- build_test_evidence(f, existing_test_file$path, base_rev)
 
   # Re-checked per function: a DSLite setup generated for an earlier function
   # in this run is reused by later ones.

@@ -1,6 +1,7 @@
 # Trigger model for the suggestion workflows (design, not built)
 
-Status: **design agreed with the user on 2026-10-01, nothing built yet.**
+Status: **built on 2026-10-01 and tested locally** (sandbox repos with
+`gh`/`jq` stand-ins, see "Implementation"), **not yet run in CI.**
 Applies to `roxygen-suggest.yml`, `test-suggest.yml` and
 `authors-suggest.yml`. The analysis workflow
 (`datashield-analysis-suggest.yml`) has its own push-on-plan model and
@@ -189,7 +190,69 @@ an opened PR.
 Reviewed like any PR, as today (the user's decision). It fits "push and
 keep working".
 
-## Consequences for callers (when built)
+## Implementation (2026-10-01)
+
+- **`.github/actions/resolve-suggestion-scope/`** (action, runs before
+  checkout): `resolve-suggestion-scope.sh` decides skip / mode / branch
+  from the event (decisions 4, 5 and 10). Next to it,
+  `determine-changes.sh`, called from the `.shared-workflows` checkout
+  after checkout, works out what is new (decisions 1 and 9):
+  - **Starting point:** the marker, else the PR base (opened), else
+    `before`, else commits on no other branch.
+  - **Filter:** `--no-merges`, `--not` the other remote branches (not
+    for an opened PR), bot authors and bot commit subjects
+    (`bot_commit_subjects` in `config/bot-authors.json`).
+  - **Output:** `files_to_check.txt`, `commits.txt`; `count`, `base_rev`,
+    `rebuild`, `reviewed_sha`.
+- **`commit-updated-files`:** new inputs `reviewed-sha`,
+  `open-suggestion-pr` and `rebuild`. In `changed` mode an open bot PR is
+  built on:
+  - the merge uses `-X theirs`, then the run's files are put on top and
+    pushed without force;
+  - each run's report is appended as "Update for <sha>", the oldest
+    updates dropped near GitHub's size limit;
+  - the marker is updated, also without new suggestions;
+  - fallback to a rebuild with a note.
+
+  Sweep branches include the base. The analysis workflow passes
+  `open-suggestion-pr: replace` (its model regenerates unmerged steps
+  anyway).
+- **Workflows** (roxygen, tests, authors):
+  - the scope step first, checkout of `ref`, then the files/commits step;
+  - later steps run if `count > 0`;
+  - one concurrency group per branch;
+  - `scan-mode` default `auto`, `sweep-base` default empty, new input
+    `open-suggestion-pr`;
+  - authors with `allow-sweep: false`.
+- **R:**
+  - `suggest_authors.R` reads `commits.txt`;
+  - `suggest_tests.R` and `build_test_evidence()` use `BASE_REV` (the
+    state before the changes) instead of the PR base branch;
+  - the test prompt says "the changes under review" instead of "this pull
+    request".
+- **Examples:** no `scan-mode` expression any more; a commented-out
+  `push` trigger (`branches-ignore: [main]`).
+
+**Tested locally:**
+- **Scenarios 1–8 in a sandbox:**
+  - a new branch with 2 commits;
+  - a second push (only the new file; the bot PR keeps the earlier
+    suggestions, the report is appended, the marker moves);
+  - merging `dev` (0 new commits);
+  - working on a file with an open suggestion (merged with the user's
+    version winning, then a new suggestion);
+  - merging the bot PR (0 new);
+  - a new bot PR, then amend + force-push (rebuild with a note);
+  - PR opened (the whole PR);
+  - a modify/delete conflict (fallback with a note).
+- **Scope decisions** for 16 event cases.
+- **Sweep branch name** with the base, and `replace`.
+- **`build_test_evidence()`** with and without a base.
+
+Found and fixed while testing: `grep` with no match under `pipefail` ended
+`determine-changes.sh` on every first run.
+
+## Consequences for callers
 
 - **PR runs review less:** after the first run, only the new push's
   files. A deliberate "review everything again" is a manual run (sweep) on

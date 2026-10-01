@@ -3,6 +3,11 @@ name: DESCRIPTION Author Suggestions
 on:
   pull_request:
     branches: [dev]
+  # Optional: also on pushes to your working branches (main left out). Credits
+  # the authors of each push's new commits. No paths filter, so contributors
+  # of tests or docs are seen too.
+  # push:
+  #   branches-ignore: [main]
 
 jobs:
   suggest-authors:

@@ -119,3 +119,6 @@ jobs:
           sub-pr-title: 'DataSHIELD analysis scripts'
           sub-pr-body: 'Drafted from your analysis plan by the datashield-analysis-suggest workflow.'
           pr-body-file: 'suggestion_report.md'
+          # Every run regenerates all steps not yet in the branch, so the bot
+          # branch is rebuilt rather than built on.
+          open-suggestion-pr: 'replace'

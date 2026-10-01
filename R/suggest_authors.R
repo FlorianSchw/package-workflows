@@ -1,5 +1,6 @@
 #!/usr/bin/env Rscript
-# Credits every PR commit author in DESCRIPTION — `aut` if any of their
+# Credits the author of every new commit (a PR, then each push; see
+# commits.txt) in DESCRIPTION — `aut` if any of their
 # commits changed files under R/, `ctb` otherwise (credit_contributor()) —
 # and lists DESCRIPTION in updated_files.txt for the workflow to commit,
 # with the changes and their reasons in suggestion_report.md for the
@@ -22,12 +23,15 @@ walk(list.files(file.path(functions_dir, c("shared", "authors")), pattern = "\\.
 
 gh_token  <- Sys.getenv("GH_TOKEN")
 repo      <- Sys.getenv("GITHUB_REPOSITORY")
-base_ref  <- Sys.getenv("BASE_REF")
 pr_number <- Sys.getenv("PR_NUMBER")
 
 bot_names <- unlist(read_json_config("config/bot-authors.json", required = TRUE)$bot_names)
 
-shas <- unique(system2("git", c("log", "--no-merges", sprintf("origin/%s...HEAD", base_ref), "--format=%H"), stdout = TRUE))
+# The commits new since the last run (determine-changes.sh: the whole PR
+# when it is opened, then each push's own commits; merges, the bot's own
+# commits and commits from other branches already left out).
+shas <- if (file.exists("commits.txt")) unique(readLines("commits.txt")) else character(0)
+shas <- shas[nzchar(shas)]
 
 contributors <- list()  # resolved name -> list(r_files, emails); e-mails only for matching
 login_names <- list()   # GitHub login -> resolved name, one users API call each

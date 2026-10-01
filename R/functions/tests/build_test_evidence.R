@@ -1,10 +1,12 @@
 # History evidence for judging a failing existing test: when the function
 # file and its test file last changed, which changed later, and — in a PR
-# run (base_ref set) — whether this PR changed the function without
-# touching its test, plus the function file's diff. A function changed
-# after its test hints at an outdated test; a test that is newer than the
-# code it fails on hints at a bug. Claude weighs this, R doesn't decide.
-build_test_evidence <- function(function_file, test_path, base_ref) {
+# or push run (base_rev set: the state before this run's changes, from
+# determine-changes.sh) — whether these changes touched the function
+# without touching its test, plus the function file's diff. A function
+# changed after its test hints at an outdated test; a test that is newer
+# than the code it fails on hints at a bug. Claude weighs this, R doesn't
+# decide.
+build_test_evidence <- function(function_file, test_path, base_rev) {
   # system2() passes arguments through the shell unquoted — quote them.
   git <- function(...) suppressWarnings(system2("git", shQuote(c(...)), stdout = TRUE, stderr = FALSE))
   last_change <- function(path) {
@@ -34,16 +36,15 @@ build_test_evidence <- function(function_file, test_path, base_ref) {
     lines <- c(lines, "No test file exists yet.")
   }
 
-  if (nzchar(base_ref)) {
-    range <- sprintf("origin/%s...HEAD", base_ref)
-    diff <- git("diff", range, "--", function_file)
-    test_touched <- length(git("diff", "--name-only", range, "--", test_path)) > 0
+  if (nzchar(base_rev)) {
+    diff <- git("diff", base_rev, "HEAD", "--", function_file)
+    test_touched <- length(git("diff", "--name-only", base_rev, "HEAD", "--", test_path)) > 0
     lines <- c(lines, sprintf(
-      "In this pull request, the function file %s and the test file %s.",
+      "In the changes under review, the function file %s and the test file %s.",
       if (length(diff) > 0) "changed" else "did not change",
       if (test_touched) "changed as well" else "did not change"
     ))
-    if (length(diff) > 0) lines <- c(lines, "", "Diff of the function file in this pull request:", "```diff", diff, "```")
+    if (length(diff) > 0) lines <- c(lines, "", "Diff of the function file in the changes under review:", "```diff", diff, "```")
   }
 
   paste(lines, collapse = "\n")

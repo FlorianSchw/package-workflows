@@ -102,7 +102,10 @@ the live caller used to validate changes before wider rollout.
 - Branch-protection rulesets (formerly `rulesets/` + `apply-ruleset.yml`)
   now live in a separate private repo.
 - `.github/actions/` — composite actions: `anthropic-token` (suggestion
-  workflows), `resolve-push-token` (also `package-release.yml`),
+  workflows), `resolve-suggestion-scope` (roxygen/tests/authors: skip,
+  mode and branch from the event; its folder also holds
+  `determine-changes.sh`, what is new since the last run),
+  `resolve-push-token` (also `package-release.yml`),
   `commit-updated-files` (also `authors-suggest.yml`), `commit-and-push`
   (plain commit to the current branch, commit message as input;
   `workflow-graphs.yml`, meant for future generated-file workflows too).
@@ -184,16 +187,27 @@ Details per workflow: [dev-notes/roxygen-suggest.md](dev-notes/roxygen-suggest.m
   caller's own file at that same relative path if it exists (an override),
   else the `.shared-workflows/` copy.
 - **Committing:** scripts write `updated_files.txt`; `commit-updated-files`
-  commits exactly those files. `changed` mode: per-file commits on a
-  sub-branch `bot-suggest/<kind>/<PR branch with / → ->`, force-pushed and
-  opened as a sub-PR *back into the PR branch* — never committed onto it
-  directly, so the PR author reviews every suggestion. When the sub-PR is
-  newly created and `origin-pr-number` is set, a link comment is posted on
-  the originating PR. `all` mode: checks out and scans the `sweep-base`
-  input (default `dev` — a scheduled run would otherwise start on `main`),
-  one commit on `bot-suggest/<kind>-sweep-YYYY-MM`, force-pushed, + PR
-  against `sweep-base`; a re-run in the same month updates that month's
-  open PR instead of failing or duplicating it. In both modes only an
+  commits exactly those files. `changed` mode (PR or push; what's new
+  since the last run, `determine-changes.sh`):
+  - **Bot branch:** per-file commits on `bot-suggest/<kind>/<branch with
+    / → ->`, opened as a sub-PR *back into that branch*, never committed
+    onto it directly, so its author reviews every suggestion.
+  - **An open sub-PR is built on:** the branch is merged in with the
+    user's version winning, the run's suggestions are added and pushed
+    without force, and the report appended. It carries a hidden
+    `reviewed up to <sha>` marker.
+  - **Rebuilt** (force-push) when none is open, with
+    `open-suggestion-pr: replace`, after a history rewrite, or when the
+    merge fails.
+  - **Link comment** on the originating PR when the sub-PR is newly
+    created and `origin-pr-number` is set.
+
+  `all` mode (sweep): checks out and scans the `sweep-base` (empty: the
+  chosen branch on manual runs, `dev` on schedules, since a schedule
+  starts on `main`), one commit on `bot-suggest/<kind>-sweep-<base>-YYYY-MM`,
+  force-pushed, plus a PR against the base; a re-run in the same month
+  updates that month's open PR instead of failing or duplicating it. In
+  both modes only an
   *open* PR counts as existing. `resolve-push-token` provides an App
   token when configured, so the bot's PRs trigger the caller's required
   checks (`GITHUB_TOKEN`-created ones don't) — which is why the
@@ -350,8 +364,11 @@ and `CONTRIBUTING.md`); no PRs until a branch model and rules exist.
     repo description like "…for R packages and DataSHIELD analysis
     projects". Also a roadmap entry, and the two new config files in the
     override table of `docs/suggestions.qmd` ("Adjusting the guidance").
-- **Unified trigger model for roxygen, tests and authors** (designed
-  2026-10-01, not built): support push runs, review only what's new since
+- **Unified trigger model for roxygen, tests and authors** (built
+  2026-10-01, tested locally in sandbox repos, **not yet in CI** — re-test
+  on dsSupportClient, the list is in the dev-note; **Docs pending**: the
+  three pages' trigger sections, examples, suggestions page, release
+  note): support push runs, review only what's new since
   the last run (PR opened → whole PR; later pushes and plain pushes →
   `before..after`). The bot branch is built on instead of rebuilt
   (`open-suggestion-pr: add | replace`), with one concurrency group per

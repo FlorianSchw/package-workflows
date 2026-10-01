@@ -4,15 +4,20 @@ on:
   workflow_call:
     inputs:
       scan-mode:
-        description: '"changed" (R/ files changed in this PR) or "all" (every R/*.R file)'
+        description: '"auto" (PR or push: what is new since the last run; schedule or manual run: sweep), "changed" or "all" (every R/*.R file)'
         required: false
         type: string
-        default: 'changed'
+        default: 'auto'
       sweep-base:
-        description: '"all" mode: branch to scan and to open the sweep PR against'
+        description: 'Sweep: branch to scan and to open the sweep PR against; empty: the chosen branch on manual runs, dev on schedules'
         required: false
         type: string
-        default: 'dev'
+        default: ''
+      open-suggestion-pr:
+        description: 'When a bot PR is still open: "add" this run''s suggestions to it, or "replace" its content'
+        required: false
+        type: string
+        default: 'add'
       datashield:
         description: 'Whether this repo is a DataSHIELD package'
         required: false
@@ -45,8 +50,11 @@ on:
 
 jobs:
   suggest-docs:
-    if: ${{ !startsWith(github.head_ref, 'bot-suggest/') }}
     runs-on: ubuntu-latest
+    # Push and PR runs of one branch write the same bot branch: one at a time.
+    concurrency:
+      group: roxygen-suggest-${{ github.repository }}-${{ github.head_ref || github.ref_name }}
+      cancel-in-progress: false
     permissions:
       id-token: write
       contents: write
@@ -54,12 +62,21 @@ jobs:
       issues: write         # possible code bugs from a sweep without a suggestion PR
 
     steps:
-      - uses: actions/checkout@v7
+      - name: Resolve scope
+        id: scope
+        uses: FlorianSchw/package-workflows/.github/actions/resolve-suggestion-scope@main
         with:
-          ref: ${{ inputs.scan-mode == 'all' && inputs.sweep-base || github.event.pull_request.head.ref || github.ref }}
+          scan-mode: ${{ inputs.scan-mode }}
+          sweep-base: ${{ inputs.sweep-base }}
+
+      - uses: actions/checkout@v7
+        if: steps.scope.outputs.skip != 'true'
+        with:
+          ref: ${{ steps.scope.outputs.ref }}
           fetch-depth: 0
 
       - name: Checkout shared scripts
+        if: steps.scope.outputs.skip != 'true'
         uses: actions/checkout@v7
         with:
           repository: FlorianSchw/package-workflows
@@ -68,30 +85,35 @@ jobs:
 
       - name: Determine files to check
         id: files
+        if: steps.scope.outputs.skip != 'true'
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          BRANCH: ${{ steps.scope.outputs.branch }}
+          FILE_PATTERN: 'R/*.R'
         run: |
-          if [ "${{ inputs.scan-mode }}" = "all" ]; then
+          if [ "${{ steps.scope.outputs.mode }}" = "all" ]; then
             find R -name '*.R' > files_to_check.txt
+            echo "count=$(wc -l < files_to_check.txt)" >> "$GITHUB_OUTPUT"
           else
-            git diff --name-only \
-              origin/${{ github.event.pull_request.base.ref }}...HEAD -- 'R/*.R' \
-              > files_to_check.txt
+            SUB_BRANCH="bot-suggest/docs/${BRANCH//\//-}"
+            BOT_CONFIG="config/bot-authors.json"; [ -f "$BOT_CONFIG" ] || BOT_CONFIG=".shared-workflows/$BOT_CONFIG"
+            SUB_BRANCH="$SUB_BRANCH" BOT_CONFIG="$BOT_CONFIG" bash .shared-workflows/.github/actions/resolve-suggestion-scope/determine-changes.sh
           fi
-          echo "count=$(wc -l < files_to_check.txt)" >> "$GITHUB_OUTPUT"
 
       - uses: r-lib/actions/setup-r@v2
-        if: steps.files.outputs.count != '0'
+        if: steps.files.outputs.count > 0
         with:
           use-public-rspm: true
 
       - uses: r-lib/actions/setup-r-dependencies@v2
-        if: steps.files.outputs.count != '0'
+        if: steps.files.outputs.count > 0
         with:
           extra-packages: any::roxygen2, any::httr2, any::jsonlite, any::purrr, any::config
           needs: check
 
       - name: Get Anthropic access token
         id: anthropic_auth
-        if: steps.files.outputs.count != '0'
+        if: steps.files.outputs.count > 0
         uses: FlorianSchw/package-workflows/.github/actions/anthropic-token@main
         with:
           organization-id: ${{ secrets.anthropic-organization-id }}
@@ -99,7 +121,7 @@ jobs:
           federation-rule-id: ${{ secrets.anthropic-federation-rule-id }}
 
       - name: Run roxygen suggestion script
-        if: steps.files.outputs.count != '0'
+        if: steps.files.outputs.count > 0
         env:
           R_CONFIG_ACTIVE: roxygen-review
           ANTHROPIC_API_KEY: ${{ steps.anthropic_auth.outputs.access-token }}
@@ -111,26 +133,29 @@ jobs:
 
       - name: Resolve push token
         id: push_token
-        if: steps.files.outputs.count != '0'
+        if: steps.files.outputs.count > 0
         uses: FlorianSchw/package-workflows/.github/actions/resolve-push-token@main
         with:
           client-id: ${{ secrets.app-client-id }}
           app-private-key: ${{ secrets.app-private-key }}
 
       - name: Commit roxygen suggestions
-        if: steps.files.outputs.count != '0'
+        if: steps.files.outputs.count > 0
         uses: FlorianSchw/package-workflows/.github/actions/commit-updated-files@main
         with:
-          scan-mode: ${{ inputs.scan-mode }}
+          scan-mode: ${{ steps.scope.outputs.mode }}
           token: ${{ steps.push_token.outputs.token || secrets.commit-push-pat || secrets.GITHUB_TOKEN }}
           commit-prefix: 'docs: apply roxygen suggestion for'
           sub-branch-prefix: 'bot-suggest/docs'
           sub-pr-title: 'Roxygen documentation suggestions'
           sub-pr-body: 'Automated roxygen2 documentation suggestions. Review and merge to include them.'
           origin-pr-number: ${{ github.event.pull_request.number }}
+          reviewed-sha: ${{ steps.files.outputs.reviewed_sha }}
+          open-suggestion-pr: ${{ inputs.open-suggestion-pr }}
+          rebuild: ${{ steps.files.outputs.rebuild }}
           pr-body-file: 'suggestion_report.md'
           comment-summary-file: 'suggestion_summary.md'
-          sweep-base: ${{ inputs.sweep-base }}
+          sweep-base: ${{ steps.scope.outputs.branch }}
           sweep-branch-prefix: 'bot-suggest/docs-sweep'
           sweep-commit-message: 'docs: monthly roxygen suggestion sweep'
           sweep-pr-title: 'Monthly roxygen documentation sweep'

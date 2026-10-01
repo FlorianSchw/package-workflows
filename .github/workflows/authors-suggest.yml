@@ -2,6 +2,12 @@ name: DESCRIPTION Author Suggestions
 
 on:
   workflow_call:
+    inputs:
+      open-suggestion-pr:
+        description: 'When a bot PR is still open: "add" this run''s changes to it, or "replace" its content'
+        required: false
+        type: string
+        default: 'add'
     secrets:
       app-client-id:
         description: 'GitHub App Client ID (Iv23li...); its token lets bot PRs trigger checks (optional).'
@@ -16,48 +22,75 @@ on:
 jobs:
   suggest-authors:
     runs-on: ubuntu-latest
+    # Push and PR runs of one branch write the same bot branch: one at a time.
+    concurrency:
+      group: authors-suggest-${{ github.repository }}-${{ github.head_ref || github.ref_name }}
+      cancel-in-progress: false
     permissions:
       contents: write
       pull-requests: write
 
     steps:
-      - uses: actions/checkout@v7
+      - name: Resolve scope
+        id: scope
+        uses: FlorianSchw/package-workflows/.github/actions/resolve-suggestion-scope@main
         with:
-          ref: ${{ github.event.pull_request.head.ref }}
+          scan-mode: changed
+          allow-sweep: 'false'
+
+      - uses: actions/checkout@v7
+        if: steps.scope.outputs.skip != 'true'
+        with:
+          ref: ${{ steps.scope.outputs.ref }}
           fetch-depth: 0
 
       - name: Checkout shared scripts
+        if: steps.scope.outputs.skip != 'true'
         uses: actions/checkout@v7
         with:
           repository: FlorianSchw/package-workflows
           ref: main
           path: .shared-workflows
 
+      - name: Determine new commits
+        id: commits
+        if: steps.scope.outputs.skip != 'true'
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          BRANCH: ${{ steps.scope.outputs.branch }}
+          FILE_PATTERN: ''
+        run: |
+          SUB_BRANCH="bot-suggest/authors/${BRANCH//\//-}"
+          BOT_CONFIG="config/bot-authors.json"; [ -f "$BOT_CONFIG" ] || BOT_CONFIG=".shared-workflows/$BOT_CONFIG"
+          SUB_BRANCH="$SUB_BRANCH" BOT_CONFIG="$BOT_CONFIG" bash .shared-workflows/.github/actions/resolve-suggestion-scope/determine-changes.sh
+
       - uses: r-lib/actions/setup-r@v2
+        if: steps.commits.outputs.count > 0
         with:
           use-public-rspm: true
 
       - uses: r-lib/actions/setup-r-dependencies@v2
+        if: steps.commits.outputs.count > 0
         with:
           packages: any::desc, any::jsonlite, any::httr2, any::purrr
 
       - name: Find and add missing contributors
+        if: steps.commits.outputs.count > 0
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          BASE_REF: ${{ github.event.pull_request.base.ref }}
           PR_NUMBER: ${{ github.event.pull_request.number }}
         run: Rscript .shared-workflows/R/suggest_authors.R
 
       - name: Resolve push token
         id: push_token
-        if: hashFiles('updated_files.txt') != ''
+        if: steps.commits.outputs.count > 0
         uses: FlorianSchw/package-workflows/.github/actions/resolve-push-token@main
         with:
           client-id: ${{ secrets.app-client-id }}
           app-private-key: ${{ secrets.app-private-key }}
 
       - name: Commit DESCRIPTION update
-        if: hashFiles('updated_files.txt') != ''
+        if: steps.commits.outputs.count > 0
         uses: FlorianSchw/package-workflows/.github/actions/commit-updated-files@main
         with:
           scan-mode: 'changed'
@@ -67,4 +100,7 @@ jobs:
           sub-pr-title: 'Update contributors in DESCRIPTION'
           sub-pr-body: 'Credits commit authors in DESCRIPTION: `aut` for changes under `R/`, `ctb` otherwise. Existing entries are only upgraded, never downgraded. Review the names before merging.'
           origin-pr-number: ${{ github.event.pull_request.number }}
+          reviewed-sha: ${{ steps.commits.outputs.reviewed_sha }}
+          open-suggestion-pr: ${{ inputs.open-suggestion-pr }}
+          rebuild: ${{ steps.commits.outputs.rebuild }}
           pr-body-file: 'suggestion_report.md'

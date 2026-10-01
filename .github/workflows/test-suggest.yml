@@ -4,25 +4,30 @@ on:
   workflow_call:
     inputs:
       scan-mode:
-        description: '"changed" (R/ files changed in this PR) or "all" (sweep of R/*.R, see sweep-* inputs)'
+        description: '"auto" (PR or push: what is new since the last run; schedule or manual run: sweep), "changed" or "all" (sweep of R/*.R, see sweep-* inputs)'
         required: false
         type: string
-        default: 'changed'
+        default: 'auto'
       sweep-base:
-        description: '"all" mode: branch to scan and to open the sweep PR against'
+        description: 'Sweep: branch to scan and to open the sweep PR against; empty: the chosen branch on manual runs, dev on schedules'
         required: false
         type: string
-        default: 'dev'
+        default: ''
       sweep-lookback-days:
-        description: '"all" mode: review functions whose file or test changed within this many days'
+        description: 'Sweep: review functions whose file or test changed within this many days'
         required: false
         type: number
         default: 35
       sweep-rotation-months:
-        description: '"all" mode: also review every function at least once in this many months (0: all, every sweep)'
+        description: 'Sweep: also review every function at least once in this many months (0: all, every sweep)'
         required: false
         type: number
         default: 6
+      open-suggestion-pr:
+        description: 'When a bot PR is still open: "add" this run''s suggestions to it, or "replace" its content'
+        required: false
+        type: string
+        default: 'add'
       datashield:
         description: 'Whether this repo is a DataSHIELD package'
         required: false
@@ -55,8 +60,11 @@ on:
 
 jobs:
   suggest-tests:
-    if: ${{ !startsWith(github.head_ref, 'bot-suggest/') }}
     runs-on: ubuntu-latest
+    # Push and PR runs of one branch write the same bot branch: one at a time.
+    concurrency:
+      group: test-suggest-${{ github.repository }}-${{ github.head_ref || github.ref_name }}
+      cancel-in-progress: false
     permissions:
       id-token: write
       contents: write
@@ -64,12 +72,21 @@ jobs:
       issues: write
 
     steps:
-      - uses: actions/checkout@v7
+      - name: Resolve scope
+        id: scope
+        uses: FlorianSchw/package-workflows/.github/actions/resolve-suggestion-scope@main
         with:
-          ref: ${{ inputs.scan-mode == 'all' && inputs.sweep-base || github.event.pull_request.head.ref || github.ref }}
+          scan-mode: ${{ inputs.scan-mode }}
+          sweep-base: ${{ inputs.sweep-base }}
+
+      - uses: actions/checkout@v7
+        if: steps.scope.outputs.skip != 'true'
+        with:
+          ref: ${{ steps.scope.outputs.ref }}
           fetch-depth: 0
 
       - name: Checkout shared scripts
+        if: steps.scope.outputs.skip != 'true'
         uses: actions/checkout@v7
         with:
           repository: FlorianSchw/package-workflows
@@ -78,11 +95,15 @@ jobs:
 
       - name: Determine files to check
         id: files
+        if: steps.scope.outputs.skip != 'true'
         env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          BRANCH: ${{ steps.scope.outputs.branch }}
+          FILE_PATTERN: 'R/*.R'
           LOOKBACK_DAYS: ${{ inputs.sweep-lookback-days }}
           ROTATION: ${{ inputs.sweep-rotation-months }}
         run: |
-          if [ "${{ inputs.scan-mode }}" = "all" ]; then
+          if [ "${{ steps.scope.outputs.mode }}" = "all" ]; then
             find R -name '*.R' | sort > all_files.txt
             if [ "$ROTATION" -le 0 ]; then
               cp all_files.txt files_to_check.txt
@@ -98,27 +119,27 @@ jobs:
               done < all_files.txt > files_to_check.txt
             fi
             echo "Sweep reviews $(wc -l < files_to_check.txt) of $(wc -l < all_files.txt) files."
+            echo "count=$(wc -l < files_to_check.txt)" >> "$GITHUB_OUTPUT"
           else
-            git diff --name-only \
-              origin/${{ github.event.pull_request.base.ref }}...HEAD -- 'R/*.R' \
-              > files_to_check.txt
+            SUB_BRANCH="bot-suggest/tests/${BRANCH//\//-}"
+            BOT_CONFIG="config/bot-authors.json"; [ -f "$BOT_CONFIG" ] || BOT_CONFIG=".shared-workflows/$BOT_CONFIG"
+            SUB_BRANCH="$SUB_BRANCH" BOT_CONFIG="$BOT_CONFIG" bash .shared-workflows/.github/actions/resolve-suggestion-scope/determine-changes.sh
           fi
-          echo "count=$(wc -l < files_to_check.txt)" >> "$GITHUB_OUTPUT"
 
       - uses: r-lib/actions/setup-r@v2
-        if: steps.files.outputs.count != '0'
+        if: steps.files.outputs.count > 0
         with:
           use-public-rspm: true
 
       - uses: r-lib/actions/setup-r-dependencies@v2
-        if: steps.files.outputs.count != '0'
+        if: steps.files.outputs.count > 0
         with:
           extra-packages: any::httr2, any::jsonlite, any::purrr, any::config, any::testthat
           needs: check
 
       - name: Get Anthropic access token
         id: anthropic_auth
-        if: steps.files.outputs.count != '0'
+        if: steps.files.outputs.count > 0
         uses: FlorianSchw/package-workflows/.github/actions/anthropic-token@main
         with:
           organization-id: ${{ secrets.anthropic-organization-id }}
@@ -126,37 +147,42 @@ jobs:
           federation-rule-id: ${{ secrets.anthropic-federation-rule-id }}
 
       - name: Run test suggestion script
-        if: steps.files.outputs.count != '0'
+        if: steps.files.outputs.count > 0
         env:
           R_CONFIG_ACTIVE: test-review
           ANTHROPIC_API_KEY: ${{ steps.anthropic_auth.outputs.access-token }}
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           PR_NUMBER: ${{ github.event.pull_request.number }}
-          BASE_REF: ${{ github.event.pull_request.base.ref }}
+          # The state before this run's changes, for the history evidence
+          # (empty in a sweep).
+          BASE_REV: ${{ steps.files.outputs.base_rev }}
           DATASHIELD: ${{ inputs.datashield }}
           DATASHIELD_TYPE: ${{ inputs.datashield-type }}
         run: Rscript .shared-workflows/R/suggest_tests.R
 
       - name: Resolve push token
         id: push_token
-        if: steps.files.outputs.count != '0'
+        if: steps.files.outputs.count > 0
         uses: FlorianSchw/package-workflows/.github/actions/resolve-push-token@main
         with:
           client-id: ${{ secrets.app-client-id }}
           app-private-key: ${{ secrets.app-private-key }}
 
       - name: Commit generated tests
-        if: steps.files.outputs.count != '0'
+        if: steps.files.outputs.count > 0
         uses: FlorianSchw/package-workflows/.github/actions/commit-updated-files@main
         with:
-          scan-mode: ${{ inputs.scan-mode }}
+          scan-mode: ${{ steps.scope.outputs.mode }}
           token: ${{ steps.push_token.outputs.token || secrets.commit-push-pat || secrets.GITHUB_TOKEN }}
           commit-prefix: 'test: suggested test changes for'
           sub-branch-prefix: 'bot-suggest/tests'
           sub-pr-title: 'Test suggestions'
           sub-pr-body: 'New and updated tests from the test suggestion workflow. Every new or changed test passed a real run; changes to existing tests are listed below with their reason — review before merging.'
           origin-pr-number: ${{ github.event.pull_request.number }}
-          sweep-base: ${{ inputs.sweep-base }}
+          reviewed-sha: ${{ steps.files.outputs.reviewed_sha }}
+          open-suggestion-pr: ${{ inputs.open-suggestion-pr }}
+          rebuild: ${{ steps.files.outputs.rebuild }}
+          sweep-base: ${{ steps.scope.outputs.branch }}
           pr-body-file: 'suggestion_report.md'
           comment-summary-file: 'suggestion_summary.md'
           sweep-branch-prefix: 'bot-suggest/tests-sweep'
