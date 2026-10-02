@@ -87,6 +87,17 @@ Built 2026-10-02 for the KPIs the user has to report on service usage.
 - External users on `@main` count as `dev` — the docs should recommend
   pinning `@vX` once versions exist.
 
+## In CI (2026-10-02)
+
+The collector ran on the pushes: release `usage-counter` with its 24
+files, `usage.csv` on `usage-data` (all 0). Two fixes on the way:
+`abc3d29` — the search also matched `collect-usage.yml` itself (its own
+grep pattern) and created six files for it; now only `uses:` lines count,
+and unused files are removed if never downloaded. `1e5a576` — the
+recording step aborted on the first day: `grep -v` exits 1 when no rows
+are left, and Actions runs `bash -e` (the local test ran without `-e`;
+it now uses it). Still to see: a real count from a caller's run.
+
 ## First real check
 
 After pushing: the collector run on `main` creates the release with 24
