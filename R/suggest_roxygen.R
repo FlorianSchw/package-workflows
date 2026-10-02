@@ -30,6 +30,7 @@ walk(list.files(file.path(functions_dir, c("shared", "roxygen")), pattern = "\\.
 roxygen_review_settings <- config::get(file = resolve_shared_path("config/claude.yml"))
 anthropic_config <- roxygen_review_settings$anthropic
 accept_reasons <- unlist(roxygen_review_settings$accept_reasons)
+code_issue_confidence <- code_issue_confidence_levels(Sys.getenv("CODE_ISSUE_CONFIDENCE"), roxygen_review_settings$code_issue_confidence)
 
 api_key    <- Sys.getenv("ANTHROPIC_API_KEY")
 gh_token   <- Sys.getenv("GH_TOKEN")
@@ -37,6 +38,12 @@ repo       <- Sys.getenv("GITHUB_REPOSITORY")
 pr_number  <- Sys.getenv("PR_NUMBER")  # empty in a sweep
 datashield <- as.logical(Sys.getenv("DATASHIELD", "false"))
 ds_type    <- Sys.getenv("DATASHIELD_TYPE", "")
+# PR and push runs (empty in a sweep): the reviewed commit, the state before
+# this run's changes, and the bot branch whose open PR is built on.
+reviewed_sha <- substr(Sys.getenv("REVIEWED_SHA"), 1, 7)
+base_rev     <- Sys.getenv("BASE_REV")
+sub_branch   <- Sys.getenv("SUB_BRANCH")
+builds_on_open_pr <- nzchar(sub_branch) && identical(Sys.getenv("OPEN_SUGGESTION_PR", "add"), "add") && !identical(Sys.getenv("REBUILD"), "true")
 
 check_datashield_type(datashield, ds_type)
 
@@ -70,11 +77,18 @@ if (isTRUE(datashield)) {
 files <- readLines("files_to_check.txt")
 files <- files[nzchar(files)]
 
+# With an open bot PR to build on, its findings and proposed blocks are
+# the starting point: functions are reviewed on top of what it already
+# proposes, and its report is merged with this run's findings instead of
+# growing an update per run (see dev-notes/roxygen-suggest.md).
+pr_body <- if (builds_on_open_pr) fetch_suggestion_pr_body(sub_branch) else NULL
+state <- decode_suggestion_state(pr_body)
+bot_ref <- if (!is.null(pr_body)) fetch_bot_branch(sub_branch) else NULL
+stats <- c(new = 0L, crossed = 0L, repeats = 0L)
+
 # --- Main loop ---------------------------------------------------------------
 
 updated_files <- character(0)
-report_files <- list()  # per file: applied and dropped changes, for the PR description
-code_issue_files <- list()  # per file: likely code defects Claude noticed
 
 for (f in files) {
   parsed <- tryCatch(parse_r_file(f), error = function(e) {
@@ -82,64 +96,66 @@ for (f in files) {
     NULL
   })
   if (is.null(parsed)) next
+  source_block <- review_source_block(f, parsed, bot_ref, base_rev)
+  parsed <- source_block$parsed
+  if (source_block$from_bot) message(sprintf("%s: reviewing the block the open bot PR proposes.", f))
+  earlier <- Filter(function(e) identical(e$file, f) && identical(e$status, "active") && e$kind %in% c("dropped", "bug"), state$entries)
 
   file_role_text <- if (identical(ds_type, "utility") && !uses_ds_connections(parsed)) role_text_local else role_text
-  result <- tryCatch(ask_claude_for_review(parsed, select_profile(parsed), file_role_text), error = function(e) {
+  result <- tryCatch(ask_claude_for_review(parsed, select_profile(parsed), file_role_text, earlier), error = function(e) {
     message(sprintf("Claude call failed for %s: %s", f, conditionMessage(e)))
     NULL
   })
   if (is.null(result)) next
 
   # Code defects are reported whether or not the documentation changes.
-  if (length(result$code_issues) > 0) {
-    code_issue_files[[length(code_issue_files) + 1]] <- list(path = f, issues = result$code_issues)
-    message(sprintf("%s: %d possible code issue(s) noted.", f, length(result$code_issues)))
-  }
+  run <- list(applied = list(), dropped = list(), decisions = result$earlier_findings,
+              bugs = kept_code_issues(result$code_issues, code_issue_confidence, f))
+  if (length(run$bugs) > 0) message(sprintf("%s: %d possible code issue(s) noted.", f, length(run$bugs)))
 
   if (!isTRUE(result$needs_changes)) {
     message(sprintf("%s: documentation already adequate, skipping.", f))
-    next
+  } else {
+    review <- accepted_roxygen_fields(result, parsed, accept_reasons, f)
+    run$dropped <- review$dropped
+    new_block <- if (length(review$accepted) == 0) {
+      message(sprintf("%s: no change above the threshold, skipping.", f))
+      NULL
+    } else {
+      tryCatch(build_roxygen_block(result, parsed, f, review$accepted), error = function(e) {
+        message(sprintf("Failed to assemble roxygen block for %s: %s", f, conditionMessage(e)))
+        NULL
+      })
+    }
+    if (!is.null(new_block)) {
+      message(sprintf("%s: updating %s.", f, paste(review$accepted, collapse = ", ")))
+      write_in_place(f, parsed, new_block)
+      updated_files <- c(updated_files, f)
+      run$applied <- review$applied
+    }
   }
 
-  review <- accepted_roxygen_fields(result, parsed, accept_reasons, f)
-  accepted <- review$accepted
-  report_files[[length(report_files) + 1]] <- list(path = f, applied = review$applied, dropped = review$dropped)
-  if (length(accepted) == 0) {
-    report_files[[length(report_files)]]$applied <- list()
-    message(sprintf("%s: no change above the threshold, skipping.", f))
-    next
-  }
-
-  new_block <- tryCatch(build_roxygen_block(result, parsed, f, accepted), error = function(e) {
-    message(sprintf("Failed to assemble roxygen block for %s: %s", f, conditionMessage(e)))
-    NULL
-  })
-  if (is.null(new_block)) {
-    report_files[[length(report_files)]]$applied <- list()
-    next
-  }
-
-  message(sprintf("%s: updating %s.", f, paste(accepted, collapse = ", ")))
-
-  write_in_place(f, parsed, new_block)
-  updated_files <- c(updated_files, f)
+  merged <- merge_roxygen_findings(state, f, run, reviewed_sha, source_block$user_edited)
+  state <- merged$state
+  stats <- stats + merged$stats
 }
 
 writeLines(updated_files, "updated_files.txt")
 
 # Everything about the suggestions — applied and not-applied changes and
-# possible code bugs — goes into the suggestion PR's description, with a
-# one-line statistic on top that the link comment on the originating PR
-# repeats (suggestion_summary.md). Only written when there is a PR, so
-# notes alone never open one. Without a suggestion PR, possible bugs go to
-# a comment on the originating PR (posted once), or in a sweep to that
-# month's issue (report_sweep_code_issues(); callers grant `issues: write`).
-if (length(updated_files) > 0) {
-  summary_line <- format_roxygen_summary(report_files, code_issue_files)
-  writeLines(summary_line, "suggestion_summary.md")
-  writeLines(c(paste("**Summary:**", summary_line), "", format_roxygen_report(report_files, code_issue_files)), "suggestion_report.md")
-} else if (length(code_issue_files) > 0) {
-  bugs <- paste(format_code_issues(code_issue_files), collapse = "\n")
+# possible code bugs — goes into the suggestion PR's description, which is
+# rebuilt from all findings on every run (commit-updated-files with
+# pr-body-mode "replace"), with a one-line statistic on top that the link
+# comment on the originating PR repeats (suggestion_summary.md). Written
+# when this run changes files or a bot PR is open; notes alone never open
+# one. Without a suggestion PR, possible bugs go to a comment on the
+# originating PR (posted once), or in a sweep to that month's issue
+# (report_sweep_code_issues(); callers grant `issues: write`).
+if (length(updated_files) > 0 || !is.null(pr_body)) {
+  writeLines(format_roxygen_summary(state), "suggestion_summary.md")
+  writeLines(format_roxygen_report(state, list(sha = reviewed_sha, stats = stats), state$legacy), "suggestion_report.md")
+} else if (any(vapply(state$entries, function(e) identical(e$kind, "bug"), logical(1)))) {
+  bugs <- paste(format_code_issues(state$entries), collapse = "\n")
   if (nzchar(pr_number)) {
     comment_once(pr_number, bugs, "possible code bugs")
   } else {

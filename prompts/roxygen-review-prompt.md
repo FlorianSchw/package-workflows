@@ -52,7 +52,24 @@ meant to — a wrong formula, a path or object that doesn't match, a
 return value that differs from what the function clearly intends — list
 it in `code_issues`. Document the code's actual behavior, but don't
 silently document around a defect. Only real defects, not style or
-refactoring wishes; an empty list is the normal case.
+refactoring wishes; an empty list is the normal case. For each, reason
+it through in `explanation` first — what the code actually does, keeping
+R's scoping and evaluation rules in mind — and only then give your
+verdict, how confident you are, and the one-line summary. If the
+reasoning shows it isn't a defect after all, say so in the verdict;
+don't report it anyway.
+
+Earlier findings of this bot on this function, from its open suggestion
+PR. Changes it already proposed are part of the existing block above;
+these are the suggestions it did not apply and the possible bugs it
+reported:
+{{EARLIER_FINDINGS}}
+
+If there are earlier findings: judge each in `earlier_findings` —
+still valid, superseded (no longer correct, e.g. the code changed, or it
+was wrong) or resolved (the code or documentation now does it). When a
+change or code issue of yours says the same as an earlier finding, also
+in other words, give its id in `repeats_earlier`.
 
 Do not include export or import directives anywhere in your answer —
 those are handled entirely outside this review and are not part of any

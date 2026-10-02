@@ -10,7 +10,9 @@ default:
 roxygen-review:
   anthropic:
     tool_name: submit_review
+    max_tokens: 8192   # room for reasoning on possible bugs and judging earlier findings
   accept_reasons: [missing, inaccurate, incomplete]   # not: clarity, style
+  code_issue_confidence: [high, medium]   # possible bugs reported (verdict "defect" only)
 
 test-review:
   anthropic:

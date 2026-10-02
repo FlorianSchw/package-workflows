@@ -21,6 +21,10 @@ inputs:
   pr-body-file:
     description: 'File appended to the sub-PR or sweep PR body if it exists (optional).'
     required: false
+  pr-body-mode:
+    description: 'When building on an open bot PR: "append" the report as an update, or "replace" the description with it (the report then covers all runs).'
+    required: false
+    default: 'append'
   comment-summary-file:
     description: '"changed" mode: one-line summary added to the link comment if the file exists (optional).'
     required: false
@@ -76,6 +80,7 @@ runs:
         SCAN_MODE: ${{ inputs.scan-mode }}
         MANIFEST: ${{ inputs.manifest }}
         PR_BODY_FILE: ${{ inputs.pr-body-file }}
+        PR_BODY_MODE: ${{ inputs.pr-body-mode }}
         COMMENT_SUMMARY_FILE: ${{ inputs.comment-summary-file }}
         COMMIT_PREFIX: ${{ inputs.commit-prefix }}
         SUB_BRANCH_PREFIX: ${{ inputs.sub-branch-prefix }}

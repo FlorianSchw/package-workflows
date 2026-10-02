@@ -4,14 +4,16 @@
 # whitespace, punctuation or case. Fields Claude changed without listing
 # them aren't accepted either. Returns `accepted` (field keys), plus
 # `applied` and `dropped` change records (field, reason, explanation,
-# proposed text, and for dropped ones why) for the PR description; every
+# proposed text, for dropped ones why, and the earlier finding a change
+# repeats) for the PR description; every
 # dropped change is also logged.
 accepted_roxygen_fields <- function(result, parsed, accept_reasons, path) {
   normalize <- function(x) trimws(gsub("[[:space:][:punct:]]+", " ", tolower(paste(x, collapse = " "))))
   record <- function(change, why = NULL) {
     explanation <- if (is.null(change$explanation)) "" else change$explanation
     list(field = change$field, reason = change$reason, explanation = explanation,
-         proposed = roxygen_field_text(result, change$field), why = why)
+         proposed = roxygen_field_text(result, change$field), why = why,
+         repeats_earlier = if (is.null(change$repeats_earlier)) "" else change$repeats_earlier)
   }
   out <- list(accepted = character(0), applied = list(), dropped = list())
 

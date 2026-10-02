@@ -196,8 +196,10 @@ Details per workflow: [dev-notes/roxygen-suggest.md](dev-notes/roxygen-suggest.m
     onto it directly, so its author reviews every suggestion.
   - **An open sub-PR is built on:** the branch is merged in with the
     user's version winning, the run's suggestions are added and pushed
-    without force, and the report appended. It carries a hidden
-    `reviewed up to <sha>` marker.
+    without force, and the report appended — or, for roxygen
+    (`pr-body-mode: replace`), the description rebuilt as one merged
+    report. It carries a hidden `reviewed up to <sha>` marker (and for
+    roxygen the findings, `<!-- bot-suggest-state: … -->`).
   - **Rebuilt** (force-push) when none is open, with
     `open-suggestion-pr: replace`, after a history rewrite, or when the
     merge fails.
@@ -416,6 +418,28 @@ and `CONTRIBUTING.md`); no PRs until a branch model and rules exist.
   "What Claude gets" in `test-suggest-review.qmd`, the override table in
   `suggestions.qmd`, the example caller, and "Recent changes" in the
   roadmap.
+- **Roxygen: one merged report per bot PR, possible bugs with a verdict**
+  (built 2026-10-02 after dsSurvivalClient PR #37, tested locally,
+  **not yet in CI**). With an open bot PR, functions are reviewed on top
+  of the block it proposes (unless the user edited the docs since);
+  Claude marks repeats of earlier findings and judges them; the
+  description is rebuilt from all findings, each tagged with its commit,
+  no-longer-valid ones crossed out with the reason. Possible bugs:
+  reasoning first, then verdict and confidence; only `defect` with high
+  or medium confidence (input `code-issue-confidence`, else
+  `code_issue_confidence` in `config/claude.yml`). Later, if wrong bugs
+  persist: thinking for the roxygen review. Not now (user's decision):
+  skipping whitespace/comment-only changes. Same scheme for the test
+  report possibly later. Details in
+  [dev-notes/roxygen-suggest.md](dev-notes/roxygen-suggest.md).
+  **Docs pending:**
+  - `roxygen-suggest.qmd` report section: one report, commit tags,
+    crossed-out findings, "Latest review", verdict/confidence for
+    possible bugs, the `code-issue-confidence` input (the table is
+    generated); maybe a commented line in the example caller;
+  - `suggestions.qmd#what-gets-reviewed`: an open bot PR's proposal is
+    the starting point; hand edits to its description are overwritten;
+  - roadmap "Recent changes".
 - **Policy file for the bot's rules** (`config/suggestion-policy.yml`):
   today reasons, action↔reason mapping, the `aut`/`ctb` rule, name
   particles and report routing live partly only in R code. Move the

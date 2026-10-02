@@ -5,7 +5,25 @@
 # accepted reasons. "clarity" and "style" are the honest way out for
 # changes that aren't real improvements — see
 # dev-notes/suggestion-thresholds.md.
-build_submit_review_tool <- function(parsed, profile) {
+#
+# Possible code bugs are asked for reasoning first: explanation, then a
+# verdict and a confidence, the one-line summary last — so Claude can't
+# commit to a claim in the summary that its own reasoning then refutes
+# (seen on dsSurvivalClient PR #37). kept_code_issues() filters them.
+#
+# `earlier` are this bot's open earlier findings on the function
+# (format_earlier_findings()): Claude marks a change or code issue that
+# repeats one (`repeats_earlier`, an enum of their ids) and judges each in
+# `earlier_findings`; merge_roxygen_findings() applies both.
+build_submit_review_tool <- function(parsed, profile, earlier = list()) {
+  earlier_ids <- function(kinds) {
+    ids <- vapply(Filter(function(e) e$kind %in% kinds, earlier), function(e) sprintf("E%d", e$id), character(1))
+    if (length(ids) == 0) return(NULL)
+    list(type = "string", enum = as.list(c("", ids)),
+         description = "The id of an earlier finding (listed in the prompt) that this one says the same as, also in other words; empty string if it is new.")
+  }
+  repeats_change <- earlier_ids("dropped")
+  repeats_issue <- earlier_ids("bug")
   param_properties <- setNames(
     lapply(parsed$params, function(p) {
       list(type = "string", description = sprintf("Documentation prose for parameter '%s'.", p))
@@ -43,6 +61,20 @@ build_submit_review_tool <- function(parsed, profile) {
       required = list("field", "reason", "explanation")
     )
   )
+  if (!is.null(repeats_change)) {
+    changes_schema$items$properties$repeats_earlier <- repeats_change
+    changes_schema$items$required <- c(changes_schema$items$required, list("repeats_earlier"))
+  }
+
+  issue_properties <- list(
+    explanation = list(type = "string", description = "First reason it through: what the code does, citing the relevant lines, and whether that really is wrong (consider R's scoping and evaluation rules). Write this before deciding."),
+    verdict = list(type = "string", enum = list("defect", "not_a_defect", "unsure"),
+                   description = "Your conclusion from the explanation: a real defect, not a defect after all, or unsure."),
+    confidence = list(type = "string", enum = list("high", "medium", "low"),
+                      description = "How sure you are of the verdict."),
+    summary = list(type = "string", description = "One sentence: what the code does wrong. Must agree with the explanation and verdict.")
+  )
+  if (!is.null(repeats_issue)) issue_properties$repeats_earlier <- repeats_issue
 
   top_level_properties <- list(
     needs_changes = list(type = "boolean", description = "Whether any field needs to change."),
@@ -58,19 +90,35 @@ build_submit_review_tool <- function(parsed, profile) {
       description = "Likely defects in the function's code noticed during the review — not documentation problems, not style. Empty array if none.",
       items = list(
         type = "object",
-        properties = list(
-          summary = list(type = "string", description = "One sentence: what the code does wrong."),
-          explanation = list(type = "string", description = "Why, citing the relevant code and the effect it has.")
-        ),
-        required = list("summary", "explanation")
+        properties = issue_properties,
+        required = as.list(names(issue_properties))
       )
     )
   )
+  required <- list("needs_changes", "changes", "title", "description", "return_doc", "params", "code_issues")
+
+  if (length(earlier) > 0) {
+    top_level_properties$earlier_findings <- list(
+      type = "array",
+      description = "Your judgement of each earlier finding listed in the prompt.",
+      items = list(
+        type = "object",
+        properties = list(
+          id = list(type = "string", enum = as.list(vapply(earlier, function(e) sprintf("E%d", e$id), character(1)))),
+          status = list(type = "string", enum = list("still_valid", "superseded", "resolved"),
+                        description = "still_valid: still correct and open. superseded: no longer correct, e.g. the code changed or it was wrong. resolved: the code or documentation now does what it asked for."),
+          note = list(type = "string", description = "One sentence why, for superseded or resolved; empty string for still_valid.")
+        ),
+        required = list("id", "status", "note")
+      )
+    )
+    required <- c(required, list("earlier_findings"))
+  }
 
   input_schema <- list(
     type = "object",
     properties = top_level_properties,
-    required = list("needs_changes", "changes", "title", "description", "return_doc", "params", "code_issues")
+    required = required
   )
 
   list(

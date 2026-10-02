@@ -1,53 +1,81 @@
-# The roxygen suggestion PR's description, as collapsible groups:
-# "Applied changes (n)" with one group per file ("R/ds.rse.R (8)") listing
-# each change with reason and explanation, and "No changes applied (n)"
-# with one group per reason ("clarity (6)"), each listing the dropped
-# suggestions per file with Claude's proposed text, so a reviewer can
-# adopt one by hand and see where the threshold might be tuned. Optionally
-# a "Possible bugs in the code" section (format_code_issues()). `files` is
-# a list of list(path, applied, dropped) from accepted_roxygen_fields().
-# Heading levels and spacing come from config/report-style.yml. Capped
-# below GitHub's body limit.
-format_roxygen_report <- function(files, code_issues = list()) {
+# The roxygen suggestion PR's description, rebuilt on every run from all
+# findings the PR carries (merge_roxygen_findings()), so it stays one
+# report instead of growing an update per run:
+# - "Applied changes (n)", one group per file, each change with reason,
+#   explanation and the commit it came from;
+# - "No changes applied (n)", one group per reason, each suggestion with
+#   Claude's proposed text, so a reviewer can adopt one by hand;
+# - "Possible bugs in the code (n)" (format_code_issues()).
+# Counts are open findings; crossed-out ones stay visible, struck through
+# with when and why (finding_line()). On top: the summary line and, when
+# `latest` is given (list(sha, stats)), what the latest review changed.
+# Then `legacy` (the description of a bot PR opened before this format) in
+# a collapsed section, and the hidden state for the next run
+# (encode_suggestion_state()). Heading levels and spacing come from
+# config/report-style.yml. Kept below GitHub's body limit.
+format_roxygen_report <- function(state, latest = NULL, legacy = NULL) {
   style <- report_style()
+  entries <- state$entries
+  is_active <- function(e) identical(e$status, "active")
+  active_first <- function(x) c(Filter(is_active, x), Filter(Negate(is_active), x))
+  of_kind <- function(kind) Filter(function(e) identical(e$kind, kind), entries)
+  count <- function(x) sum(vapply(x, is_active, logical(1)))
   quote <- function(text) {
     if (is.null(text) || !nzchar(trimws(text))) return(character(0))
     paste0("  > ", strsplit(text, "\n", fixed = TRUE)[[1]])
   }
 
-  with_applied <- Filter(function(f) length(f$applied) > 0, files)
-  n_applied <- sum(vapply(with_applied, function(f) length(f$applied), integer(1)))
-  applied <- report_groups(lapply(with_applied, function(f) {
-    list(title = sprintf("%s (%d)", f$path, length(f$applied)), lines = vapply(f$applied, function(ch) {
-      sprintf("- `%s` — `%s`: %s", ch$field, ch$reason, ch$explanation)
+  applied <- of_kind("applied")
+  applied_groups <- report_groups(lapply(unique(vapply(applied, function(e) e$file, character(1))), function(p) {
+    of_file <- active_first(Filter(function(e) identical(e$file, p), applied))
+    list(title = group_title(p, of_file), lines = vapply(of_file, function(e) {
+      finding_line(e, sprintf("`%s` — `%s`: %s", e$field, e$reason, e$explanation), sprintf("`%s` — `%s`: %s", e$field, e$reason, e$explanation))
     }, character(1)))
   }), style)
 
-  dropped <- unlist(lapply(files, function(f) lapply(f$dropped, function(ch) c(ch, path = f$path))), recursive = FALSE)
-  reasons <- unique(vapply(dropped, function(ch) ch$reason, character(1)))
-  not_applied <- report_groups(lapply(reasons, function(r) {
-    of_reason <- Filter(function(ch) identical(ch$reason, r), dropped)
-    paths <- unique(vapply(of_reason, function(ch) ch$path, character(1)))
-    lines <- unlist(lapply(paths, function(p) {
-      c(sprintf("**`%s`**", p), unlist(lapply(Filter(function(ch) identical(ch$path, p), of_reason), function(ch) {
-        c(sprintf("- `%s`: %s", ch$field, ch$explanation), quote(ch$proposed))
+  dropped <- of_kind("dropped")
+  dropped_groups <- report_groups(lapply(unique(vapply(dropped, function(e) e$reason, character(1))), function(r) {
+    of_reason <- Filter(function(e) identical(e$reason, r), dropped)
+    lines <- unlist(lapply(unique(vapply(of_reason, function(e) e$file, character(1))), function(p) {
+      c(sprintf("**`%s`**", p), unlist(lapply(active_first(Filter(function(e) identical(e$file, p), of_reason)), function(e) {
+        c(finding_line(e, sprintf("`%s`: %s", e$field, e$explanation), sprintf("`%s`: %s", e$field, e$explanation)),
+          if (is_active(e)) quote(e$proposed))
       })), "")
     }))
-    list(title = sprintf("%s (%d)", r, length(of_reason)), lines = lines)
+    list(title = group_title(r, of_reason), lines = lines)
   }), style)
 
+  latest_line <- if (!is.null(latest) && nzchar(latest$sha)) {
+    s <- latest$stats
+    parts <- c(
+      sprintf("%d new", s[["new"]]),
+      if (s[["crossed"]] > 0) sprintf("%d crossed out", s[["crossed"]]),
+      if (s[["repeats"]] > 0) sprintf("%d %s of earlier findings skipped", s[["repeats"]], if (s[["repeats"]] == 1) "repeat" else "repeats")
+    )
+    sprintf("**Latest review** (`%s`): %s", latest$sha, paste(parts, collapse = " · "))
+  }
+
   body <- c(
-    if (n_applied > 0) c(report_heading(sprintf("Applied changes (%d)", n_applied), style), "", applied),
+    paste("**Summary:**", format_roxygen_summary(state)),
+    if (!is.null(latest_line)) c("", latest_line),
+    "",
+    if (length(applied) > 0) c(report_heading(sprintf("Applied changes (%d)", count(applied)), style), "", applied_groups),
     if (length(dropped) > 0) c(
-      report_heading(sprintf("No changes applied (%d)", length(dropped)), style),
+      report_heading(sprintf("No changes applied (%d)", count(dropped)), style),
       "",
       "Suggestions whose reason isn't on the accepted list (`accept_reasons` in `config/claude.yml`). Adopt one by hand if it's worth it.",
       "",
-      not_applied
+      dropped_groups
     ),
-    if (length(code_issues) > 0) format_code_issues(code_issues, style)
+    format_code_issues(entries, style)
   )
+  hidden <- encode_suggestion_state(state)
   body <- paste(body, collapse = "\n")
-  if (nchar(body) > 60000) body <- paste0(substr(body, 1, 60000), "\n\n… truncated — see the job log for the rest.")
-  body
+  room <- 62000 - nchar(hidden)
+  if (!is.null(legacy)) {
+    legacy <- substr(legacy, 1, max(0, min(20000, room - nchar(body) - 200)))
+    if (nzchar(legacy)) body <- paste0(body, "\n\n<details><summary>Earlier reports (before this report format)</summary>\n\n", legacy, "\n\n</details>")
+  }
+  if (nchar(body) > room) body <- paste0(substr(body, 1, room), "\n\n… truncated — see the job log for the rest.")
+  paste0(body, "\n\n", hidden)
 }

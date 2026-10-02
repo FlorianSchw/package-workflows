@@ -72,6 +72,19 @@ append_body() {
   echo "$file"
 }
 
+# PR body when building on open PR $1 with intro text $2: the report
+# appended as an update (PR_BODY_MODE "append"), or — "replace", for a
+# report that already covers all runs (roxygen) — a new body like
+# write_body(). Without a report, "replace" keeps the old body and only
+# updates the marker.
+refresh_body() {
+  if [ "$PR_BODY_MODE" = "replace" ] && has_content "$PR_BODY_FILE"; then
+    write_body "$2"
+  else
+    append_body "$1"
+  fi
+}
+
 # Proposes branch $1 as a new PR into $2 with title $3 and body text $4, or
 # refreshes the open one; prints the URL of a newly opened PR only.
 propose() {
@@ -81,7 +94,7 @@ propose() {
     body_file="$(write_body "$4")"
     gh pr create --base "$base" --head "$branch" --title "$title" --body-file "$body_file"
   elif [ "$5" = "append" ]; then
-    gh pr edit "$existing" --body-file "$(append_body "$existing")" > /dev/null
+    gh pr edit "$existing" --body-file "$(refresh_body "$existing" "$4")" > /dev/null
   elif has_content "$PR_BODY_FILE" || [ -n "$REVIEWED_SHA" ]; then
     gh pr edit "$existing" --body-file "$(write_body "$4")" > /dev/null
   fi
@@ -127,7 +140,7 @@ existing="$(open_pr "$sub_branch")"
 
 if ! has_content "$MANIFEST"; then
   if [ -n "$existing" ] && [ -n "$REVIEWED_SHA" ]; then
-    gh pr edit "$existing" --body-file "$(append_body "$existing")" > /dev/null
+    gh pr edit "$existing" --body-file "$(refresh_body "$existing" "$SUB_PR_BODY")" > /dev/null
     echo "No new suggestions; updated the marker of bot PR #$existing."
   else
     echo "No updated files — nothing to commit."
@@ -203,7 +216,7 @@ if [ -n "$note" ] && has_content "$PR_BODY_FILE"; then printf '\n%s\n' "$note" >
 if [ -z "$committed" ] && [ "$mode" = "add" ]; then
   # Nothing new, but the merged-in commits and the marker are worth keeping.
   git_push_with_token origin "$sub_branch"
-  gh pr edit "$existing" --body-file "$(append_body "$existing")" > /dev/null
+  gh pr edit "$existing" --body-file "$(refresh_body "$existing" "$SUB_PR_BODY")" > /dev/null
   echo "No new suggestions; brought bot PR #$existing up to date."
   exit 0
 fi
