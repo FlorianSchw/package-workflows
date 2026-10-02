@@ -11,7 +11,7 @@
 # that already requests it (checked by verify_note_issues()).
 build_analysis_tool <- function(step_ids, catalogue_names, catalogue_functions, gap_issue_numbers) {
   note_package <- list(type = "string", description = "For kind other_package: the catalogue package that would make this possible (server package name). Empty string otherwise.")
-  if (length(catalogue_names) > 0) note_package$enum <- as.list(c("", catalogue_names))
+  if (length(catalogue_names) > 0) note_package$enum <- as.list(c("", unname(catalogue_names)))
   note_function <- list(type = "string", description = "For kind other_package: the client function of that package, from the catalogue list, that would do it. Empty string if none fits or for other kinds.")
   if (length(catalogue_functions) > 0) note_function$enum <- as.list(c("", catalogue_functions))
   note_issue <- list(type = "string", description = "For kind missing_function: the number of an open issue from the list that already requests the same missing function (same method, not just a similar topic). Empty string if none matches or for other kinds.")
@@ -28,7 +28,7 @@ build_analysis_tool <- function(step_ids, catalogue_names, catalogue_functions, 
           items = list(
             type = "object",
             properties = list(
-              step_id = list(type = "string", enum = as.list(step_ids), description = "The step's id from the plan."),
+              step_id = list(type = "string", enum = as.list(unname(step_ids)), description = "The step's id from the plan."),
               sections = list(
                 type = "array",
                 description = "The step's code, split into self-contained sections of a few related calls each. Empty if nothing in the step is possible with the installed packages.",

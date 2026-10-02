@@ -29,7 +29,7 @@
 # merge_test_findings() and the entry script apply both.
 build_submit_tests_tool <- function(dslite_datasets, max_new_tests, categories = NULL, existing_file_names = character(0), earlier = list()) {
   earlier_ids <- function(kinds) {
-    ids <- vapply(Filter(function(e) e$kind %in% kinds, earlier), function(e) sprintf("E%d", e$id), character(1))
+    ids <- vapply(Filter(function(e) e$kind %in% kinds, earlier), function(e) sprintf("E%d", e$id), character(1), USE.NAMES = FALSE)
     if (length(ids) == 0) return(NULL)
     list(type = "string", enum = as.list(c("", ids)),
          description = "The id of an earlier finding (listed in the prompt) that this one repeats, also in other words; empty string if it is new.")
@@ -58,7 +58,7 @@ build_submit_tests_tool <- function(dslite_datasets, max_new_tests, categories =
   )
   if (length(categories) > 0) {
     test_item_schema$properties$category <- list(
-      type = "string", enum = as.list(categories),
+      type = "string", enum = as.list(unname(categories)),
       description = "The test file category this test belongs to (see the categories in the prompt); the script writes the test into test-<category>-<function>.R."
     )
     test_item_schema$required <- c(test_item_schema$required, list("category"))
@@ -69,7 +69,10 @@ build_submit_tests_tool <- function(dslite_datasets, max_new_tests, categories =
   }
 
   test_file_schema <- list(type = "string", description = "The file name of the test, e.g. test-ds.mean.R, exactly as shown.")
-  if (length(existing_file_names) > 0) test_file_schema$enum <- as.list(existing_file_names)
+  # unname(): a named vector (suggest_tests.R names the test files by their
+  # paths) would become a JSON object, and the API rejects the schema
+  # ("JSON schema is invalid") — an enum must be an array.
+  if (length(existing_file_names) > 0) test_file_schema$enum <- as.list(unname(existing_file_names))
 
   existing_item_schema <- list(
     type = "object",
@@ -142,7 +145,7 @@ build_submit_tests_tool <- function(dslite_datasets, max_new_tests, categories =
       items = list(
         type = "object",
         properties = list(
-          id = list(type = "string", enum = as.list(vapply(earlier, function(e) sprintf("E%d", e$id), character(1)))),
+          id = list(type = "string", enum = as.list(vapply(earlier, function(e) sprintf("E%d", e$id), character(1), USE.NAMES = FALSE))),
           status = list(type = "string", enum = list("still_valid", "superseded", "resolved"),
                         description = "still_valid: still correct and open. superseded: no longer correct, e.g. the code changed or it was wrong. resolved: the code or tests now do what it asked for."),
           note = list(type = "string", description = "One sentence why, for superseded or resolved; empty string for still_valid.")

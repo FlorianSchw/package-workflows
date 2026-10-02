@@ -20,7 +20,7 @@
 # no code_issues field: Claude isn't asked for possible bugs at all.
 build_submit_review_tool <- function(parsed, profile, earlier = list(), with_code_issues = TRUE) {
   earlier_ids <- function(kinds) {
-    ids <- vapply(Filter(function(e) e$kind %in% kinds, earlier), function(e) sprintf("E%d", e$id), character(1))
+    ids <- vapply(Filter(function(e) e$kind %in% kinds, earlier), function(e) sprintf("E%d", e$id), character(1), USE.NAMES = FALSE)
     if (length(ids) == 0) return(NULL)
     list(type = "string", enum = as.list(c("", ids)),
          description = "The id of an earlier finding (listed in the prompt) that this one says the same as, also in other words; empty string if it is new.")
@@ -111,7 +111,7 @@ build_submit_review_tool <- function(parsed, profile, earlier = list(), with_cod
       items = list(
         type = "object",
         properties = list(
-          id = list(type = "string", enum = as.list(vapply(earlier, function(e) sprintf("E%d", e$id), character(1)))),
+          id = list(type = "string", enum = as.list(vapply(earlier, function(e) sprintf("E%d", e$id), character(1), USE.NAMES = FALSE))),
           status = list(type = "string", enum = list("still_valid", "superseded", "resolved"),
                         description = "still_valid: still correct and open. superseded: no longer correct, e.g. the code changed or it was wrong. resolved: the code or documentation now does what it asked for."),
           note = list(type = "string", description = "One sentence why, for superseded or resolved; empty string for still_valid.")
