@@ -15,7 +15,10 @@
 # (format_earlier_findings()): Claude marks a change or code issue that
 # repeats one (`repeats_earlier`, an enum of their ids) and judges each in
 # `earlier_findings`; merge_roxygen_findings() applies both.
-build_submit_review_tool <- function(parsed, profile, earlier = list()) {
+#
+# With `with_code_issues` FALSE (code-issue-confidence "none") the form has
+# no code_issues field: Claude isn't asked for possible bugs at all.
+build_submit_review_tool <- function(parsed, profile, earlier = list(), with_code_issues = TRUE) {
   earlier_ids <- function(kinds) {
     ids <- vapply(Filter(function(e) e$kind %in% kinds, earlier), function(e) sprintf("E%d", e$id), character(1))
     if (length(ids) == 0) return(NULL)
@@ -96,6 +99,10 @@ build_submit_review_tool <- function(parsed, profile, earlier = list()) {
     )
   )
   required <- list("needs_changes", "changes", "title", "description", "return_doc", "params", "code_issues")
+  if (!with_code_issues) {
+    top_level_properties$code_issues <- NULL
+    required <- setdiff(required, "code_issues")
+  }
 
   if (length(earlier) > 0) {
     top_level_properties$earlier_findings <- list(

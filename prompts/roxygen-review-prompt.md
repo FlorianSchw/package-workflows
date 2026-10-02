@@ -47,7 +47,8 @@ Not every reason leads to a proposed change, so don't upgrade a clarity
 or style change to a stronger reason — and don't downgrade a correction
 of a false statement to clarity or style.
 
-If, while checking, you notice code that likely doesn't do what it is
+If the form has a `code_issues` field and, while checking, you notice
+code that likely doesn't do what it is
 meant to — a wrong formula, a path or object that doesn't match, a
 return value that differs from what the function clearly intends — list
 it in `code_issues`. Document the code's actual behavior, but don't

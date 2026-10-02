@@ -1,4 +1,5 @@
-# One report list item for a stored finding (merge_roxygen_findings()):
+# One report list item for a stored finding (merge_roxygen_findings(),
+# merge_test_findings()):
 # "- <text> _(1b4922c)_", with the commit it came from. A crossed-out
 # finding shows only `short`, struck through, with when and why:
 # "- ~~<short>~~ _(1b4922c · superseded in ed1fbb9: the code changed)_".

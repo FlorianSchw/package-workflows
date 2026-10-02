@@ -19,7 +19,7 @@ on:
         type: string
         default: 'add'
       code-issue-confidence:
-        description: 'Possible bugs in the code to report, by how sure Claude is: "high", "high,medium" or "high,medium,low"; empty: `code_issue_confidence` in `config/claude.yml` (high, medium)'
+        description: 'Possible bugs in the code to report, by how sure Claude is: "high", "high,medium" or "high,medium,low"; "none": not looked for, no such section in the report; empty: `code_issue_confidence` in `config/claude.yml` (high, medium)'
         required: false
         type: string
         default: ''

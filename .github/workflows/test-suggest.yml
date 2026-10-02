@@ -130,6 +130,7 @@ jobs:
             echo "count=$(wc -l < files_to_check.txt)" >> "$GITHUB_OUTPUT"
           else
             SUB_BRANCH="bot-suggest/tests/${BRANCH//\//-}"
+            echo "sub_branch=$SUB_BRANCH" >> "$GITHUB_OUTPUT"
             BOT_CONFIG="config/bot-authors.json"; [ -f "$BOT_CONFIG" ] || BOT_CONFIG=".shared-workflows/$BOT_CONFIG"
             SUB_BRANCH="$SUB_BRANCH" BOT_CONFIG="$BOT_CONFIG" bash .shared-workflows/.github/actions/resolve-suggestion-scope/determine-changes.sh
           fi
@@ -167,6 +168,13 @@ jobs:
           DATASHIELD: ${{ inputs.datashield }}
           DATASHIELD_TYPE: ${{ inputs.datashield-type }}
           DSLITE_SETUP: ${{ inputs.dslite-setup }}
+          # PR and push runs (empty in a sweep): an open bot PR is built on —
+          # its findings merged with this run's, its test files the starting
+          # point.
+          SUB_BRANCH: ${{ steps.files.outputs.sub_branch }}
+          REVIEWED_SHA: ${{ steps.files.outputs.reviewed_sha }}
+          OPEN_SUGGESTION_PR: ${{ inputs.open-suggestion-pr }}
+          REBUILD: ${{ steps.files.outputs.rebuild }}
         run: Rscript .shared-workflows/R/suggest_tests.R
 
       - name: Resolve push token
@@ -193,6 +201,7 @@ jobs:
           rebuild: ${{ steps.files.outputs.rebuild }}
           sweep-base: ${{ steps.scope.outputs.branch }}
           pr-body-file: 'suggestion_report.md'
+          pr-body-mode: 'replace'   # the report is rebuilt from all findings each run
           comment-summary-file: 'suggestion_summary.md'
           sweep-branch-prefix: 'bot-suggest/tests-sweep'
           sweep-commit-message: 'test: monthly test coverage sweep'

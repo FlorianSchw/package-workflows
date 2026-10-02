@@ -50,9 +50,9 @@ are read too:
 
 | Function | What it does |
 |---|---|
-| [`fetch_suggestion_pr_body()`](https://github.com/FlorianSchw/package-workflows/blob/main/R/functions/roxygen/fetch_suggestion_pr_body.R) | The description of the open suggestion PR for this branch, if there is one. |
-| [`decode_suggestion_state()`](https://github.com/FlorianSchw/package-workflows/blob/main/R/functions/roxygen/decode_suggestion_state.R) | Reads the findings of earlier runs, kept hidden in that description. |
-| [`fetch_bot_branch()`](https://github.com/FlorianSchw/package-workflows/blob/main/R/functions/roxygen/fetch_bot_branch.R) | Fetches the suggestion branch, to read the blocks it already proposes. |
+| [`fetch_suggestion_pr_body()`](https://github.com/FlorianSchw/package-workflows/blob/main/R/functions/shared/fetch_suggestion_pr_body.R) | The description of the open suggestion PR for this branch, if there is one. |
+| [`decode_suggestion_state()`](https://github.com/FlorianSchw/package-workflows/blob/main/R/functions/shared/decode_suggestion_state.R) | Reads the findings of earlier runs, kept hidden in that description. |
+| [`fetch_bot_branch()`](https://github.com/FlorianSchw/package-workflows/blob/main/R/functions/shared/fetch_bot_branch.R) | Fetches the suggestion branch, to read the blocks it already proposes. |
 
 ## ② Read the function
 
@@ -85,7 +85,7 @@ are read too:
 | [`implicit_roxygen_field()`](https://github.com/FlorianSchw/package-workflows/blob/main/R/functions/roxygen/implicit_roxygen_field.R) | The same for a title or description written without a tag (the first lines of the block). |
 | [`roxygen_field_text()`](https://github.com/FlorianSchw/package-workflows/blob/main/R/functions/roxygen/roxygen_field_text.R) | Claude's new text for one documentation part. |
 | [`kept_code_issues()`](https://github.com/FlorianSchw/package-workflows/blob/main/R/functions/roxygen/kept_code_issues.R) | Keeps a possible bug only if Claude concluded it is a defect, with one of the confidence levels to report. |
-| [`code_issue_confidence_levels()`](https://github.com/FlorianSchw/package-workflows/blob/main/R/functions/roxygen/code_issue_confidence_levels.R) | Those levels: the `code-issue-confidence` input, else `code_issue_confidence` in `config/claude.yml` (high and medium); stops on an unknown level. |
+| [`code_issue_confidence_levels()`](https://github.com/FlorianSchw/package-workflows/blob/main/R/functions/roxygen/code_issue_confidence_levels.R) | Those levels: the `code-issue-confidence` input, else `code_issue_confidence` in `config/claude.yml` (high and medium); `none` means possible bugs aren't asked for and the report has no such section. Stops on an unknown level. |
 
 ## ⑤ Build the block and ⑥ write the file
 
@@ -103,8 +103,8 @@ are read too:
 | [`format_roxygen_summary()`](https://github.com/FlorianSchw/package-workflows/blob/main/R/functions/roxygen/format_roxygen_summary.R) | The summary line of the open findings, e.g. "8 changes applied · 3 not applied · 1 possible bug". |
 | [`format_roxygen_report()`](https://github.com/FlorianSchw/package-workflows/blob/main/R/functions/roxygen/format_roxygen_report.R) | The suggestion PR's description, rebuilt from all findings on every run: applied changes per file, not applied ones per reason with Claude's proposed text, and what the latest review changed. |
 | [`format_code_issues()`](https://github.com/FlorianSchw/package-workflows/blob/main/R/functions/roxygen/format_code_issues.R) | The "Possible bugs in the code" section. |
-| [`finding_line()`](https://github.com/FlorianSchw/package-workflows/blob/main/R/functions/roxygen/finding_line.R), [`group_title()`](https://github.com/FlorianSchw/package-workflows/blob/main/R/functions/roxygen/group_title.R) | One finding with the commit it came from — crossed out with when and why if it no longer holds — and a group's title with its counts. |
-| [`encode_suggestion_state()`](https://github.com/FlorianSchw/package-workflows/blob/main/R/functions/roxygen/encode_suggestion_state.R) | Stores all findings hidden in the description, for the next run. |
+| [`finding_line()`](https://github.com/FlorianSchw/package-workflows/blob/main/R/functions/shared/finding_line.R), [`group_title()`](https://github.com/FlorianSchw/package-workflows/blob/main/R/functions/shared/group_title.R) | One finding with the commit it came from — crossed out with when and why if it no longer holds — and a group's title with its counts. |
+| [`encode_suggestion_state()`](https://github.com/FlorianSchw/package-workflows/blob/main/R/functions/shared/encode_suggestion_state.R) | Stores all findings hidden in the description, for the next run. |
 | [`comment_once()`](https://github.com/FlorianSchw/package-workflows/blob/main/R/functions/shared/comment_once.R) | Without a suggestion PR: posts the possible bugs as a comment on your PR, but not again on the next push. |
 | [`report_sweep_code_issues()`](https://github.com/FlorianSchw/package-workflows/blob/main/R/functions/roxygen/report_sweep_code_issues.R) | A sweep without a suggestion PR: puts the possible bugs into that month's issue. |
 

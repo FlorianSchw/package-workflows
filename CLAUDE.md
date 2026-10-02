@@ -196,10 +196,10 @@ Details per workflow: [dev-notes/roxygen-suggest.md](dev-notes/roxygen-suggest.m
     onto it directly, so its author reviews every suggestion.
   - **An open sub-PR is built on:** the branch is merged in with the
     user's version winning, the run's suggestions are added and pushed
-    without force, and the report appended — or, for roxygen
-    (`pr-body-mode: replace`), the description rebuilt as one merged
-    report. It carries a hidden `reviewed up to <sha>` marker (and for
-    roxygen the findings, `<!-- bot-suggest-state: … -->`).
+    without force. Roxygen and tests (`pr-body-mode: replace`) rebuild
+    the description as one merged report; others append theirs. It
+    carries a hidden `reviewed up to <sha>` marker (and for roxygen and
+    tests the findings, `<!-- bot-suggest-state: … -->`).
   - **Rebuilt** (force-push) when none is open, with
     `open-suggestion-pr: replace`, after a history rewrite, or when the
     merge fails.
@@ -427,18 +427,27 @@ and `CONTRIBUTING.md`); no PRs until a branch model and rules exist.
   no-longer-valid ones crossed out with the reason. Possible bugs:
   reasoning first, then verdict and confidence; only `defect` with high
   or medium confidence (input `code-issue-confidence`, else
-  `code_issue_confidence` in `config/claude.yml`). Later, if wrong bugs
+  `code_issue_confidence` in `config/claude.yml`; `none` skips them
+  entirely). Later, if wrong bugs
   persist: thinking for the roxygen review. Not now (user's decision):
-  skipping whitespace/comment-only changes. Same scheme for the test
-  report possibly later. Details in
+  skipping whitespace/comment-only changes. Details in
   [dev-notes/roxygen-suggest.md](dev-notes/roxygen-suggest.md).
+  **Tests got the same scheme** (built 2026-10-02, tested locally, not
+  in CI): the bot branch's test files are put in place before the run
+  (unless the user changed them), repeats of earlier failures aren't
+  classified/commented/filed again, a reported test that passes now is
+  resolved, report with a new "New tests" section. Details in
+  [dev-notes/test-suggest.md](dev-notes/test-suggest.md).
   **Docs pending:**
   - `roxygen-suggest.qmd` report section: one report, commit tags,
     crossed-out findings, "Latest review", verdict/confidence for
     possible bugs, the `code-issue-confidence` input (the table is
     generated); maybe a commented line in the example caller;
   - `suggestions.qmd#what-gets-reviewed`: an open bot PR's proposal is
-    the starting point; hand edits to its description are overwritten;
+    the starting point; hand edits to its description are overwritten
+    (comments are fine);
+  - `test-suggest.qmd` report section: "New tests", one merged report,
+    repeated failures not commented again;
   - roadmap "Recent changes".
 - **Policy file for the bot's rules** (`config/suggestion-policy.yml`):
   today reasons, action↔reason mapping, the `aut`/`ctb` rule, name

@@ -42,6 +42,14 @@ flowchart TD
 | [`summarize_test_data()`](https://github.com/FlorianSchw/package-workflows/blob/main/R/functions/tests/summarize_test_data.R) | Describes the test data those files create, so Claude can check concrete values; never fails the run. |
 | [`collect_test_data()`](https://github.com/FlorianSchw/package-workflows/blob/main/R/functions/tests/collect_test_data.R) | Does the actual work in a separate R process: loads your package, runs the support files, and lists each table's rows, columns, types, missing values and factor level counts (also tables inside a DSLite server). |
 
+With an open suggestion PR to build on (a PR or push run), first:
+
+| Function | What it does |
+|---|---|
+| [`fetch_suggestion_pr_body()`](https://github.com/FlorianSchw/package-workflows/blob/main/R/functions/shared/fetch_suggestion_pr_body.R), [`decode_suggestion_state()`](https://github.com/FlorianSchw/package-workflows/blob/main/R/functions/shared/decode_suggestion_state.R) | As for roxygen: the open suggestion PR's description and the findings of earlier runs kept hidden in it. |
+| [`fetch_bot_branch()`](https://github.com/FlorianSchw/package-workflows/blob/main/R/functions/shared/fetch_bot_branch.R) | Fetches the suggestion branch. |
+| [`materialize_bot_tests()`](https://github.com/FlorianSchw/package-workflows/blob/main/R/functions/tests/materialize_bot_tests.R) | Puts the test files it changed in place, so its tests count as existing: they are run and shown to Claude, and not generated again. A test file you changed since the last review keeps your version. |
+
 ## ② Read the function and its test files
 
 | Function | What it does |
@@ -68,12 +76,13 @@ flowchart TD
 |---|---|
 | [`ask_claude_for_tests()`](https://github.com/FlorianSchw/package-workflows/blob/main/R/functions/tests/ask_claude_for_tests.R) | Prepares and sends the request: function, test files, how they are named, support files, example tests, test data, test results and history. Returns Claude's fields. |
 | [`format_test_files()`](https://github.com/FlorianSchw/package-workflows/blob/main/R/functions/tests/format_test_files.R) | Puts the function's test files into the prompt word for word, each under its name. |
+| [`format_earlier_test_findings()`](https://github.com/FlorianSchw/package-workflows/blob/main/R/functions/tests/format_earlier_test_findings.R) | Lists the open earlier findings on the function — reported tests and generated tests that failed — each with an id, so Claude can judge them and doesn't repeat them. |
 | [`format_test_scheme_guidance()`](https://github.com/FlorianSchw/package-workflows/blob/main/R/functions/tests/format_test_scheme_guidance.R) | Where new tests go: `test-<function>.R`, or the categories to choose from, with their meanings from `config/test-categories.json`. |
 | [`test_sourced_files()`](https://github.com/FlorianSchw/package-workflows/blob/main/R/functions/tests/test_sourced_files.R) | The files your support files `source()`, e.g. connection helpers in a subfolder. |
 | [`format_test_support_files()`](https://github.com/FlorianSchw/package-workflows/blob/main/R/functions/tests/format_test_support_files.R) | Puts your support files and the files they source into the prompt word for word, so the tests use your own objects, connection helpers and helpers. |
 | [`example_test_files()`](https://github.com/FlorianSchw/package-workflows/blob/main/R/functions/tests/example_test_files.R) | For a function without tests: one or two typical test files of other functions, as examples of how your package writes tests. |
 | [`fn_source()`](https://github.com/FlorianSchw/package-workflows/blob/main/R/functions/shared/fn_source.R), [`fill_template()`](https://github.com/FlorianSchw/package-workflows/blob/main/R/functions/shared/fill_template.R) | As for roxygen: the function's code, and filling the prompt template. |
-| [`build_submit_tests_tool()`](https://github.com/FlorianSchw/package-workflows/blob/main/R/functions/tests/build_submit_tests_tool.R) | Defines the form: new tests (description, reason, setup code, assertions, and the category where test files are named by one — at most `max_new_tests`), decisions on existing tests with their file, setup and clean-up code for a new test file, and the DSLite dataset if one is needed. |
+| [`build_submit_tests_tool()`](https://github.com/FlorianSchw/package-workflows/blob/main/R/functions/tests/build_submit_tests_tool.R) | Defines the form: new tests (description, reason, setup code, assertions, and the category where test files are named by one — at most `max_new_tests`), decisions on existing tests with their file, setup and clean-up code for a new test file, and the DSLite dataset if one is needed; with earlier findings, which one a new test or report repeats and whether each still holds. |
 | [`suggestion_reasons()`](https://github.com/FlorianSchw/package-workflows/blob/main/R/functions/shared/suggestion_reasons.R) | The fixed list of reasons for new tests (`uncovered_branch`, `error_handling`, `edge_case`, `regression`, `other`). |
 | [`call_claude_tool()`](https://github.com/FlorianSchw/package-workflows/blob/main/R/functions/shared/call_claude_tool.R) | Sends the request to the Claude API, as for roxygen. |
 
@@ -103,7 +112,7 @@ flowchart TD
 
 | Function | What it does |
 |---|---|
-| [`ask_claude_to_classify_failure()`](https://github.com/FlorianSchw/package-workflows/blob/main/R/functions/tests/ask_claude_to_classify_failure.R) | Shows Claude the failed test and its error output and asks why it failed: `real_bug`, `bad_test` or `env_misconfiguration`. Uses its own profile, `test-failure-classification`. |
+| [`ask_claude_to_classify_failure()`](https://github.com/FlorianSchw/package-workflows/blob/main/R/functions/tests/ask_claude_to_classify_failure.R) | Shows Claude the failed test and its error output and asks why it failed: `real_bug`, `bad_test` or `env_misconfiguration`. Uses its own profile, `test-failure-classification`. A test that failed in an earlier run (same name, or one Claude says it repeats) isn't classified, commented or filed again. |
 | [`build_submit_failure_classification_tool()`](https://github.com/FlorianSchw/package-workflows/blob/main/R/functions/tests/build_submit_failure_classification_tool.R) | The form for that answer: one of the three categories, plus an explanation. |
 | [`create_bug_issue()`](https://github.com/FlorianSchw/package-workflows/blob/main/R/functions/tests/create_bug_issue.R) | `real_bug`: opens an issue, which outlives the PR. |
 | [`post_test_failure_comment()`](https://github.com/FlorianSchw/package-workflows/blob/main/R/functions/tests/post_test_failure_comment.R) | The other two, in a PR: a comment on your PR. |
@@ -114,7 +123,10 @@ flowchart TD
 | Function | What it does |
 |---|---|
 | [`ensure_testthat_setup()`](https://github.com/FlorianSchw/package-workflows/blob/main/R/functions/tests/ensure_testthat_setup.R) | If new tests were kept: creates `tests/testthat.R`, adds `testthat` to `Suggests`, and sets edition 3 for a fresh setup — so R CMD check runs the tests. |
-| [`format_test_summary()`](https://github.com/FlorianSchw/package-workflows/blob/main/R/functions/tests/format_test_summary.R) | The summary line, e.g. "7 new tests · 1 existing test updated". |
-| [`format_test_report()`](https://github.com/FlorianSchw/package-workflows/blob/main/R/functions/tests/format_test_report.R) | The report: changes to existing tests, tests to look at, in a sweep the failed tests, and functions left untested (`dslite-setup: never`) — grouped per file. |
-| [`publish_test_report()`](https://github.com/FlorianSchw/package-workflows/blob/main/R/functions/tests/publish_test_report.R) | Puts the report into the suggestion PR's description; without one, a comment on your PR, or in a sweep one issue. |
+| [`merge_test_findings()`](https://github.com/FlorianSchw/package-workflows/blob/main/R/functions/tests/merge_test_findings.R) | After each function: merges its findings with the earlier ones — repeats skipped, a reported test that passes now resolved, earlier findings that no longer hold crossed out, never deleted. |
+| [`restore_unproposed_files()`](https://github.com/FlorianSchw/package-workflows/blob/main/R/functions/tests/restore_unproposed_files.R) | Puts back the suggestion branch's test files this run doesn't change, so only this run's files are proposed. |
+| [`format_test_summary()`](https://github.com/FlorianSchw/package-workflows/blob/main/R/functions/tests/format_test_summary.R) | The summary line of the open findings, e.g. "7 new tests · 1 existing test updated". |
+| [`format_test_report()`](https://github.com/FlorianSchw/package-workflows/blob/main/R/functions/tests/format_test_report.R) | The report, rebuilt from all findings on every run: new tests, changes to existing tests, tests to look at, failed tests reported here rather than as comments, and functions left untested (`dslite-setup: never`) — grouped per file, each with the commit it came from, and what the latest review changed. |
+| [`finding_line()`](https://github.com/FlorianSchw/package-workflows/blob/main/R/functions/shared/finding_line.R), [`group_title()`](https://github.com/FlorianSchw/package-workflows/blob/main/R/functions/shared/group_title.R), [`encode_suggestion_state()`](https://github.com/FlorianSchw/package-workflows/blob/main/R/functions/shared/encode_suggestion_state.R) | As for roxygen: one finding (crossed out with when and why if it no longer holds), a group's title, and the hidden findings for the next run. |
+| [`publish_test_report()`](https://github.com/FlorianSchw/package-workflows/blob/main/R/functions/tests/publish_test_report.R) | Makes the report the suggestion PR's description; without one, a comment on your PR, or in a sweep one issue. |
 

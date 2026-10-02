@@ -6,7 +6,9 @@
 # files of other functions when this one has none yet, how the repository
 # names its test files, the structure of the test data
 # (summarize_test_data()), the existing tests' current results and the
-# history evidence, to judge failing tests (outdated vs. possible bug).
+# history evidence, to judge failing tests (outdated vs. possible bug),
+# and this bot's open earlier findings (`context$earlier`) to judge and not
+# repeat.
 # `context` bundles the per-run and per-function inputs; see
 # R/suggest_tests.R.
 ask_claude_for_tests <- function(parsed, context) {
@@ -21,13 +23,15 @@ ask_claude_for_tests <- function(parsed, context) {
     HISTORY_EVIDENCE      = context$evidence,
     FUNCTION_SOURCE       = fn_source(parsed),
     FUNCTION_NAME         = parsed$fn_name,
-    MAX_NEW_TESTS         = as.character(context$max_new_tests)
+    MAX_NEW_TESTS         = as.character(context$max_new_tests),
+    EARLIER_FINDINGS      = format_earlier_test_findings(context$earlier)
   ))
 
   tool <- build_submit_tests_tool(
     context$dslite_datasets, context$max_new_tests,
     categories = context$categories,
-    existing_file_names = vapply(context$test_files, function(f) basename(f$path), character(1))
+    existing_file_names = vapply(context$test_files, function(f) basename(f$path), character(1)),
+    earlier = context$earlier
   )
   call_claude_tool(anthropic_config, tool, prompt)
 }

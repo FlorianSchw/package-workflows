@@ -126,6 +126,10 @@ explanation, written after it, refuted it.
   `code_issue_confidence` in `config/claude.yml` (default high + medium,
   user's choice); an unknown level stops the run
   (`code_issue_confidence_levels()`). Medium is labelled in the report.
+  `none` (user's request): the form has no `code_issues` field (saves
+  the reasoning tokens), earlier bug entries are dropped from the state,
+  and the report has no bug section; the prompt's paragraph on bugs is
+  conditional on the field being there.
 - **Test report stays `append`** until it gets the same merge scheme:
   its report covers only the current run, so replacing would lose the
   earlier runs' findings. `max_tokens` for

@@ -1,5 +1,5 @@
-# The description of the open bot PR from `branch` (the roxygen bot branch
-# of the reviewed branch, e.g. bot-suggest/docs/dev), or NULL if none is
+# The description of the open bot PR from `branch` (the bot branch of the
+# reviewed branch, e.g. bot-suggest/docs/dev), or NULL if none is
 # open. Only an open PR counts: a merged or closed one has nothing to
 # build on.
 fetch_suggestion_pr_body <- function(branch) {

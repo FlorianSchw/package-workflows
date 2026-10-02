@@ -1,18 +1,23 @@
-# One-line statistic of a test suggestion run, e.g. "7 new tests ·
+# One-line statistic of the open test findings, e.g. "7 new tests ·
 # 1 existing test updated · 1 existing test deleted · DSLite test setup
 # created (`tests/testthat/setup.R`) · testthat set up (`tests/testthat.R`,
-# `DESCRIPTION`)". Zero counts are left out. `counts` is a named vector
-# (new, updated, deleted), `created_setups` the DSLite setup files and
-# `testthat_setup` the files ensure_testthat_setup() created or changed.
-format_test_summary <- function(counts, created_setups = character(0), testthat_setup = character(0)) {
-  plural <- function(n, one, many) sprintf("%d %s", n, if (n == 1) one else many)
+# `DESCRIPTION`)" — for the link comment on the originating PR and the top
+# of the suggestion PR's description. Crossed-out findings and zero counts
+# are left out. `state` from merge_test_findings().
+format_test_summary <- function(state) {
+  open <- Filter(function(e) identical(e$status, "active"), state$entries)
+  n <- function(kind) sum(vapply(open, function(e) identical(e$kind, kind), logical(1)))
+  plural <- function(k, one, many) sprintf("%d %s", k, if (k == 1) one else many)
   files <- function(x) paste0("`", x, "`", collapse = ", ")
+  setups <- vapply(Filter(function(e) identical(e$kind, "setup"), open), function(e) e$file, character(1))
+  dslite <- setups[grepl("^setup", basename(setups))]
+  testthat <- setdiff(setups, dslite)
   parts <- c(
-    if (counts[["new"]] > 0) plural(counts[["new"]], "new test", "new tests"),
-    if (counts[["updated"]] > 0) plural(counts[["updated"]], "existing test updated", "existing tests updated"),
-    if (counts[["deleted"]] > 0) plural(counts[["deleted"]], "existing test deleted", "existing tests deleted"),
-    if (length(created_setups) > 0) sprintf("DSLite test setup created (%s)", files(created_setups)),
-    if (length(testthat_setup) > 0) sprintf("testthat set up (%s)", files(testthat_setup))
+    if (n("new") > 0) plural(n("new"), "new test", "new tests"),
+    if (n("updated") > 0) plural(n("updated"), "existing test updated", "existing tests updated"),
+    if (n("deleted") > 0) plural(n("deleted"), "existing test deleted", "existing tests deleted"),
+    if (length(dslite) > 0) sprintf("DSLite test setup created (%s)", files(dslite)),
+    if (length(testthat) > 0) sprintf("testthat set up (%s)", files(testthat))
   )
   if (length(parts) == 0) return("no changes")
   paste(parts, collapse = " · ")

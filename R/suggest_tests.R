@@ -51,6 +51,11 @@ repo       <- Sys.getenv("GITHUB_REPOSITORY")
 pr_number  <- Sys.getenv("PR_NUMBER")
 base_rev   <- Sys.getenv("BASE_REV")  # state before this run's changes; empty in a sweep
 is_sweep   <- !nzchar(pr_number)  # no PR to comment on (a sweep, or a push without a PR)
+# PR and push runs (empty in a sweep): the reviewed commit and the bot
+# branch whose open PR is built on.
+reviewed_sha <- substr(Sys.getenv("REVIEWED_SHA"), 1, 7)
+sub_branch   <- Sys.getenv("SUB_BRANCH")
+builds_on_open_pr <- nzchar(sub_branch) && identical(Sys.getenv("OPEN_SUGGESTION_PR", "add"), "add") && !identical(Sys.getenv("REBUILD"), "true")
 datashield <- as.logical(Sys.getenv("DATASHIELD", "false"))
 ds_type    <- Sys.getenv("DATASHIELD_TYPE", "")
 check_datashield_type(datashield, ds_type)
@@ -77,6 +82,22 @@ dslite_datasets <- if (may_use_dslite) read_json_config("config/dslite-canned-da
 files <- readLines("files_to_check.txt")
 files <- files[nzchar(files)]
 
+# With an open bot PR to build on, its findings and the test files it
+# proposes are the starting point: they are put in place before anything
+# runs, so its tests count as existing, and its report is merged with this
+# run's findings instead of growing an update per run (see
+# dev-notes/test-suggest.md).
+pr_body <- if (builds_on_open_pr) fetch_suggestion_pr_body(sub_branch) else NULL
+state <- decode_suggestion_state(pr_body)
+bot_ref <- if (!is.null(pr_body)) fetch_bot_branch(sub_branch) else NULL
+bot_tests <- materialize_bot_tests(bot_ref, base_rev)
+stats <- c(new = 0L, crossed = 0L, repeats = 0L)
+merge_run <- function(fn, run) {
+  merged <- merge_test_findings(state, fn, run, reviewed_sha)
+  state <<- merged$state
+  stats <<- stats + merged$stats
+}
+
 # How the repository names its test files (test-<function>.R or
 # test-<category>-<function>.R) — once per run.
 scheme <- detect_test_scheme(package_function_names())
@@ -97,17 +118,7 @@ run_quietly <- function(path, what) {
 # --- Main loop ---------------------------------------------------------------
 
 updated_files <- character(0)
-counts <- c(new = 0, updated = 0, deleted = 0) # for format_test_summary()
-created_setups <- character(0)
-# Report entries per file (format_test_report()):
-sweep_failures <- list()   # failed new tests in a sweep (no PR to comment on)
-existing_changes <- list() # applied updates/deletions, with reasons
-existing_notes <- list()   # possible bugs, failing tests left unchanged
-untested <- list()         # functions with no way to connect (dslite-setup: never)
-add_entry <- function(store, path, entries) {
-  if (length(entries) > 0) store[[path]] <- c(store[[path]], entries)
-  store
-}
+new_total <- 0  # new tests kept in this run, for ensure_testthat_setup()
 
 for (f in files) {
   parsed <- tryCatch(parse_r_file(f), error = function(e) {
@@ -116,6 +127,7 @@ for (f in files) {
   })
   if (is.null(parsed)) next
   function_name <- parsed$fn_name
+  run <- list(user_edited = bot_tests$user_edited, new = list(), changes = list(), notes = list(), failed = list(), repeats = 0L)
 
   # Re-checked per function: a DSLite setup generated for an earlier function
   # in this run is reused by later ones.
@@ -124,7 +136,7 @@ for (f in files) {
   setup_plan <- if (needs_dslite) decide_dslite_setup(dslite_setup_mode, detect_connection_approaches()) else "not_needed"
   if (identical(setup_plan, "none")) {
     message(sprintf("%s: needs DataSHIELD connections, but the tests have none and dslite-setup is 'never' — not tested.", function_name))
-    untested <- add_entry(untested, f, sprintf("- `%s`", function_name))
+    merge_run(function_name, c(run, list(untested = f)))
     next
   }
 
@@ -133,6 +145,8 @@ for (f in files) {
   names(test_files) <- paths
   blocks <- lapply(test_files, function(t) parse_test_file(t$content))
   baseline <- lapply(test_files, function(t) run_quietly(t$path, sprintf("existing tests in %s", t$path)))
+  run$current <- unlist(lapply(paths, function(p) lapply(baseline[[p]], function(r) list(file = p, description = r$description, passed = isTRUE(r$passed)))), recursive = FALSE)
+  earlier <- Filter(function(e) identical(e$fn, function_name) && identical(e$status, "active") && e$kind %in% c("note", "failed"), state$entries)
 
   offered_datasets <- if (identical(setup_plan, "create")) dslite_datasets else NULL
   support_files <- test_support_files()
@@ -147,14 +161,19 @@ for (f in files) {
     test_results = format_test_results(baseline),
     evidence = build_test_evidence(f, paths, base_rev),
     dslite_datasets = offered_datasets,
-    max_new_tests = max_new_tests
+    max_new_tests = max_new_tests,
+    earlier = earlier
   )
 
   result <- tryCatch(ask_claude_for_tests(parsed, context), error = function(e) {
     message(sprintf("Claude call failed for %s: %s", function_name, conditionMessage(e)))
     NULL
   })
-  if (is.null(result)) next
+  if (is.null(result)) {
+    merge_run(function_name, run)
+    next
+  }
+  run$decisions <- result$earlier_findings
 
   # Decisions on existing tests, per test file. With a single test file, a
   # decision naming no (or another) file belongs to it.
@@ -170,11 +189,11 @@ for (f in files) {
   reviews <- list()
   for (path in paths) {
     review <- review_existing_tests(result$existing_tests[decision_paths %in% path], blocks[[path]], baseline[[path]], function_name)
-    existing_notes <- add_entry(existing_notes, path, review$notes)
+    run$notes <- c(run$notes, lapply(review$notes, function(n) c(n, list(file = path))))
     # A failing existing test Claude left without any decision is reported too.
     decided <- vapply(result$existing_tests[decision_paths %in% path], function(d) d$description, character(1))
     for (r in Filter(function(r) !isTRUE(r$passed) && !r$description %in% decided, baseline[[path]])) {
-      existing_notes <- add_entry(existing_notes, path, sprintf("- \"%s\" — fails, no change proposed. %s", r$description, gsub("\\s+", " ", r$message)))
+      run$notes[[length(run$notes) + 1]] <- list(file = path, description = r$description, text = sprintf("fails, no change proposed. %s", gsub("\\s+", " ", r$message)))
     }
     reviews[[path]] <- review
   }
@@ -205,6 +224,7 @@ for (f in files) {
     })
     if (length(blocks_for_file) > 0) new_by_file[[path]] <- blocks_for_file
   }
+  new_test_of <- function(description) Find(function(t) identical(t$description, description), new_tests)
 
   changed_paths <- unique(c(
     names(new_by_file),
@@ -212,6 +232,7 @@ for (f in files) {
   ))
   if (length(changed_paths) == 0) {
     message(sprintf("%s: nothing to change.", function_name))
+    merge_run(function_name, run)
     next
   }
 
@@ -238,19 +259,34 @@ for (f in files) {
     applied <- apply_test_file_changes(test_file, if (path %in% paths) blocks[[path]] else list(), review$updates, review$deletes, test_blocks, result, function_name, package_name)
 
     for (d in applied$failed_updates) {
-      existing_notes <- add_entry(existing_notes, path, sprintf("- \"%s\" — an update was proposed (%s) but still failed, so the original test was kept.", d, review$explanations[[d]]))
+      run$notes[[length(run$notes) + 1]] <- list(file = path, description = d, text = sprintf("an update was proposed (%s) but still failed, so the original test was kept.", review$explanations[[d]]))
     }
     if (!is.null(applied$path)) {
       updated_files <- c(updated_files, applied$path)
-      counts <- counts + c(length(applied$passing_new), length(applied$kept_updates), length(review$deletes))
       kept_new_total <- kept_new_total + length(applied$passing_new)
-      for (d in c(names(applied$kept_updates), review$deletes)) {
-        existing_changes <- add_entry(existing_changes, path, sprintf("- \"%s\" — %s", d, review$explanations[[d]]))
+      for (d in applied$passing_new) {
+        t <- new_test_of(d)
+        run$new[[length(run$new) + 1]] <- list(file = path, description = d, reason = t$reason, repeats_earlier = t$repeats_earlier)
+      }
+      for (d in names(applied$kept_updates)) {
+        run$changes[[length(run$changes) + 1]] <- list(file = path, description = d, action = "updated", reason = "contract_changed", explanation = review$explanations[[d]])
+      }
+      for (d in review$deletes) {
+        run$changes[[length(run$changes) + 1]] <- list(file = path, description = d, action = "deleted", reason = "", explanation = review$explanations[[d]])
       }
       message(sprintf("%s: %d new test(s), %d update(s), %d deletion(s) in %s.", function_name, length(applied$passing_new), length(applied$kept_updates), length(review$deletes), path))
     }
 
     for (fail in applied$failing_new) {
+      # A test that failed before (same name, or one Claude says it
+      # repeats) isn't classified, commented or filed again.
+      t <- new_test_of(fail$description)
+      repeated_id <- if (!is.null(t$repeats_earlier) && nzchar(t$repeats_earlier)) suppressWarnings(as.integer(sub("^E", "", t$repeats_earlier))) else NA_integer_
+      if (any(vapply(earlier, function(e) identical(e$kind, "failed") && (identical(as.integer(e$id), repeated_id) || identical(e$description, fail$description)), logical(1)))) {
+        message(sprintf("%s: '%s' failed again — reported before.", function_name, fail$description))
+        run$repeats <- run$repeats + 1L
+        next
+      }
       block_text <- test_blocks[[fail$description]]
       classification <- tryCatch(
         ask_claude_to_classify_failure(fn_source(parsed), block_text, fail$message),
@@ -263,11 +299,14 @@ for (f in files) {
 
       if (identical(classification$category, "real_bug")) {
         create_bug_issue(function_name, block_text, fail$message, classification)
-      } else if (is_sweep) {
-        sweep_failures <- add_entry(sweep_failures, path, format_test_failure(function_name, block_text, fail$message, classification))
-      } else {
+      } else if (!is_sweep) {
         post_test_failure_comment(function_name, block_text, fail$message, classification)
       }
+      in_report <- is_sweep && !identical(classification$category, "real_bug")
+      run$failed[[length(run$failed) + 1]] <- list(
+        file = path, description = fail$description, classification = classification$category, in_report = in_report,
+        explanation = if (in_report) format_test_failure(function_name, block_text, fail$message, classification) else classification$explanation
+      )
     }
   }
 
@@ -276,30 +315,37 @@ for (f in files) {
   if (!is.null(created_setup)) {
     if (kept_new_total > 0) {
       updated_files <- c(updated_files, created_setup)
-      created_setups <- c(created_setups, created_setup)
+      run$setups <- created_setup
     } else {
       file.remove(created_setup)
     }
   }
+  new_total <- new_total + kept_new_total
+  merge_run(function_name, run)
 }
 
 # Proposed tests only count if R CMD check runs them: set up testthat in
 # packages that don't have it yet.
-testthat_setup <- if (counts[["new"]] > 0) ensure_testthat_setup(package_name) else character(0)
+testthat_setup <- if (new_total > 0) ensure_testthat_setup(package_name) else character(0)
 updated_files <- c(updated_files, testthat_setup)
+if (length(testthat_setup) > 0) merge_run("", list(setups = testthat_setup))
 
 writeLines(updated_files, "updated_files.txt")
+restore_unproposed_files(bot_tests$materialized, updated_files)
 
-# One-line summary: in the link comment on the originating PR (read by
-# commit-updated-files from suggestion_summary.md) and on top of the
-# suggestion PR's description.
-summary_line <- format_test_summary(counts, created_setups, testthat_setup)
-if (length(updated_files) > 0) writeLines(summary_line, "suggestion_summary.md")
-
-# Functions left untested (dslite-setup: never) are listed when there is a
-# report anyway, but don't make one on their own: the repository chose
-# that, and a comment or issue on every run would be noise.
-if (length(existing_changes) + length(existing_notes) + length(sweep_failures) > 0 || length(updated_files) > 0) {
-  report <- format_test_report(if (length(updated_files) > 0) summary_line, existing_changes, existing_notes, sweep_failures, untested)
-  publish_test_report(report, has_pr = length(updated_files) > 0)
+# One-line summary of the open findings: in the link comment on the
+# originating PR (read by commit-updated-files from suggestion_summary.md)
+# and on top of the suggestion PR's description, which is rebuilt from all
+# findings on every run (pr-body-mode "replace"). Written when this run
+# changes files or a bot PR is open; without one, notes and sweep failures
+# still get published (publish_test_report()). Functions left untested
+# (dslite-setup: never) are listed when there is a report anyway, but
+# don't make one on their own: the repository chose that, and a comment
+# or issue on every run would be noise.
+has_pr <- length(updated_files) > 0 || !is.null(pr_body)
+open_kinds <- vapply(Filter(function(e) identical(e$status, "active"), state$entries), function(e) e$kind, character(1))
+if (length(updated_files) > 0) writeLines(format_test_summary(state), "suggestion_summary.md")
+if (has_pr || any(open_kinds == "note") || any(vapply(state$entries, function(e) isTRUE(e$in_report), logical(1)))) {
+  report <- format_test_report(state, list(sha = reviewed_sha, stats = stats), state$legacy)
+  publish_test_report(report, has_pr = has_pr)
 }

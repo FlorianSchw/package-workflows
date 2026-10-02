@@ -1,7 +1,8 @@
-# Reads the findings an open roxygen bot PR carries in its description: a
-# hidden comment "<!-- bot-suggest-state: <base64 JSON> -->" written by
-# encode_suggestion_state(). Returns list(entries, next_id, legacy):
-# entries as stored (see merge_roxygen_findings()), and `legacy` — the
+# Reads the findings an open bot PR (roxygen or tests) carries in its
+# description: a hidden comment "<!-- bot-suggest-state: <base64 JSON> -->"
+# written by encode_suggestion_state(). Returns list(entries, next_id,
+# legacy): entries as stored (see merge_roxygen_findings(),
+# merge_test_findings()), and `legacy` — the
 # description without the reviewed-up-to marker — when the PR has a
 # description but no state yet (opened before this report format), or the
 # collapsed copy of it from an earlier run, so its text isn't lost. A

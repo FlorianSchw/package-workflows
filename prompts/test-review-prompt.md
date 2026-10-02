@@ -87,6 +87,21 @@ that are fine.
   be written differently.
 - Passing tests are not rewritten.
 
+## Earlier findings
+
+Earlier findings of this bot on this function, from its open suggestion
+PR. Tests it already added or changed are part of the test files above;
+these are the existing tests it reported and the generated tests that
+failed and were not proposed:
+{{EARLIER_FINDINGS}}
+
+If there are earlier findings: judge each in `earlier_findings` — still
+valid, superseded (no longer correct, e.g. the code changed, or it was
+wrong) or resolved (the code or tests now do it). Don't write a new test
+that does what an earlier failed one did unless the cause of the failure
+is gone; if you do, give its id in `repeats_earlier`. Likewise give the id
+when you report an existing test that was reported before.
+
 Name each existing test's file (test_file) and copy its description
 exactly. Fill setup_code and
 assertions_code only for "update"; use empty strings otherwise.

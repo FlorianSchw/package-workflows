@@ -21,7 +21,19 @@
 # category per new test; existing_file_names (the function's test files)
 # restricts which file a decision on an existing test names. A new test
 # file can get top-level setup and teardown code (new_test_file_content()).
-build_submit_tests_tool <- function(dslite_datasets, max_new_tests, categories = NULL, existing_file_names = character(0)) {
+#
+# `earlier` are this bot's open earlier findings on the function
+# (format_earlier_test_findings()): a new test that repeats an earlier
+# failed one, and a report that repeats an earlier one, name it in
+# `repeats_earlier` (an enum of their ids); `earlier_findings` judges each.
+# merge_test_findings() and the entry script apply both.
+build_submit_tests_tool <- function(dslite_datasets, max_new_tests, categories = NULL, existing_file_names = character(0), earlier = list()) {
+  earlier_ids <- function(kind) {
+    ids <- vapply(Filter(function(e) identical(e$kind, kind), earlier), function(e) sprintf("E%d", e$id), character(1))
+    if (length(ids) == 0) return(NULL)
+    list(type = "string", enum = as.list(c("", ids)),
+         description = "The id of an earlier finding (listed in the prompt) that this one repeats, also in other words; empty string if it is new.")
+  }
   code_fields <- list(
     setup_code = list(type = "string", description = "Raw runnable R code needed only for this specific test (e.g. extra assigns), beyond the shared connection/setup. Empty string if nothing extra is needed."),
     assertions_code = list(type = "string", description = "Raw runnable R code containing the actual expect_*() assertion(s) for this test. No comment markers, no test_that() wrapper — the script adds that.")
@@ -51,6 +63,10 @@ build_submit_tests_tool <- function(dslite_datasets, max_new_tests, categories =
     )
     test_item_schema$required <- c(test_item_schema$required, list("category"))
   }
+  if (!is.null(earlier_ids("failed"))) {
+    test_item_schema$properties$repeats_earlier <- earlier_ids("failed")
+    test_item_schema$required <- c(test_item_schema$required, list("repeats_earlier"))
+  }
 
   test_file_schema <- list(type = "string", description = "The file name of the test, e.g. test-ds.mean.R, exactly as shown.")
   if (length(existing_file_names) > 0) test_file_schema$enum <- as.list(existing_file_names)
@@ -79,6 +95,10 @@ build_submit_tests_tool <- function(dslite_datasets, max_new_tests, categories =
     ), code_fields),
     required = list("test_file", "description", "action", "reason", "explanation", "setup_code", "assertions_code")
   )
+  if (!is.null(earlier_ids("note"))) {
+    existing_item_schema$properties$repeats_earlier <- earlier_ids("note")
+    existing_item_schema$required <- c(existing_item_schema$required, list("repeats_earlier"))
+  }
 
   dataset_names <- if (!is.null(dslite_datasets)) {
     c("", vapply(dslite_datasets, function(d) d$name, character(1)))
@@ -113,6 +133,23 @@ build_submit_tests_tool <- function(dslite_datasets, max_new_tests, categories =
     ),
     required = list("needs_tests", "dslite_dataset", "file_setup_code", "file_teardown_code", "tests", "existing_tests")
   )
+  if (length(earlier) > 0) {
+    input_schema$properties$earlier_findings <- list(
+      type = "array",
+      description = "Your judgement of each earlier finding listed in the prompt.",
+      items = list(
+        type = "object",
+        properties = list(
+          id = list(type = "string", enum = as.list(vapply(earlier, function(e) sprintf("E%d", e$id), character(1)))),
+          status = list(type = "string", enum = list("still_valid", "superseded", "resolved"),
+                        description = "still_valid: still correct and open. superseded: no longer correct, e.g. the code changed or it was wrong. resolved: the code or tests now do what it asked for."),
+          note = list(type = "string", description = "One sentence why, for superseded or resolved; empty string for still_valid.")
+        ),
+        required = list("id", "status", "note")
+      )
+    )
+    input_schema$required <- c(input_schema$required, list("earlier_findings"))
+  }
 
   list(
     description = "Submit new and changed testthat tests as individual structured fields, never as assembled test_that() syntax.",

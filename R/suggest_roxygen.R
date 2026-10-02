@@ -83,6 +83,10 @@ files <- files[nzchar(files)]
 # growing an update per run (see dev-notes/roxygen-suggest.md).
 pr_body <- if (builds_on_open_pr) fetch_suggestion_pr_body(sub_branch) else NULL
 state <- decode_suggestion_state(pr_body)
+# code-issue-confidence "none": no possible bugs — not asked for, and
+# earlier ones leave the report too.
+with_code_issues <- length(code_issue_confidence) > 0
+if (!with_code_issues) state$entries <- Filter(function(e) !identical(e$kind, "bug"), state$entries)
 bot_ref <- if (!is.null(pr_body)) fetch_bot_branch(sub_branch) else NULL
 stats <- c(new = 0L, crossed = 0L, repeats = 0L)
 
@@ -102,7 +106,7 @@ for (f in files) {
   earlier <- Filter(function(e) identical(e$file, f) && identical(e$status, "active") && e$kind %in% c("dropped", "bug"), state$entries)
 
   file_role_text <- if (identical(ds_type, "utility") && !uses_ds_connections(parsed)) role_text_local else role_text
-  result <- tryCatch(ask_claude_for_review(parsed, select_profile(parsed), file_role_text, earlier), error = function(e) {
+  result <- tryCatch(ask_claude_for_review(parsed, select_profile(parsed), file_role_text, earlier, with_code_issues), error = function(e) {
     message(sprintf("Claude call failed for %s: %s", f, conditionMessage(e)))
     NULL
   })

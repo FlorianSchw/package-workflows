@@ -8,14 +8,17 @@
 #   rewritten, and a test that fails because of a possible bug is only
 #   reported, never adapted to the code's current output.
 # Returns proposed `updates` (description -> assembled test_that() text),
-# `deletes`, their `explanations`, and report `notes`. Updates still have
+# `deletes`, their `explanations`, and report `notes` (description, text,
+# the earlier finding a report repeats). Updates still have
 # to pass a real run before they are kept.
 review_existing_tests <- function(decisions, blocks, baseline, function_name) {
   fits <- list(update = "contract_changed", delete = c("duplicate", "behavior_removed", "trivial"), report = "possible_code_bug")
   failing <- vapply(Filter(function(r) !isTRUE(r$passed), baseline), function(r) r$description, character(1))
-  label <- function(d) sprintf("\"%s\"", d$description)
 
-  out <- list(updates = character(0), deletes = character(0), explanations = character(0), notes = character(0))
+  out <- list(updates = character(0), deletes = character(0), explanations = character(0), notes = list())
+  note <- function(d, text) {
+    list(description = d$description, text = text, repeats_earlier = if (is.null(d$repeats_earlier)) "" else d$repeats_earlier)
+  }
   for (d in decisions) {
     block <- Find(function(b) identical(b$description, d$description), blocks)
     if (is.null(block)) {
@@ -27,11 +30,11 @@ review_existing_tests <- function(decisions, blocks, baseline, function_name) {
       next
     }
     if (d$action == "report") {
-      out$notes <- c(out$notes, sprintf("- %s — possible bug in the code, test left unchanged. %s", label(d), d$explanation))
+      out$notes[[length(out$notes) + 1]] <- note(d, sprintf("possible bug in the code, test left unchanged. %s", d$explanation))
       next
     }
     if (!block$editable) {
-      out$notes <- c(out$notes, sprintf("- %s — suggested %s (`%s`), but the test can't be edited automatically (duplicate name or shared lines). %s", label(d), d$action, d$reason, d$explanation))
+      out$notes[[length(out$notes) + 1]] <- note(d, sprintf("suggested %s (`%s`), but the test can't be edited automatically (duplicate name or shared lines). %s", d$action, d$reason, d$explanation))
       next
     }
     if (d$action == "update") {

@@ -313,6 +313,48 @@ Looked at dsBaseClient and dsBase (2026-10-01):
   for an untested function); a plain sandbox (unchanged behaviour); all
   `dslite-setup` values incl. a typo and Opal found in a subfolder.
 
+## One report per bot PR (built 2026-10-02)
+
+Same scheme as the roxygen workflow (dev-notes/roxygen-suggest.md, "One
+report per bot PR"), after the duplication seen on dsSurvivalClient
+PR #37. PR and push runs that build on an open bot PR
+(`open-suggestion-pr: add`, no rebuild):
+- **Bot's test files in place first:** `materialize_bot_tests()` copies
+  every `tests/` file the bot branch changed (since its merge base with
+  the branch) into the working tree, unless the user changed it since
+  the last review (`BASE_REV`; their version wins, as in the merge). The
+  bot's tests then count as existing — run in the baseline, shown to
+  Claude — so they aren't generated again. `restore_unproposed_files()`
+  puts back what the run doesn't propose, so `commit-updated-files` can
+  switch branches.
+- **Earlier findings to Claude** (`format_earlier_test_findings()`): open
+  notes (reported tests, failing tests left unchanged) and failed
+  generated tests, with ids. Schema: `repeats_earlier` on new tests
+  (failed ids) and on decisions (note ids), `earlier_findings`.
+- **Failures:** a new test that repeats an earlier failed one (by id or
+  same name) is still run — if it passes, the earlier failure is
+  resolved; if it fails again it is only counted as a repeat: no
+  classification call, no comment, no issue.
+- **Merge** (`merge_test_findings()`), never deleting: user-edited test
+  file → the bot's earlier entries for it crossed out; Claude's
+  judgement; a note whose test passes now (or no longer exists, in a
+  file that ran) resolved mechanically; an update/deletion replaces
+  earlier entries on that test; repeated notes skipped (by id or same
+  file + test); created setup files and untested functions added once.
+- **Report** (`format_test_report()`), rebuilt each run, new section "New
+  tests" (so far only counted). Failed tests appear in it only where
+  they were not commented (sweeps, pushes without a PR), with code and
+  output. `pr-body-mode: replace`. Without a bot PR, the comment or sweep
+  issue gets the report without the hidden state.
+
+**Tested locally** (real entry script; Claude and the PR lookup mocked; a
+real bot branch in a bare remote), three runs: run 2 saw run 1's new test
+as existing, added one test, skipped a repeated failure (one failure
+comment in total) and a repeated report; run 3 (the code changed)
+resolved the earlier note "the test passes now", noted a newly failing
+test, and left the working tree clean. The categorised sandbox gives the
+same files as before. **Not yet in CI.**
+
 ## Status
 
 Verified locally (real entry script, only the Anthropic/GitHub APIs mocked):

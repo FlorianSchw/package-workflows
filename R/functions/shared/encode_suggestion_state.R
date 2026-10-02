@@ -1,4 +1,4 @@
-# The hidden comment that carries the findings in the roxygen bot PR's
+# The hidden comment that carries the findings in a bot PR's
 # description, read back by decode_suggestion_state() on the next run.
 # Base64, so no text inside can end the HTML comment early. Kept within
 # `max_chars`: if the state is too long, crossed-out entries are dropped
