@@ -14,9 +14,13 @@ structural rule is possible.
    schema enum). The list includes honest "not really an improvement"
    options (`clarity`, `style`, `other`): a model with a place for that
    case uses it more reliably than one told "don't make style changes".
-2. **R keeps only accepted reasons.** The accept lists live in
-   `config/claude.yml` (`accept_reasons` per profile), so a repository can
-   tune them by overriding that file, without touching prompts.
+2. **R keeps only accepted reasons.** The default accept lists live in
+   `config/claude.yml` (`accept_reasons` per profile). A repository tunes
+   them with the `accept-reasons` input of `roxygen-suggest.yml` /
+   `test-suggest.yml` (added 2026-10-02, user's request, e.g. to also get
+   `style` or `clarity` changes), or by overriding that file, without
+   touching prompts. An unknown reason stops the run
+   (`accepted_reasons()`).
 3. **Mechanical filters in R** on top, independent of what Claude says.
 
 ## Current settings

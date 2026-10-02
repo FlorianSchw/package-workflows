@@ -80,12 +80,13 @@ are read too:
 
 | Function | What it does |
 |---|---|
+| [`accepted_reasons()`](https://github.com/FlorianSchw/package-workflows/blob/main/R/functions/shared/accepted_reasons.R) | Which reasons lead to a change: the `accept-reasons` input, else `accept_reasons` in `config/claude.yml` (missing, inaccurate, incomplete); stops on an unknown reason. |
 | [`accepted_roxygen_fields()`](https://github.com/FlorianSchw/package-workflows/blob/main/R/functions/roxygen/accepted_roxygen_fields.R) | Keeps a change only if its reason is accepted and the text really differs (more than whitespace, punctuation or case). Records applied and dropped changes for the report. |
 | [`original_roxygen_field()`](https://github.com/FlorianSchw/package-workflows/blob/main/R/functions/roxygen/original_roxygen_field.R) | The current text of one documentation part, for the comparison. |
 | [`implicit_roxygen_field()`](https://github.com/FlorianSchw/package-workflows/blob/main/R/functions/roxygen/implicit_roxygen_field.R) | The same for a title or description written without a tag (the first lines of the block). |
 | [`roxygen_field_text()`](https://github.com/FlorianSchw/package-workflows/blob/main/R/functions/roxygen/roxygen_field_text.R) | Claude's new text for one documentation part. |
 | [`kept_code_issues()`](https://github.com/FlorianSchw/package-workflows/blob/main/R/functions/roxygen/kept_code_issues.R) | Keeps a possible bug only if Claude concluded it is a defect, with one of the confidence levels to report. |
-| [`code_issue_confidence_levels()`](https://github.com/FlorianSchw/package-workflows/blob/main/R/functions/roxygen/code_issue_confidence_levels.R) | Those levels: the `code-issue-confidence` input, else `code_issue_confidence` in `config/claude.yml` (high and medium); `none` means possible bugs aren't asked for and the report has no such section. Stops on an unknown level. |
+| [`code_issue_confidence_levels()`](https://github.com/FlorianSchw/package-workflows/blob/main/R/functions/shared/code_issue_confidence_levels.R) | Those levels: the `code-issue-confidence` input, else `code_issue_confidence` in `config/claude.yml` (high and medium); `none` means possible bugs aren't asked for and the report has no such section. Stops on an unknown level. |
 
 ## ⑤ Build the block and ⑥ write the file
 
@@ -107,4 +108,5 @@ are read too:
 | [`encode_suggestion_state()`](https://github.com/FlorianSchw/package-workflows/blob/main/R/functions/shared/encode_suggestion_state.R) | Stores all findings hidden in the description, for the next run. |
 | [`comment_once()`](https://github.com/FlorianSchw/package-workflows/blob/main/R/functions/shared/comment_once.R) | Without a suggestion PR: posts the possible bugs as a comment on your PR, but not again on the next push. |
 | [`report_sweep_code_issues()`](https://github.com/FlorianSchw/package-workflows/blob/main/R/functions/roxygen/report_sweep_code_issues.R) | A sweep without a suggestion PR: puts the possible bugs into that month's issue. |
+| [`post_issue_once()`](https://github.com/FlorianSchw/package-workflows/blob/main/R/functions/shared/post_issue_once.R) | Opens an issue — or, if one with the same title is open, adds a comment there (not again if it says the same). |
 

@@ -1,22 +1,27 @@
 # Merges one function's findings of this run into the state the test bot
 # PR carries (decode_suggestion_state()), so its description stays one
 # report instead of growing an update per run. Each entry: id, kind ("new",
-# "updated", "deleted", "note" = existing test to look at, "failed" =
-# generated test that failed, "setup", "untested"), fn, file, description,
-# reason, explanation, classification, in_report, sha, status ("active",
+# "updated", "deleted", "note" = existing test to look at, "bug" = possible
+# bug in the code, "failed" = generated test that failed, "setup",
+# "untested"), fn, file, description, reason, explanation, classification,
+# in_report, origin and confidence and issue (bugs: "existing" = a
+# reported existing test, "failure" = a failed generated test, with the
+# URL of its issue if one was opened), sha, status ("active",
 # "superseded", "resolved"), status_sha, status_note. Entries are never
 # deleted, only crossed out, in this order:
 # 1. a test file the user changed since the last review: the bot's earlier
 #    entries for it gave way to their version;
-# 2. Claude judged an earlier note or failure superseded or resolved
+# 2. Claude judged an earlier note, bug or failure superseded or resolved
 #    (`run$decisions`);
-# 3. an earlier note whose test passes now, or no longer exists, is
-#    resolved (`run$current`: this run's results before any change, as
-#    list(file, description, passed));
-# 4. a new test resolves an earlier failure it repeats (by id or name);
+# 3. an earlier note or bug about an existing test that passes now, or no
+#    longer exists, is resolved (`run$current`: this run's results before
+#    any change, as list(file, description, passed));
+# 4. a new test resolves an earlier failure (or bug found by one) it
+#    repeats (by id or name);
 # 5. an update or deletion replaces earlier entries on that test;
-# 6. a note that repeats an open one (by id, or same file and test) is
-#    skipped;
+# 6. a possible bug on a test with an open bug is skipped, and replaces an
+#    open plain note on it; a note on a test with an open note or bug is
+#    skipped (by id, or same file and test);
 # 7. failures (already without repeats, see R/suggest_tests.R), created
 #    setup files and an untested function are added — the last two once.
 # Returns list(state, stats: new, crossed, repeats).
@@ -38,7 +43,8 @@ merge_test_findings <- function(state, fn, run, sha) {
     }
   }
   add <- function(kind, fields) {
-    blank <- list(file = "", description = "", reason = "", explanation = "", classification = "", in_report = FALSE)
+    blank <- list(file = "", description = "", reason = "", explanation = "", classification = "", in_report = FALSE,
+                  origin = "", confidence = "", issue = "")
     entries[[length(entries) + 1]] <<- c(
       list(id = next_id, kind = kind, fn = fn),
       modifyList(blank, fields),
@@ -58,36 +64,55 @@ merge_test_findings <- function(state, fn, run, sha) {
   for (d in run$decisions) {
     if (!isTRUE(d$status %in% c("superseded", "resolved"))) next
     id <- id_of(d$id)
-    cross(function(e) is_open(e, c("note", "failed")) && identical(as.integer(e$id), id), d$status, text(d$note))
+    cross(function(e) is_open(e, c("note", "bug", "failed")) && identical(as.integer(e$id), id), d$status, text(d$note))
   }
 
   # A file that produced no results at all (it didn't run) proves nothing.
   ran <- unique(vapply(run$current, function(r) r$file, character(1)))
-  for (e in Filter(function(e) is_open(e, "note") && identical(e$fn, fn), entries)) {
+  about_existing <- function(e) is_open(e, "note") || (is_open(e, "bug") && identical(e$origin, "existing"))
+  for (e in Filter(function(e) about_existing(e) && identical(e$fn, fn), entries)) {
     now <- Find(function(r) same_test(r, e$file, e$description), run$current)
     if (is.null(now) && (e$file %in% ran || !file.exists(e$file))) {
-      cross(function(x) identical(x$id, e$id) && is_open(x, "note"), "resolved", "the test no longer exists")
+      cross(function(x) identical(x$id, e$id) && about_existing(x), "resolved", "the test no longer exists")
     } else if (isTRUE(now$passed)) {
-      cross(function(x) identical(x$id, e$id) && is_open(x, "note"), "resolved", "the test passes now")
+      cross(function(x) identical(x$id, e$id) && about_existing(x), "resolved", "the test passes now")
     }
   }
 
   for (t in run$new) {
     id <- id_of(t$repeats_earlier)
-    cross(function(e) is_open(e, "failed") && identical(e$fn, fn) && (identical(as.integer(e$id), id) || identical(e$description, t$description)),
+    cross(function(e) (is_open(e, "failed") || (is_open(e, "bug") && identical(e$origin, "failure"))) && identical(e$fn, fn) &&
+            (identical(as.integer(e$id), id) || identical(e$description, t$description)),
           "resolved", "a new version of the test passes")
     add("new", list(file = t$file, description = t$description, reason = t$reason))
   }
 
   for (ch in run$changes) {
-    cross(function(e) is_open(e, c("new", "updated", "note")) && same_test(e, ch$file, ch$description),
+    cross(function(e) (is_open(e, c("new", "updated", "note")) || (is_open(e, "bug") && identical(e$origin, "existing"))) && same_test(e, ch$file, ch$description),
           "superseded", sprintf("%s by a later review", ch$action))
     add(ch$action, list(file = ch$file, description = ch$description, reason = ch$reason, explanation = text(ch$explanation)))
   }
 
+  # Same earlier finding: by the id Claude gave, or the same file and test.
+  repeats <- function(x, kinds) {
+    id <- id_of(x$repeats_earlier)
+    any(vapply(entries, function(e) is_open(e, kinds) && (identical(as.integer(e$id), id) || same_test(e, x$file, x$description)), logical(1)))
+  }
+
+  for (b in run$bugs) {
+    if (identical(b$origin, "existing") && repeats(b, "bug")) {
+      stats[["repeats"]] <- stats[["repeats"]] + 1L
+      next
+    }
+    if (identical(b$origin, "existing")) {
+      cross(function(e) is_open(e, "note") && same_test(e, b$file, b$description), "superseded", "reported as a possible bug in the code")
+    }
+    add("bug", list(file = b$file, description = b$description, explanation = text(b$explanation),
+                    origin = b$origin, confidence = text(b$confidence), issue = text(b$issue)))
+  }
+
   for (n in run$notes) {
-    id <- id_of(n$repeats_earlier)
-    if (any(vapply(entries, function(e) is_open(e, "note") && (identical(as.integer(e$id), id) || same_test(e, n$file, n$description)), logical(1)))) {
+    if (repeats(n, c("note", "bug"))) {
       stats[["repeats"]] <- stats[["repeats"]] + 1L
       next
     }

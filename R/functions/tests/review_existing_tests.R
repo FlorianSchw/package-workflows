@@ -9,15 +9,19 @@
 #   reported, never adapted to the code's current output.
 # Returns proposed `updates` (description -> assembled test_that() text),
 # `deletes`, their `explanations`, and report `notes` (description, text,
-# the earlier finding a report repeats). Updates still have
+# the earlier finding a report repeats, and for a possible bug in the code
+# `possible_bug`, explanation and confidence — R/suggest_tests.R reports it
+# as a possible bug if the confidence is high enough, else as a note).
+# Updates still have
 # to pass a real run before they are kept.
 review_existing_tests <- function(decisions, blocks, baseline, function_name) {
   fits <- list(update = "contract_changed", delete = c("duplicate", "behavior_removed", "trivial"), report = "possible_code_bug")
   failing <- vapply(Filter(function(r) !isTRUE(r$passed), baseline), function(r) r$description, character(1))
 
   out <- list(updates = character(0), deletes = character(0), explanations = character(0), notes = list())
-  note <- function(d, text) {
-    list(description = d$description, text = text, repeats_earlier = if (is.null(d$repeats_earlier)) "" else d$repeats_earlier)
+  note <- function(d, text, possible_bug = FALSE) {
+    list(description = d$description, text = text, repeats_earlier = if (is.null(d$repeats_earlier)) "" else d$repeats_earlier,
+         possible_bug = possible_bug, explanation = d$explanation, confidence = if (is.null(d$confidence)) "" else d$confidence)
   }
   for (d in decisions) {
     block <- Find(function(b) identical(b$description, d$description), blocks)
@@ -30,7 +34,7 @@ review_existing_tests <- function(decisions, blocks, baseline, function_name) {
       next
     }
     if (d$action == "report") {
-      out$notes[[length(out$notes) + 1]] <- note(d, sprintf("possible bug in the code, test left unchanged. %s", d$explanation))
+      out$notes[[length(out$notes) + 1]] <- note(d, sprintf("possible bug in the code, test left unchanged. %s", d$explanation), possible_bug = TRUE)
       next
     }
     if (!block$editable) {

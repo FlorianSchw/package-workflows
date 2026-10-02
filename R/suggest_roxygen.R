@@ -29,7 +29,7 @@ walk(list.files(file.path(functions_dir, c("shared", "roxygen")), pattern = "\\.
 # — set as an env var on the calling workflow step.
 roxygen_review_settings <- config::get(file = resolve_shared_path("config/claude.yml"))
 anthropic_config <- roxygen_review_settings$anthropic
-accept_reasons <- unlist(roxygen_review_settings$accept_reasons)
+accept_reasons <- accepted_reasons(Sys.getenv("ACCEPT_REASONS"), roxygen_review_settings$accept_reasons, "roxygen")
 code_issue_confidence <- code_issue_confidence_levels(Sys.getenv("CODE_ISSUE_CONFIDENCE"), roxygen_review_settings$code_issue_confidence)
 
 api_key    <- Sys.getenv("ANTHROPIC_API_KEY")

@@ -1,7 +1,9 @@
 # Creates a separate GitHub issue for a failing generated test classified
 # as real_bug — a genuine defect the test caught deserves more durability
 # than a PR comment (survives even if the PR is closed without the
-# generated test being merged), per dev-notes/test-suggest.md.
+# generated test being merged), per dev-notes/test-suggest.md. One issue
+# per function: while it is open, further findings for the function go
+# there as comments instead of a second issue (post_issue_once()).
 create_bug_issue <- function(function_name, test_block, failure_message, classification) {
   title <- sprintf("Possible bug found by generated test: %s", function_name)
   body <- sprintf(
@@ -29,9 +31,5 @@ create_bug_issue <- function(function_name, test_block, failure_message, classif
     function_name, classification$explanation, test_block, failure_message
   )
 
-  post_github_json(
-    sprintf("/repos/%s/issues", repo),
-    list(title = title, body = body),
-    function_name
-  )
+  post_issue_once(title, body, function_name)
 }

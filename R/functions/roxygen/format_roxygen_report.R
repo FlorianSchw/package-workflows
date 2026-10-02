@@ -63,7 +63,7 @@ format_roxygen_report <- function(state, latest = NULL, legacy = NULL) {
     if (length(dropped) > 0) c(
       report_heading(sprintf("No changes applied (%d)", count(dropped)), style),
       "",
-      "Suggestions whose reason isn't on the accepted list (`accept_reasons` in `config/claude.yml`). Adopt one by hand if it's worth it.",
+      "Suggestions whose reason isn't on the accepted list (the `accept-reasons` input, or `accept_reasons` in `config/claude.yml`). Adopt one by hand if it's worth it.",
       "",
       dropped_groups
     ),

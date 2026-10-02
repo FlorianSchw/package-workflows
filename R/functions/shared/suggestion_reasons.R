@@ -1,6 +1,7 @@
 # The full reason list Claude chooses from per task (tool schema enum).
 # Which of them actually lead to a proposed change is configured as
-# accept_reasons in config/claude.yml — see
+# the accept-reasons input, else accept_reasons in config/claude.yml
+# (accepted_reasons()) — see
 # dev-notes/suggestion-thresholds.md.
 suggestion_reasons <- function(task) {
   switch(task,

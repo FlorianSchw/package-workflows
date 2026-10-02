@@ -41,9 +41,12 @@ walk(list.files(file.path(functions_dir, c("shared", "tests")), pattern = "\\.R$
 config_path <- resolve_shared_path("config/claude.yml")
 test_review_settings <- config::get(file = config_path)
 anthropic_config <- test_review_settings$anthropic
-accept_reasons <- unlist(test_review_settings$accept_reasons)
+accept_reasons <- accepted_reasons(Sys.getenv("ACCEPT_REASONS"), test_review_settings$accept_reasons, "tests")
 max_new_tests <- if (is.null(test_review_settings$max_new_tests)) 10L else as.integer(test_review_settings$max_new_tests)
 failure_classification_config <- config::get(config = "test-failure-classification", file = config_path)$anthropic
+# Possible bugs in the code to report, by Claude's confidence (input
+# code-issue-confidence, else config); an issue is opened only for "high".
+code_issue_confidence <- code_issue_confidence_levels(Sys.getenv("CODE_ISSUE_CONFIDENCE"), test_review_settings$code_issue_confidence)
 
 api_key    <- Sys.getenv("ANTHROPIC_API_KEY")
 gh_token   <- Sys.getenv("GH_TOKEN")
@@ -89,6 +92,8 @@ files <- files[nzchar(files)]
 # dev-notes/test-suggest.md).
 pr_body <- if (builds_on_open_pr) fetch_suggestion_pr_body(sub_branch) else NULL
 state <- decode_suggestion_state(pr_body)
+# code-issue-confidence "none": no possible bugs, also not earlier ones.
+if (length(code_issue_confidence) == 0) state$entries <- Filter(function(e) !identical(e$kind, "bug"), state$entries)
 bot_ref <- if (!is.null(pr_body)) fetch_bot_branch(sub_branch) else NULL
 bot_tests <- materialize_bot_tests(bot_ref, base_rev)
 stats <- c(new = 0L, crossed = 0L, repeats = 0L)
@@ -127,7 +132,7 @@ for (f in files) {
   })
   if (is.null(parsed)) next
   function_name <- parsed$fn_name
-  run <- list(user_edited = bot_tests$user_edited, new = list(), changes = list(), notes = list(), failed = list(), repeats = 0L)
+  run <- list(user_edited = bot_tests$user_edited, new = list(), changes = list(), notes = list(), bugs = list(), failed = list(), repeats = 0L)
 
   # Re-checked per function: a DSLite setup generated for an earlier function
   # in this run is reused by later ones.
@@ -146,7 +151,7 @@ for (f in files) {
   blocks <- lapply(test_files, function(t) parse_test_file(t$content))
   baseline <- lapply(test_files, function(t) run_quietly(t$path, sprintf("existing tests in %s", t$path)))
   run$current <- unlist(lapply(paths, function(p) lapply(baseline[[p]], function(r) list(file = p, description = r$description, passed = isTRUE(r$passed)))), recursive = FALSE)
-  earlier <- Filter(function(e) identical(e$fn, function_name) && identical(e$status, "active") && e$kind %in% c("note", "failed"), state$entries)
+  earlier <- Filter(function(e) identical(e$fn, function_name) && identical(e$status, "active") && e$kind %in% c("note", "bug", "failed"), state$entries)
 
   offered_datasets <- if (identical(setup_plan, "create")) dslite_datasets else NULL
   support_files <- test_support_files()
@@ -189,7 +194,17 @@ for (f in files) {
   reviews <- list()
   for (path in paths) {
     review <- review_existing_tests(result$existing_tests[decision_paths %in% path], blocks[[path]], baseline[[path]], function_name)
-    run$notes <- c(run$notes, lapply(review$notes, function(n) c(n, list(file = path))))
+    # A report of a possible bug Claude is sure enough of
+    # (code-issue-confidence) goes to "Possible bugs in the code", any
+    # other report stays a note.
+    for (n in review$notes) {
+      n$file <- path
+      if (isTRUE(n$possible_bug) && isTRUE(n$confidence %in% code_issue_confidence)) {
+        run$bugs[[length(run$bugs) + 1]] <- c(n, list(origin = "existing"))
+      } else {
+        run$notes[[length(run$notes) + 1]] <- n
+      }
+    }
     # A failing existing test Claude left without any decision is reported too.
     decided <- vapply(result$existing_tests[decision_paths %in% path], function(d) d$description, character(1))
     for (r in Filter(function(r) !isTRUE(r$passed) && !r$description %in% decided, baseline[[path]])) {
@@ -282,7 +297,8 @@ for (f in files) {
       # repeats) isn't classified, commented or filed again.
       t <- new_test_of(fail$description)
       repeated_id <- if (!is.null(t$repeats_earlier) && nzchar(t$repeats_earlier)) suppressWarnings(as.integer(sub("^E", "", t$repeats_earlier))) else NA_integer_
-      if (any(vapply(earlier, function(e) identical(e$kind, "failed") && (identical(as.integer(e$id), repeated_id) || identical(e$description, fail$description)), logical(1)))) {
+      failed_before <- function(e) identical(e$kind, "failed") || (identical(e$kind, "bug") && identical(e$origin, "failure"))
+      if (any(vapply(earlier, function(e) failed_before(e) && (identical(as.integer(e$id), repeated_id) || identical(e$description, fail$description)), logical(1)))) {
         message(sprintf("%s: '%s' failed again — reported before.", function_name, fail$description))
         run$repeats <- run$repeats + 1L
         next
@@ -297,12 +313,20 @@ for (f in files) {
       )
       if (is.null(classification)) next
 
-      if (identical(classification$category, "real_bug")) {
-        create_bug_issue(function_name, block_text, fail$message, classification)
-      } else if (!is_sweep) {
-        post_test_failure_comment(function_name, block_text, fail$message, classification)
+      # A real bug Claude is sure enough of (code-issue-confidence) is a
+      # possible bug in the code — with an issue only at high confidence;
+      # anything else is a failed test, commented on the PR or, without
+      # one, listed in the report.
+      if (identical(classification$category, "real_bug") && isTRUE(classification$confidence %in% code_issue_confidence)) {
+        issue <- if (identical(classification$confidence, "high")) create_bug_issue(function_name, block_text, fail$message, classification)
+        run$bugs[[length(run$bugs) + 1]] <- list(
+          file = path, description = fail$description, origin = "failure", explanation = classification$explanation,
+          confidence = classification$confidence, issue = if (is.null(issue)) "" else issue
+        )
+        next
       }
-      in_report <- is_sweep && !identical(classification$category, "real_bug")
+      if (!is_sweep) post_test_failure_comment(function_name, block_text, fail$message, classification)
+      in_report <- is_sweep
       run$failed[[length(run$failed) + 1]] <- list(
         file = path, description = fail$description, classification = classification$category, in_report = in_report,
         explanation = if (in_report) format_test_failure(function_name, block_text, fail$message, classification) else classification$explanation
@@ -345,7 +369,7 @@ restore_unproposed_files(bot_tests$materialized, updated_files)
 has_pr <- length(updated_files) > 0 || !is.null(pr_body)
 open_kinds <- vapply(Filter(function(e) identical(e$status, "active"), state$entries), function(e) e$kind, character(1))
 if (length(updated_files) > 0) writeLines(format_test_summary(state), "suggestion_summary.md")
-if (has_pr || any(open_kinds == "note") || any(vapply(state$entries, function(e) isTRUE(e$in_report), logical(1)))) {
+if (has_pr || any(open_kinds %in% c("note", "bug")) || any(vapply(state$entries, function(e) isTRUE(e$in_report), logical(1)))) {
   report <- format_test_report(state, list(sha = reviewed_sha, stats = stats), state$legacy)
   publish_test_report(report, has_pr = has_pr)
 }

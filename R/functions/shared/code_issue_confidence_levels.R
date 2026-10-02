@@ -1,8 +1,9 @@
-# The confidence levels of possible code bugs to report
-# (kept_code_issues()): the code-issue-confidence input ("high",
-# "high,medium", …) if set, else code_issue_confidence in
-# config/claude.yml, else high and medium. "none" returns no levels:
-# Claude isn't asked for possible bugs and the report has no such section.
+# The confidence levels of possible code bugs to report — roxygen
+# (kept_code_issues()) and tests (R/suggest_tests.R): the
+# code-issue-confidence input ("high", "high,medium", …) if set, else
+# code_issue_confidence in config/claude.yml, else high and medium. "none"
+# returns no levels: no possible bugs are reported (roxygen doesn't even
+# ask for them) and the report has no such section.
 # Stops the run on an unknown level, or "none" mixed with levels, so a
 # typo fails loudly instead of silently hiding bugs.
 code_issue_confidence_levels <- function(input, configured) {

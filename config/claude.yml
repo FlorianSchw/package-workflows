@@ -6,13 +6,16 @@ default:
     thinking:
       type: disabled
     tool_choice_type: tool
+  # Possible bugs in the code reported by the roxygen and test suggestions,
+  # by Claude's confidence; the code-issue-confidence input overrides it.
+  # Test suggestions open an issue only for "high".
+  code_issue_confidence: [high, medium]
 
 roxygen-review:
   anthropic:
     tool_name: submit_review
     max_tokens: 8192   # room for reasoning on possible bugs and judging earlier findings
   accept_reasons: [missing, inaccurate, incomplete]   # not: clarity, style
-  code_issue_confidence: [high, medium]   # possible bugs reported (verdict "defect" only)
 
 test-review:
   anthropic:

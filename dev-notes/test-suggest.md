@@ -347,13 +347,36 @@ PR #37. PR and push runs that build on an open bot PR
   output. `pr-body-mode: replace`. Without a bot PR, the comment or sweep
   issue gets the report without the hidden state.
 
+**Possible bugs in the code** (built 2026-10-02, user's decision, like
+roxygen): the failure classification asks for the reasoning first, then
+the category and a `confidence`; decisions on existing tests carry a
+`confidence` too. With the confidence in `code-issue-confidence` (input,
+else `code_issue_confidence` in the `default` profile of
+`config/claude.yml`; high + medium):
+- a `real_bug` failure becomes a "bug" entry (origin "failure"), with an
+  issue only at **high** (issues outlive the PR and reach every watcher);
+  otherwise — lower confidence, or `none` — it is an ordinary failure
+  (PR comment / report);
+- a `possible_code_bug` report becomes a "bug" entry (origin
+  "existing"), else an ordinary note.
+Report section "Possible bugs in the code" (medium labelled, issue
+linked), summary "· n possible bugs". `create_bug_issue()` and the sweep
+report issue use `post_issue_once()` (shared): an open issue with the
+same title gets a comment instead of a second issue — the duplicate the
+user had seen.
+
 **Tested locally** (real entry script; Claude and the PR lookup mocked; a
 real bot branch in a bare remote), three runs: run 2 saw run 1's new test
 as existing, added one test, skipped a repeated failure (one failure
 comment in total) and a repeated report; run 3 (the code changed)
 resolved the earlier note "the test passes now", noted a newly failing
 test, and left the working tree clean. The categorised sandbox gives the
-same files as before. **Not yet in CI.**
+same files as before. With bugs: `bad_test` → comment, `real_bug` high →
+issue + bug entry with link, `real_bug` low → comment, a medium report →
+bug entry (labelled), repeats skipped, the reported test resolved once it
+passes; with `none` no issue and no bug section. `post_issue_once()`
+checked with a mocked API (new, identical, different, other function,
+closed). **Not yet in CI.**
 
 ## Status
 

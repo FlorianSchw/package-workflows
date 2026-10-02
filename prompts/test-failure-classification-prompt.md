@@ -14,5 +14,10 @@ Generated test that failed:
 Failure output:
 {{FAILURE_MESSAGE}}
 
+Reason it through in `explanation` first, then give the category and how
+confident you are. Choose real_bug only when the test's expectation is
+clearly what the function is meant to do; when the intended behaviour is
+unclear, say so with a lower confidence.
+
 Call the submit_failure_classification tool with your result. Do not
 write any prose response — only call the tool.

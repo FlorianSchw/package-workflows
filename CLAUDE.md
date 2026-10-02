@@ -179,8 +179,10 @@ Details per workflow: [dev-notes/roxygen-suggest.md](dev-notes/roxygen-suggest.m
   wording where a structural constraint (schema field, `maxItems`, enum)
   is possible.
 - **Threshold for what gets proposed:** Claude states a reason per change
-  from a fixed enum (`suggestion_reasons()`), R keeps only the
-  `accept_reasons` of `config/claude.yml` and adds mechanical filters.
+  from a fixed enum (`suggestion_reasons()`), R keeps only the accepted
+  ones — the `accept-reasons` input, else `accept_reasons` of
+  `config/claude.yml` (`accepted_reasons()`) — and adds mechanical
+  filters.
   A revisable decision, recorded in
   [dev-notes/suggestion-thresholds.md](dev-notes/suggestion-thresholds.md)
   — update that note when changing it.
@@ -437,7 +439,10 @@ and `CONTRIBUTING.md`); no PRs until a branch model and rules exist.
   (unless the user changed them), repeats of earlier failures aren't
   classified/commented/filed again, a reported test that passes now is
   resolved, report with a new "New tests" section. Details in
-  [dev-notes/test-suggest.md](dev-notes/test-suggest.md).
+  [dev-notes/test-suggest.md](dev-notes/test-suggest.md). Tests also got
+  "Possible bugs in the code" (failure classification and reports with a
+  confidence, same `code-issue-confidence` input; issues only at high)
+  and no duplicate issues any more (`post_issue_once()`).
   **Docs pending:**
   - `roxygen-suggest.qmd` report section: one report, commit tags,
     crossed-out findings, "Latest review", verdict/confidence for
@@ -446,8 +451,12 @@ and `CONTRIBUTING.md`); no PRs until a branch model and rules exist.
   - `suggestions.qmd#what-gets-reviewed`: an open bot PR's proposal is
     the starting point; hand edits to its description are overwritten
     (comments are fine);
-  - `test-suggest.qmd` report section: "New tests", one merged report,
-    repeated failures not commented again;
+  - `test-suggest.qmd` report section: "New tests", "Possible bugs in
+    the code", one merged report, repeated failures not commented again;
+    `test-suggest-review.qmd#failing-tests`: confidence, issues only at
+    high, one issue per function; the `code-issue-confidence` input;
+  - `suggestions.qmd#what-gets-proposed`: the `accept-reasons` input
+    (roxygen and tests) besides the config file;
   - roadmap "Recent changes".
 - **Policy file for the bot's rules** (`config/suggestion-policy.yml`):
   today reasons, action↔reason mapping, the `aut`/`ctb` rule, name

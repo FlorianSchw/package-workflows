@@ -18,6 +18,11 @@ on:
         required: false
         type: string
         default: 'add'
+      accept-reasons:
+        description: 'Reasons that lead to a proposed change, comma-separated, from: missing, inaccurate, incomplete, clarity, style; empty: `accept_reasons` in `config/claude.yml` (missing, inaccurate, incomplete)'
+        required: false
+        type: string
+        default: ''
       code-issue-confidence:
         description: 'Possible bugs in the code to report, by how sure Claude is: "high", "high,medium" or "high,medium,low"; "none": not looked for, no such section in the report; empty: `code_issue_confidence` in `config/claude.yml` (high, medium)'
         required: false
@@ -144,6 +149,7 @@ jobs:
           OPEN_SUGGESTION_PR: ${{ inputs.open-suggestion-pr }}
           REBUILD: ${{ steps.files.outputs.rebuild }}
           CODE_ISSUE_CONFIDENCE: ${{ inputs.code-issue-confidence }}
+          ACCEPT_REASONS: ${{ inputs.accept-reasons }}
         run: Rscript .shared-workflows/R/suggest_roxygen.R
 
       - name: Resolve push token

@@ -3,7 +3,10 @@
 # (merge_test_findings()), so it stays one report instead of growing an
 # update per run. Laid out like the roxygen report: a section per kind
 # with its count of open findings — "New tests", "Changes to existing
-# tests", "Existing tests to look at", "Generated tests that failed"
+# tests", "Possible bugs in the code" (from reported existing tests and
+# failed generated tests, medium confidence labelled, with a link to the
+# issue where one was opened), "Existing tests to look at", "Generated
+# tests that failed"
 # (those reported here rather than as PR comments, with test code and
 # output), "Functions not tested" — and in each a collapsible group per
 # file. Each finding carries the commit it came from; crossed-out ones
@@ -51,6 +54,12 @@ format_test_report <- function(state, latest = NULL, legacy = NULL) {
             function(e) sprintf("%s — `%s`", name(e), e$reason)),
     section("Changes to existing tests", of_kind(c("updated", "deleted")), "Each change passed a real run. Check the reasons before merging.",
             function(e) sprintf("%s — %s", name(e), e$explanation)),
+    section("Possible bugs in the code", of_kind("bug"), "Noticed while testing — nothing in the code was changed. Please check.",
+            function(e) sprintf("%s%s%s — %s%s", name(e),
+                                if (identical(e$origin, "failure")) " (a generated test, not proposed)" else "",
+                                if (identical(e$confidence, "medium")) " _(medium confidence)_" else "",
+                                e$explanation,
+                                if (nzchar(e$issue)) sprintf(" — [issue](%s)", e$issue) else "")),
     section("Existing tests to look at", of_kind("note"), "Not changed automatically.",
             function(e) sprintf("%s — %s", name(e), e$explanation)),
     section("Generated tests that failed", Filter(function(e) isTRUE(e$in_report), of_kind("failed")), "Not proposed; each needs a look.",

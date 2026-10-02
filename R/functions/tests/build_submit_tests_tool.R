@@ -28,8 +28,8 @@
 # `repeats_earlier` (an enum of their ids); `earlier_findings` judges each.
 # merge_test_findings() and the entry script apply both.
 build_submit_tests_tool <- function(dslite_datasets, max_new_tests, categories = NULL, existing_file_names = character(0), earlier = list()) {
-  earlier_ids <- function(kind) {
-    ids <- vapply(Filter(function(e) identical(e$kind, kind), earlier), function(e) sprintf("E%d", e$id), character(1))
+  earlier_ids <- function(kinds) {
+    ids <- vapply(Filter(function(e) e$kind %in% kinds, earlier), function(e) sprintf("E%d", e$id), character(1))
     if (length(ids) == 0) return(NULL)
     list(type = "string", enum = as.list(c("", ids)),
          description = "The id of an earlier finding (listed in the prompt) that this one repeats, also in other words; empty string if it is new.")
@@ -63,8 +63,8 @@ build_submit_tests_tool <- function(dslite_datasets, max_new_tests, categories =
     )
     test_item_schema$required <- c(test_item_schema$required, list("category"))
   }
-  if (!is.null(earlier_ids("failed"))) {
-    test_item_schema$properties$repeats_earlier <- earlier_ids("failed")
+  if (!is.null(earlier_ids(c("failed", "bug")))) {
+    test_item_schema$properties$repeats_earlier <- earlier_ids(c("failed", "bug"))
     test_item_schema$required <- c(test_item_schema$required, list("repeats_earlier"))
   }
 
@@ -91,12 +91,14 @@ build_submit_tests_tool <- function(dslite_datasets, max_new_tests, categories =
           "possible_code_bug (with report): the test describes sensible behavior the code no longer delivers."
         )
       ),
-      explanation = list(type = "string", description = "One or two sentences why, citing the evidence (history, diff, failure output).")
+      explanation = list(type = "string", description = "One or two sentences why, citing the evidence (history, diff, failure output)."),
+      confidence = list(type = "string", enum = list("high", "medium", "low"),
+                        description = "How sure you are of this decision; for a report, how sure you are that the code, not the test, is wrong.")
     ), code_fields),
-    required = list("test_file", "description", "action", "reason", "explanation", "setup_code", "assertions_code")
+    required = list("test_file", "description", "action", "reason", "explanation", "confidence", "setup_code", "assertions_code")
   )
-  if (!is.null(earlier_ids("note"))) {
-    existing_item_schema$properties$repeats_earlier <- earlier_ids("note")
+  if (!is.null(earlier_ids(c("note", "bug")))) {
+    existing_item_schema$properties$repeats_earlier <- earlier_ids(c("note", "bug"))
     existing_item_schema$required <- c(existing_item_schema$required, list("repeats_earlier"))
   }
 

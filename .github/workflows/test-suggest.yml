@@ -38,6 +38,16 @@ on:
         required: false
         type: string
         default: ''
+      accept-reasons:
+        description: 'Reasons a new test must have to be proposed, comma-separated, from: uncovered_branch, error_handling, edge_case, regression, other; empty: `accept_reasons` in `config/claude.yml` (all but other)'
+        required: false
+        type: string
+        default: ''
+      code-issue-confidence:
+        description: 'Possible bugs in the code to report, by how sure Claude is: "high", "high,medium" or "high,medium,low" (an issue is opened only for high); "none": reported as ordinary notes and failed tests; empty: `code_issue_confidence` in `config/claude.yml` (high, medium)'
+        required: false
+        type: string
+        default: ''
       dslite-setup:
         description: 'For functions using DataSHIELD connections: "auto" (create a DSLite test setup only if the tests have no way to connect yet), "create" (create one unless the tests already use DSLite) or "never"'
         required: false
@@ -168,6 +178,8 @@ jobs:
           DATASHIELD: ${{ inputs.datashield }}
           DATASHIELD_TYPE: ${{ inputs.datashield-type }}
           DSLITE_SETUP: ${{ inputs.dslite-setup }}
+          CODE_ISSUE_CONFIDENCE: ${{ inputs.code-issue-confidence }}
+          ACCEPT_REASONS: ${{ inputs.accept-reasons }}
           # PR and push runs (empty in a sweep): an open bot PR is built on —
           # its findings merged with this run's, its test files the starting
           # point.
