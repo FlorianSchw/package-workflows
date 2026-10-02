@@ -99,7 +99,8 @@ jobs:
           fi
           today="$(date -u +%F)"
           # One set of rows per day: a second run on the same day replaces them.
-          { head -1 usage.csv; tail -n +2 usage.csv | grep -v "^$today,"; sed "s/^/$today,/" "$RUNNER_TEMP/counts.csv"; } > "$RUNNER_TEMP/usage.csv"
+          # (grep -v exits 1 when no lines are left, e.g. on the first day.)
+          { head -1 usage.csv; tail -n +2 usage.csv | { grep -v "^$today," || true; }; sed "s/^/$today,/" "$RUNNER_TEMP/counts.csv"; } > "$RUNNER_TEMP/usage.csv"
           mv "$RUNNER_TEMP/usage.csv" usage.csv
           git add usage.csv README.md
           if git diff --cached --quiet; then
