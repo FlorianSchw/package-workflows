@@ -19,7 +19,8 @@ format_roxygen_report <- function(state, latest = NULL, legacy = NULL) {
   is_active <- function(e) identical(e$status, "active")
   active_first <- function(x) c(Filter(is_active, x), Filter(Negate(is_active), x))
   of_kind <- function(kind) Filter(function(e) identical(e$kind, kind), entries)
-  count <- function(x) sum(vapply(x, is_active, logical(1)))
+  # Counted: open findings, not the ones the user declined.
+  count <- function(x) sum(vapply(x, function(e) is_active(e) && !identical(suggestion_choice(e), "declined"), logical(1)))
   quote <- function(text) {
     if (is.null(text) || !nzchar(trimws(text))) return(character(0))
     paste0("  > ", strsplit(text, "\n", fixed = TRUE)[[1]])
@@ -29,7 +30,7 @@ format_roxygen_report <- function(state, latest = NULL, legacy = NULL) {
   applied_groups <- report_groups(lapply(unique(vapply(applied, function(e) e$file, character(1))), function(p) {
     of_file <- active_first(Filter(function(e) identical(e$file, p), applied))
     list(title = group_title(p, of_file), lines = vapply(of_file, function(e) {
-      finding_line(e, sprintf("`%s` — `%s`: %s", e$field, e$reason, e$explanation), sprintf("`%s` — `%s`: %s", e$field, e$reason, e$explanation))
+      choice_line(e, sprintf("`%s` — `%s`: %s", e$field, e$reason, e$explanation), sprintf("`%s` — `%s`: %s", e$field, e$reason, e$explanation))
     }, character(1)))
   }), style)
 
@@ -38,7 +39,7 @@ format_roxygen_report <- function(state, latest = NULL, legacy = NULL) {
     of_reason <- Filter(function(e) identical(e$reason, r), dropped)
     lines <- unlist(lapply(unique(vapply(of_reason, function(e) e$file, character(1))), function(p) {
       c(sprintf("**`%s`**", p), unlist(lapply(active_first(Filter(function(e) identical(e$file, p), of_reason)), function(e) {
-        c(finding_line(e, sprintf("`%s`: %s", e$field, e$explanation), sprintf("`%s`: %s", e$field, e$explanation)),
+        c(choice_line(e, sprintf("`%s`: %s", e$field, e$explanation), sprintf("`%s`: %s", e$field, e$explanation)),
           if (is_active(e)) quote(e$proposed))
       })), "")
     }))
@@ -59,11 +60,13 @@ format_roxygen_report <- function(state, latest = NULL, legacy = NULL) {
     paste("**Summary:**", format_roxygen_summary(state)),
     if (!is.null(latest_line)) c("", latest_line),
     "",
-    if (length(applied) > 0) c(report_heading(sprintf("Applied changes (%d)", count(applied)), style), "", applied_groups),
+    if (length(applied) > 0) c(report_heading(sprintf("Applied changes (%d)", count(applied)), style), "",
+                               "Untick what you don't want: the branch follows within a minute, and an unticked change isn't suggested again while the function's code stays the same.", "",
+                               applied_groups),
     if (length(dropped) > 0) c(
       report_heading(sprintf("No changes applied (%d)", count(dropped)), style),
       "",
-      "Suggestions whose reason isn't on the accepted list (the `accept-reasons` input, or `accept_reasons` in `config/claude.yml`). Adopt one by hand if it's worth it.",
+      "Suggestions whose reason isn't on the accepted list (the `accept-reasons` input, or `accept_reasons` in `config/claude.yml`). Tick one to apply it: the branch follows within a minute.",
       "",
       dropped_groups
     ),

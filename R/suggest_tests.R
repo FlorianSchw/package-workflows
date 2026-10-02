@@ -93,6 +93,9 @@ files <- files[nzchar(files)]
 # dev-notes/test-suggest.md).
 pr_body <- if (builds_on_open_pr) fetch_suggestion_pr_body(sub_branch) else NULL
 state <- decode_suggestion_state(pr_body)
+# The user's checkboxes (dev-notes/suggestion-choices.md): recorded before
+# anything else, so the rebuilt description keeps them.
+state <- record_suggestion_choices(state, read_suggestion_choices(pr_body))
 # code-issue-confidence "none": no possible bugs, also not earlier ones.
 if (length(code_issue_confidence) == 0) state$entries <- Filter(function(e) !identical(e$kind, "bug"), state$entries)
 bot_ref <- if (!is.null(pr_body)) fetch_bot_branch(sub_branch) else NULL
@@ -139,7 +142,14 @@ for (f in files) {
   # -> test-initMockData.R, also when the function is initMockdata()), as in
   # the other workflows that pair R files with their tests.
   file_name <- test_file_name(f)
-  run <- list(user_edited = bot_tests$user_edited, new = list(), changes = list(), notes = list(), bugs = list(), failed = list(), repeats = 0L)
+  # What the user declined for this function stays out, unless its code
+  # changed since (declined_suggestions()).
+  fingerprint <- code_fingerprint(fn_source(parsed))
+  declined <- declined_suggestions(state, function(e) identical(e$fn, function_name), fingerprint, reviewed_sha)
+  state <- declined$state
+  declined <- declined$declined
+  declined_of <- function(kinds) vapply(Filter(function(e) e$kind %in% kinds, declined), function(e) e$description, character(1))
+  run <- list(user_edited = bot_tests$user_edited, new = list(), changes = list(), notes = list(), bugs = list(), failed = list(), repeats = 0L, code = fingerprint)
 
   # Re-checked per function: a DSLite setup generated for an earlier function
   # in this run is reused by later ones.
@@ -196,6 +206,15 @@ for (f in files) {
     hit <- paths[basename(paths) == name]
     if (length(hit) == 1) hit else if (length(paths) == 1) paths else NA_character_
   }
+  # An update or deletion the user declined isn't proposed again.
+  declined_decision <- function(d) {
+    (identical(d$action, "update") && d$description %in% declined_of("updated")) ||
+      (identical(d$action, "delete") && d$description %in% declined_of("deleted"))
+  }
+  for (d in Filter(declined_decision, result$existing_tests)) {
+    message(sprintf("%s: not proposing to %s '%s' again — declined.", function_name, d$action, d$description))
+  }
+  result$existing_tests <- Filter(Negate(declined_decision), result$existing_tests)
   decision_paths <- vapply(result$existing_tests, decision_file, character(1))
   for (d in result$existing_tests[is.na(decision_paths)]) {
     message(sprintf("%s: ignoring decision on '%s' — unknown test file '%s'.", function_name, d$description, d$test_file))
@@ -231,6 +250,11 @@ for (f in files) {
   } else {
     list()
   }
+  # A new test the user declined isn't proposed again (same name).
+  for (t in Filter(function(t) t$description %in% declined_of("new"), new_tests)) {
+    message(sprintf("%s: not proposing '%s' again — declined.", function_name, t$description))
+  }
+  new_tests <- Filter(function(t) !t$description %in% declined_of("new"), new_tests)
   target_of <- function(t) {
     if (!scheme$categorised) return(test_file_path(file_name))
     if (!isTRUE(t$category %in% scheme$categories)) {

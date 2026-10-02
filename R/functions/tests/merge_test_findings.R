@@ -6,7 +6,9 @@
 # "untested"), fn, file, description, reason, explanation, classification,
 # in_report, origin and confidence and issue (bugs: "existing" = a
 # reported existing test, "failure" = a failed generated test, with the
-# URL of its issue if one was opened), sha, status ("active",
+# URL of its issue if one was opened), sha, code (code_fingerprint() of
+# the function), choice (the user's checkbox, record_suggestion_choices()),
+# status ("active",
 # "superseded", "resolved"), status_sha, status_note. Entries are never
 # deleted, only crossed out, in this order:
 # 1. a test file the user changed since the last review: the bot's earlier
@@ -48,7 +50,7 @@ merge_test_findings <- function(state, fn, run, sha) {
     entries[[length(entries) + 1]] <<- c(
       list(id = next_id, kind = kind, fn = fn),
       modifyList(blank, fields),
-      list(sha = sha, status = "active", status_sha = "", status_note = "")
+      list(sha = sha, code = if (is.null(run$code)) "" else run$code, status = "active", status_sha = "", status_note = "")
     )
     next_id <<- next_id + 1L
     stats[["new"]] <<- stats[["new"]] + 1L

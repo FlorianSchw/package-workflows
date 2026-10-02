@@ -21,16 +21,19 @@ format_test_report <- function(state, latest = NULL, legacy = NULL) {
   is_active <- function(e) identical(e$status, "active")
   of_kind <- function(kinds) Filter(function(e) e$kind %in% kinds, state$entries)
   name <- function(e) sprintf("\"%s\"", e$description)
+  choices_hint <- "Untick what you don't want: the branch follows within a minute, and an unticked test isn't suggested again while the function's code stays the same."
 
-  section <- function(title, entries, intro, line, extra = function(e) character(0), sep = character(0)) {
+  # Counted: open findings, not the ones the user declined.
+  counts <- function(e) is_active(e) && !identical(suggestion_choice(e), "declined")
+  section <- function(title, entries, intro, line, extra = function(e) character(0), sep = character(0), liner = finding_line) {
     if (length(entries) == 0) return(character(0))
     paths <- unique(vapply(entries, function(e) e$file, character(1)))
     c(
-      report_heading(sprintf("%s (%d)", title, sum(vapply(entries, is_active, logical(1)))), style), "", intro, "",
+      report_heading(sprintf("%s (%d)", title, sum(vapply(entries, counts, logical(1)))), style), "", intro, "",
       report_groups(lapply(paths, function(p) {
         of_file <- Filter(function(e) identical(e$file, p), entries)
         of_file <- c(Filter(is_active, of_file), Filter(Negate(is_active), of_file))
-        blocks <- lapply(of_file, function(e) c(finding_line(e, line(e), name(e)), if (is_active(e)) extra(e)))
+        blocks <- lapply(of_file, function(e) c(liner(e, line(e), name(e)), if (is_active(e)) extra(e)))
         list(title = group_title(p, of_file), lines = Reduce(function(a, b) c(a, sep, b), blocks))
       }), style)
     )
@@ -50,10 +53,10 @@ format_test_report <- function(state, latest = NULL, legacy = NULL) {
     paste("**Summary:**", format_test_summary(state)),
     if (!is.null(latest_line)) c("", latest_line),
     "",
-    section("New tests", of_kind("new"), "Each passed a real run.",
-            function(e) sprintf("%s — `%s`", name(e), e$reason)),
-    section("Changes to existing tests", of_kind(c("updated", "deleted")), "Each change passed a real run. Check the reasons before merging.",
-            function(e) sprintf("%s — %s", name(e), e$explanation)),
+    section("New tests", of_kind("new"), paste("Each passed a real run.", choices_hint),
+            function(e) sprintf("%s — `%s`", name(e), e$reason), liner = choice_line),
+    section("Changes to existing tests", of_kind(c("updated", "deleted")), paste("Each change passed a real run. Check the reasons before merging.", choices_hint),
+            function(e) sprintf("%s%s — %s", if (identical(e$kind, "deleted")) "delete " else "update ", name(e), e$explanation), liner = choice_line),
     section("Possible bugs in the code", of_kind("bug"), "Noticed while testing — nothing in the code was changed. Please check.",
             function(e) sprintf("%s%s%s — %s%s", name(e),
                                 if (identical(e$origin, "failure")) " (a generated test, not proposed)" else "",

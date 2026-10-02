@@ -3,6 +3,8 @@
 # instead of growing an update per run. Each entry: id, file, kind
 # ("applied", "dropped" = not applied, "bug"), field, reason, explanation,
 # proposed, summary, confidence, sha (the reviewed commit it came from),
+# code (code_fingerprint() of the function), choice (the user's checkbox,
+# record_suggestion_choices()),
 # status ("active", "superseded", "resolved"), status_sha, status_note.
 # Entries are never deleted, only crossed out, in this order:
 # 1. the user edited this documentation since the last review: the bot's
@@ -36,7 +38,7 @@ merge_roxygen_findings <- function(state, path, run, sha, user_edited = FALSE) {
     entries[[length(entries) + 1]] <<- c(
       list(id = next_id, file = path, kind = kind),
       modifyList(blank, fields),
-      list(sha = sha, status = "active", status_sha = "", status_note = "")
+      list(sha = sha, code = if (is.null(run$code)) "" else run$code, status = "active", status_sha = "", status_note = "")
     )
     next_id <<- next_id + 1L
     stats[["new"]] <<- stats[["new"]] + 1L
@@ -62,7 +64,7 @@ merge_roxygen_findings <- function(state, path, run, sha, user_edited = FALSE) {
 
   for (ch in run$applied) {
     cross_where(c("applied", "dropped"), function(e) identical(e$field, ch$field), "superseded", sprintf("replaced by a newer change to `%s`", ch$field))
-    add("applied", list(field = ch$field, reason = ch$reason, explanation = text(ch$explanation)))
+    add("applied", list(field = ch$field, reason = ch$reason, explanation = text(ch$explanation), proposed = text(ch$proposed)))
   }
 
   for (ch in run$dropped) {

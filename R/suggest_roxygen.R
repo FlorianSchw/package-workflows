@@ -83,6 +83,9 @@ files <- files[nzchar(files)]
 # growing an update per run (see dev-notes/roxygen-suggest.md).
 pr_body <- if (builds_on_open_pr) fetch_suggestion_pr_body(sub_branch) else NULL
 state <- decode_suggestion_state(pr_body)
+# The user's checkboxes (dev-notes/suggestion-choices.md): recorded before
+# anything else, so the rebuilt description keeps them.
+state <- record_suggestion_choices(state, read_suggestion_choices(pr_body))
 # code-issue-confidence "none": no possible bugs — not asked for, and
 # earlier ones leave the report too.
 with_code_issues <- length(code_issue_confidence) > 0
@@ -103,7 +106,13 @@ for (f in files) {
   source_block <- review_source_block(f, parsed, bot_ref, base_rev)
   parsed <- source_block$parsed
   if (source_block$from_bot) message(sprintf("%s: reviewing the block the open bot PR proposes.", f))
-  earlier <- Filter(function(e) identical(e$file, f) && identical(e$status, "active") && e$kind %in% c("dropped", "bug"), state$entries)
+  # Fields the user declined stay as they are, unless the function's code
+  # changed since (declined_suggestions()).
+  fingerprint <- code_fingerprint(fn_source(parsed))
+  declined <- declined_suggestions(state, function(e) identical(e$file, f), fingerprint, reviewed_sha)
+  state <- declined$state
+  declined_fields <- vapply(Filter(function(e) identical(e$kind, "applied"), declined$declined), function(e) e$field, character(1))
+  earlier <-Filter(function(e) identical(e$file, f) && identical(e$status, "active") && e$kind %in% c("dropped", "bug"), state$entries)
 
   file_role_text <- if (identical(ds_type, "utility") && !uses_ds_connections(parsed)) role_text_local else role_text
   result <- tryCatch(ask_claude_for_review(parsed, select_profile(parsed), file_role_text, earlier, with_code_issues), error = function(e) {
@@ -116,13 +125,18 @@ for (f in files) {
 
   # Code defects are reported whether or not the documentation changes.
   run <- list(applied = list(), dropped = list(), decisions = result$earlier_findings,
-              bugs = kept_code_issues(result$code_issues, code_issue_confidence, f))
+              bugs = kept_code_issues(result$code_issues, code_issue_confidence, f), code = fingerprint)
   if (length(run$bugs) > 0) message(sprintf("%s: %d possible code issue(s) noted.", f, length(run$bugs)))
 
   if (!isTRUE(result$needs_changes)) {
     message(sprintf("%s: documentation already adequate, skipping.", f))
   } else {
     review <- accepted_roxygen_fields(result, parsed, accept_reasons, f)
+    for (key in intersect(review$accepted, declined_fields)) {
+      message(sprintf("%s: not changing '%s' again — declined.", f, key))
+    }
+    review$accepted <- setdiff(review$accepted, declined_fields)
+    review$applied <- Filter(function(ch) !ch$field %in% declined_fields, review$applied)
     run$dropped <- review$dropped
     new_block <- if (length(review$accepted) == 0) {
       message(sprintf("%s: no change above the threshold, skipping.", f))
