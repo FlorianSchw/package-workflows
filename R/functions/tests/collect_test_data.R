@@ -29,6 +29,9 @@ collect_test_data <- function(files, out) {
     suppressMessages(pkgload::load_all(".", quiet = TRUE))
     env <- new.env(parent = globalenv())
     setwd(file.path("tests", "testthat"))
+    # As during a test run: testthat::test_path() and other helpers check
+    # TESTTHAT, and without it look for tests/testthat below this folder.
+    Sys.setenv(TESTTHAT = "true", TESTTHAT_PKG = read.dcf(file.path("..", "..", "DESCRIPTION"), "Package")[[1]])
     # A file failing partway (e.g. at the login) still leaves the tables it
     # created before — describe those, and say what failed.
     for (f in basename(files)) {
