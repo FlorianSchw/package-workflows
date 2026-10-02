@@ -102,7 +102,8 @@ the live caller used to validate changes before wider rollout.
 - Branch-protection rulesets (formerly `rulesets/` + `apply-ruleset.yml`)
   now live in a separate private repo.
 - `.github/actions/` — composite actions: `anthropic-token` (suggestion
-  workflows), `resolve-suggestion-scope` (roxygen/tests/authors: skip,
+  workflows), `count-run` (usage counting, see below),
+  `resolve-suggestion-scope` (roxygen/tests/authors: skip,
   mode and branch from the event; its folder also holds
   `determine-changes.sh`, what is new since the last run),
   `resolve-push-token` (also `package-release.yml`),
@@ -124,8 +125,21 @@ the live caller used to validate changes before wider rollout.
   Claude call settings for the suggestion workflows.
 - `dev-notes/` — internal design notes and status per suggestion workflow
   (not published).
+- **Usage counting:** the Claude-assisted workflows (roxygen, tests,
+  analysis scripts) and `authors-suggest.yml` end with a "Count this run"
+  step — the composite action `count-run` — that downloads one file from
+  the `usage-counter` pre-release, `<workflow>-<outcome>-<channel>`
+  (outcome proposed / nothing / failed; channel release = a `vX` tag
+  points to the commit that ran, dev = `@main` or a branch, i.e.
+  development and testing). Anonymous; the download counts are the runs.
+  Only these four (user's choice). `collect-usage.yml` (not reusable)
+  keeps the release complete — the files for every workflow calling
+  `count-run` — and records the counts daily on the `usage-data` branch.
+  **A new Claude-assisted workflow gets the same last step** (copy it,
+  with its own `workflow:` name); the collector adds its files. Design:
+  [dev-notes/usage-counting.md](dev-notes/usage-counting.md).
 - `docs/` — Quarto site, published to GitHub Pages by `publish-docs.yml`
-  (the only non-reusable workflow). One page per workflow, grouped in the
+  (non-reusable, like `collect-usage.yml`). One page per workflow, grouped in the
   sidebar via `docs/_quarto.yml` (sections: Getting started, Pull request
   checks, Release, Bot suggestions, Analysis projects, Workflow upkeep;
   Roadmap last, whose "Recent changes" section serves as release notes).
@@ -262,6 +276,10 @@ and `CONTRIBUTING.md`); no PRs until a branch model and rules exist.
     (`uses: ./.shared-workflows/.github/actions/…`).
   - **Federation rules** match `job_workflow_ref` exactly (incl.
     `@refs/heads/main`); tags need a prefix/condition match.
+  - **Usage counting** relies on it: runs on a `vX` tag count as
+    `release`, everything else as `dev`. Delete the old unused `v1` tag
+    (`8d11341`) before the first real release, and recommend pinning
+    `@vX` in the docs.
 - Federation rules for the other two accounts, before rolling out beyond
   dsSupportClient.
 - Not yet confirmed in real CI: ~~`all` mode of both suggestion workflows~~
@@ -458,6 +476,14 @@ and `CONTRIBUTING.md`); no PRs until a branch model and rules exist.
   - `suggestions.qmd#what-gets-proposed`: the `accept-reasons` input
     (roxygen and tests) besides the config file;
   - roadmap "Recent changes".
+- **Usage counting** (built 2026-10-02 for service-usage KPIs, **not yet
+  in CI**): per workflow, outcome and channel, anonymous, no opt-out
+  (user's decision); see
+  the LAYOUT entry and
+  [dev-notes/usage-counting.md](dev-notes/usage-counting.md). Docs done:
+  `getting-started.qmd#usage-counting`, roadmap "Recent changes". Still
+  to do: the data protection note in dsAnalysis's README (its CLAUDE.md,
+  item D11).
 - **Policy file for the bot's rules** (`config/suggestion-policy.yml`):
   today reasons, action↔reason mapping, the `aut`/`ctb` rule, name
   particles and report routing live partly only in R code. Move the

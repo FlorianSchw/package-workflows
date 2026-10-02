@@ -91,3 +91,31 @@ trigger workflows. The token order is App → PAT → `GITHUB_TOKEN`.
 The App is still recommended: a PAT acts as its owner, so bot commits and
 pull requests appear under their name, it stops working when they leave or
 the token expires, and it can do everything its owner can.
+
+## Usage counting {#usage-counting}
+
+To report how much the bot suggestions are used, every run of the
+[roxygen](roxygen-suggest.qmd), [test](test-suggest.qmd) and
+[author](authors-suggest.qmd) suggestions and of the
+[DataSHIELD analysis scripts](datashield-analysis-suggest.qmd) is
+counted once. Their last step ("Count this run") downloads a small file
+from a release of this repository; GitHub counts the downloads of each
+file, and those counts are the numbers of runs. The other workflows
+aren't counted. There is one file per workflow and
+
+- **outcome:** the run proposed changes (files in a suggestion pull
+  request), had nothing to propose, or failed;
+- **version:** a released version of these workflows (`@v1`, …), or
+  `@main` / a branch, which counts as development and testing.
+
+- **Nothing about your repository is sent:** no name, no owner, no
+  content, no identifier. The requests go to GitHub, which already
+  serves these workflows to your runner: the file download, and a look at
+  this repository's version tags to tell the version.
+- **Only runs are counted,** not repositories or people. A run the
+  workflow skips itself (e.g. on its own suggestion branches) isn't
+  counted.
+- **The counts are public:** anyone can see the download counts of the
+  release `usage-counter`.
+- **It can't break your run:** if the download fails, the run carries on
+  as usual.

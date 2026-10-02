@@ -219,3 +219,13 @@ jobs:
           sweep-commit-message: 'test: monthly test coverage sweep'
           sweep-pr-title: 'Monthly test coverage sweep'
           sweep-pr-body: 'New and updated tests from the test suggestion workflow. Every new or changed test passed a real run; changes to existing tests are listed below with their reason — review before merging.'
+
+      # Counts this run once, anonymously, by workflow, outcome and version
+      # (see docs: usage counting). Nothing about this repository is sent.
+      - name: Count this run
+        if: always() && steps.scope.outputs.skip != 'true'   # not when the run was skipped (bot branch, fork, …)
+        continue-on-error: true
+        uses: FlorianSchw/package-workflows/.github/actions/count-run@main
+        with:
+          workflow: test-suggest
+          job-status: ${{ job.status }}

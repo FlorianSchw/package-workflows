@@ -24,6 +24,11 @@ may be closed without review until this is set up.
 
 **October 2026**
 
+- **Usage counting:** every run of the bot suggestions (roxygen, tests,
+  authors) and the DataSHIELD analysis scripts is now counted once,
+  anonymously, so their usage can be reported per workflow, outcome and
+  version. Nothing about
+  your repository is sent; see [Usage counting](getting-started.qmd#usage-counting).
 - **Test suggestions find all test files of a function**, also
   `test-<category>-<function>.R` as in the DataSHIELD base packages. In a
   repository named that way, new tests go into the file of the category

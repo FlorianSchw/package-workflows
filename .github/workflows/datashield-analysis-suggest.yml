@@ -122,3 +122,13 @@ jobs:
           # Every run regenerates all steps not yet in the branch, so the bot
           # branch is rebuilt rather than built on.
           open-suggestion-pr: 'replace'
+
+      # Counts this run once, anonymously, by workflow, outcome and version
+      # (see docs: usage counting). Nothing about this repository is sent.
+      - name: Count this run
+        if: always()
+        continue-on-error: true
+        uses: FlorianSchw/package-workflows/.github/actions/count-run@main
+        with:
+          workflow: datashield-analysis-suggest
+          job-status: ${{ job.status }}

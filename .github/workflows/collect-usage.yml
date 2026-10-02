@@ -1,0 +1,105 @@
+name: Collect usage counts
+
+# Not reusable: runs in this repository only. The counted workflows — the
+# Claude-assisted ones (roxygen, tests, analysis scripts) and
+# authors-suggest — end with a "Count this run" step (the count-run action)
+# that downloads one file from the usage-counter release, named
+# <workflow>-<outcome>-<channel>; GitHub counts the downloads per file, so
+# each file's download count is a number of runs — from any caller, public
+# or private, without sending anything about the caller.
+#
+# This workflow keeps that release complete (the files for every workflow
+# calling count-run, also new ones) and records the counts once a day on the
+# usage-data branch, since GitHub only keeps the running total: the runs
+# in a period are the difference between two days. Design and KPIs:
+# dev-notes/usage-counting.md.
+on:
+  schedule:
+    - cron: '17 5 * * *'
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths: ['.github/workflows/*.yml']   # a new reusable workflow gets its file at once
+
+concurrency:
+  group: collect-usage
+  cancel-in-progress: false
+
+jobs:
+  collect:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    env:
+      GH_TOKEN: ${{ github.token }}
+      TAG: usage-counter
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
+
+      - name: Make sure every counted workflow has its counter file
+        run: |
+          if ! gh release view "$TAG" > /dev/null 2>&1; then
+            gh release create "$TAG" --prerelease --latest=false --title "Usage counter" \
+              --notes "One file per reusable workflow. Each run of a workflow downloads its file once, so the download counts are the numbers of runs. Nothing about the calling repository is sent. Please don't download these files by hand — it would count as a run."
+          fi
+          existing="$(gh release view "$TAG" --json assets --jq '.assets[].name')"
+          # One file per counted workflow (those calling the count-run action),
+          # outcome and channel — see .github/actions/count-run/count-run.sh.
+          for f in .github/workflows/*.yml; do
+            grep -q 'actions/count-run@' "$f" || continue
+            workflow="$(basename "$f" .yml)"
+            for outcome in proposed nothing failed; do
+              for channel in release dev; do
+                name="$workflow-$outcome-$channel"
+                if grep -qx "$name" <<< "$existing"; then continue; fi
+                printf 'Downloaded once per run of %s.yml (%s, %s) to count its runs.\n' "$workflow" "$outcome" "$channel" > "$RUNNER_TEMP/$name"
+                gh release upload "$TAG" "$RUNNER_TEMP/$name"
+                echo "Added the counter file $name."
+              done
+            done
+          done
+
+      - name: Record today's counts on the usage-data branch
+        run: |
+          # Asset name <workflow>-<outcome>-<channel> → separate columns.
+          gh api "repos/${{ github.repository }}/releases/tags/$TAG" \
+            --jq '.assets[] | (.name | split("-")) as $p | "\($p[:-2] | join("-")),\($p[-2]),\($p[-1]),\(.download_count)"' \
+            | sort > "$RUNNER_TEMP/counts.csv"
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          if git fetch --quiet origin usage-data 2> /dev/null; then
+            git checkout --quiet -B usage-data FETCH_HEAD
+          else
+            git checkout --quiet --orphan usage-data
+            git rm -rfq .
+            printf 'date,workflow,outcome,channel,runs_total\n' > usage.csv
+            printf '%s\n' \
+              '# Usage counts' '' \
+              'Written daily by `.github/workflows/collect-usage.yml` on `main`.' \
+              '`usage.csv`: per day, workflow, outcome and channel, the total number of runs' \
+              'so far (the download count of its file in the `usage-counter` release).' \
+              '- outcome: `proposed` (files in the suggestion PR), `nothing`, `failed`;' \
+              '- channel: `release` (a released version, `@vX`), `dev` (`@main` or a branch:' \
+              '  development and testing).' \
+              'The runs in a period are the difference between its last and first day.' > README.md
+          fi
+          today="$(date -u +%F)"
+          # One set of rows per day: a second run on the same day replaces them.
+          { head -1 usage.csv; tail -n +2 usage.csv | grep -v "^$today,"; sed "s/^/$today,/" "$RUNNER_TEMP/counts.csv"; } > "$RUNNER_TEMP/usage.csv"
+          mv "$RUNNER_TEMP/usage.csv" usage.csv
+          git add usage.csv README.md
+          if git diff --cached --quiet; then
+            echo "No change."
+          else
+            git commit --quiet -m "usage: counts of $today"
+            git push --quiet origin usage-data
+          fi
+          cat "$RUNNER_TEMP/counts.csv"
+
+  keepalive:
+    if: github.event_name == 'schedule'
+    permissions:
+      actions: write
+    uses: ./.github/workflows/workflow-keepalive.yml
