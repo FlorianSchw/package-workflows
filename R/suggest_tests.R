@@ -172,6 +172,7 @@ for (f in files) {
 
   result <- tryCatch(ask_claude_for_tests(parsed, context), error = function(e) {
     message(sprintf("Claude call failed for %s: %s", function_name, conditionMessage(e)))
+    warn_failed_call(paste0(function_name, "()"), f, e)
     note_retry_file(f)
     NULL
   })

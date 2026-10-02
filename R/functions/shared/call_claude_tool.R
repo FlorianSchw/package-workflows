@@ -30,7 +30,13 @@ call_claude_tool <- function(config, tool, prompt) {
     ) |>
     req_body_json(body) |>
     req_timeout(900) |>
-    req_error(is_error = function(resp) FALSE)  # handle errors manually so we can see the real body
+    req_error(is_error = function(resp) FALSE) |>  # handle errors manually so we can see the real body
+    # Temporary failures are retried within the run: rate limit (429),
+    # server errors (5xx), overloaded (529), and connection failures.
+    # httr2's back-off (exponential, at most 60 s) honours Retry-After.
+    req_retry(max_tries = 4,
+              retry_on_failure = TRUE,
+              is_transient = function(resp) resp_status(resp) %in% c(429, 500, 502, 503, 504, 529))
   if (!is.null(config$betas)) req <- req_headers(req, "anthropic-beta" = paste(unlist(config$betas), collapse = ","))
 
   resp <- req_perform(req)

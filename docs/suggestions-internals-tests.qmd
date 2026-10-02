@@ -86,7 +86,7 @@ With an open suggestion PR to build on (a PR or push run), first:
 | [`build_submit_tests_tool()`](https://github.com/FlorianSchw/package-workflows/blob/main/R/functions/tests/build_submit_tests_tool.R) | Defines the form: new tests (description, reason, setup code, assertions, and the category where test files are named by one — at most `max_new_tests`), decisions on existing tests with their file, setup and clean-up code for a new test file, and the DSLite dataset if one is needed; with earlier findings, which one a new test or report repeats and whether each still holds. |
 | [`suggestion_reasons()`](https://github.com/FlorianSchw/package-workflows/blob/main/R/functions/shared/suggestion_reasons.R) | The fixed list of reasons for new tests (`uncovered_branch`, `error_handling`, `edge_case`, `regression`, `other`). |
 | [`call_claude_tool()`](https://github.com/FlorianSchw/package-workflows/blob/main/R/functions/shared/call_claude_tool.R) | Sends the request to the Claude API, as for roxygen. |
-| [`note_retry_file()`](https://github.com/FlorianSchw/package-workflows/blob/main/R/functions/shared/note_retry_file.R) | As for roxygen: if the call fails, notes the file, so that the next run tests it again. |
+| [`warn_failed_call()`](https://github.com/FlorianSchw/package-workflows/blob/main/R/functions/shared/warn_failed_call.R), [`note_retry_file()`](https://github.com/FlorianSchw/package-workflows/blob/main/R/functions/shared/note_retry_file.R) | As for roxygen: if the call still fails, a warning on the run's summary page, and the file is noted, so that the next run tests it again. |
 
 ## ⑤ Check the answer
 

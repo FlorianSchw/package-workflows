@@ -108,6 +108,7 @@ for (f in files) {
   file_role_text <- if (identical(ds_type, "utility") && !uses_ds_connections(parsed)) role_text_local else role_text
   result <- tryCatch(ask_claude_for_review(parsed, select_profile(parsed), file_role_text, earlier, with_code_issues), error = function(e) {
     message(sprintf("Claude call failed for %s: %s", f, conditionMessage(e)))
+    warn_failed_call(f, f, e)
     note_retry_file(f)
     NULL
   })

@@ -61,7 +61,18 @@ changed files, filtered to `R/*.R` (roxygen, tests) as today.
   succeeds writes no retry line, so the file drops out. Same gap as below:
   without an open bot PR there is nowhere to keep them, so a first run
   that only fails isn't repeated by the next push (a re-run or a sweep
-  catches it).
+  catches it). Accepted (the user's decision, 2026-10-02) together with
+  two measures that make the gap small: temporary failures (429, 5xx,
+  529, lost connection) are retried within the run (`req_retry()` in
+  `call_claude_tool()`, up to four tries), and a call that still fails
+  writes a warning annotation (`warn_failed_call()`; the job stays
+  green). What remains is mostly persistent errors (a rejected request, a
+  refusal, `max_tokens`), which a later run wouldn't fix anyway; the
+  warnings make them visible and show how often calls fail. Rejected for
+  now: failing the job (a red check for an API hiccup), a hidden comment
+  on the originating PR (pull requests only, more state), an otherwise
+  empty bot PR (needs a dummy commit). Revisit failing the job if the
+  warnings show frequent failures.
 
 Rejected: a hidden Git ref per branch (`refs/bot-suggest/reviewed/…`).
 It would clutter the repo, need cleanup, and isn't needed once the bot PR
