@@ -36,6 +36,13 @@ call_claude_tool <- function(config, tool, prompt) {
   resp <- req_perform(req)
 
   if (resp_status(resp) >= 400) {
+    # A rejected request (e.g. "JSON schema is invalid") is only explainable
+    # with what was sent: log the tool definition, serialized as
+    # req_body_json() sends it. Never the prompt — it can hold package code.
+    if (resp_status(resp) == 400) {
+      message("Tool definition sent with the rejected request:\n",
+              jsonlite::toJSON(tool, auto_unbox = TRUE, digits = 22, null = "null", pretty = TRUE))
+    }
     stop(sprintf(
       "Anthropic API error (HTTP %d): %s",
       resp_status(resp), resp_body_string(resp)
