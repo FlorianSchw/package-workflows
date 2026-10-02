@@ -45,14 +45,17 @@ jobs:
               --notes "One file per reusable workflow. Each run of a workflow downloads its file once, so the download counts are the numbers of runs. Nothing about the calling repository is sent. Please don't download these files by hand — it would count as a run."
           fi
           existing="$(gh release view "$TAG" --json assets --jq '.assets[].name')"
-          # One file per counted workflow (those calling the count-run action),
-          # outcome and channel — see .github/actions/count-run/count-run.sh.
+          # One file per counted workflow (those calling the count-run action
+          # in a `uses:` line), outcome and channel — see
+          # .github/actions/count-run/count-run.sh.
+          wanted=""
           for f in .github/workflows/*.yml; do
-            grep -q 'actions/count-run@' "$f" || continue
+            grep -qE '^ *uses: .*/actions/count-run@' "$f" || continue
             workflow="$(basename "$f" .yml)"
             for outcome in proposed nothing failed; do
               for channel in release dev; do
                 name="$workflow-$outcome-$channel"
+                wanted+="$name"$'\n'
                 if grep -qx "$name" <<< "$existing"; then continue; fi
                 printf 'Downloaded once per run of %s.yml (%s, %s) to count its runs.\n' "$workflow" "$outcome" "$channel" > "$RUNNER_TEMP/$name"
                 gh release upload "$TAG" "$RUNNER_TEMP/$name"
@@ -60,6 +63,15 @@ jobs:
               done
             done
           done
+          # A file no counted workflow uses any more is removed — only if it
+          # was never downloaded, so no count is ever lost.
+          gh api "repos/${{ github.repository }}/releases/tags/$TAG" --jq '.assets[] | "\(.id) \(.name) \(.download_count)"' |
+            while read -r id name count; do
+              if ! grep -qx "$name" <<< "$wanted" && [ "$count" = "0" ]; then
+                gh api -X DELETE "repos/${{ github.repository }}/releases/assets/$id"
+                echo "Removed the unused counter file $name."
+              fi
+            done
 
       - name: Record today's counts on the usage-data branch
         run: |
