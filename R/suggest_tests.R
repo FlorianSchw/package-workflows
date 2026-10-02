@@ -7,9 +7,10 @@
 # tests' current results and the history evidence (build_test_evidence())
 # to tell an outdated test from a bug.
 #
-# A function can have several test files (test-<function>.R, or
-# test-<category>-<function>.R in repositories that sort tests by purpose,
-# detect_test_scheme()); each change stays in its own file.
+# An R file can have several test files (test-<name>.R, or
+# test-<category>-<name>.R in repositories that sort tests by purpose,
+# detect_test_scheme(); <name> is the R file's name, test_file_name());
+# each change stays in its own file.
 #
 # Nothing is trusted unchecked: new tests pass filter_generated_tests(),
 # decisions on existing tests pass review_existing_tests(), then every new
@@ -103,9 +104,11 @@ merge_run <- function(fn, run) {
   stats <<- stats + merged$stats
 }
 
-# How the repository names its test files (test-<function>.R or
-# test-<category>-<function>.R) — once per run.
-scheme <- detect_test_scheme(package_function_names())
+# How the repository names its test files (test-<name>.R or
+# test-<category>-<name>.R, <name> being the R file's name) — once per
+# run. The names to recognise: the R files' names (test_file_name()), plus
+# the function names, which other repositories' category files may use.
+scheme <- detect_test_scheme(unique(c(test_file_name(list.files("R", pattern = "[.][Rr]$")), package_function_names())))
 if (scheme$categorised) message("Test files are named by category: ", paste(scheme$categories, collapse = ", "))
 
 # Structure of the test data the package's setup/helper files create —
@@ -132,6 +135,10 @@ for (f in files) {
   })
   if (is.null(parsed)) next
   function_name <- parsed$fn_name
+  # Test files are named after the R file, not the function (R/initMockData.R
+  # -> test-initMockData.R, also when the function is initMockdata()), as in
+  # the other workflows that pair R files with their tests.
+  file_name <- test_file_name(f)
   run <- list(user_edited = bot_tests$user_edited, new = list(), changes = list(), notes = list(), bugs = list(), failed = list(), repeats = 0L)
 
   # Re-checked per function: a DSLite setup generated for an earlier function
@@ -145,7 +152,7 @@ for (f in files) {
     next
   }
 
-  test_files <- find_test_files(function_name, scheme)
+  test_files <- find_test_files(file_name, scheme)
   paths <- vapply(test_files, function(t) t$path, character(1))
   names(test_files) <- paths
   blocks <- lapply(test_files, function(t) parse_test_file(t$content))
@@ -157,7 +164,7 @@ for (f in files) {
   support_files <- test_support_files()
   context <- list(
     role_text = build_test_role_guidance(datashield, ds_type, identical(setup_plan, "reuse"), offered_datasets, test_role_guidance, uses_connections),
-    scheme_text = format_test_scheme_guidance(scheme, category_meanings, function_name, test_files),
+    scheme_text = format_test_scheme_guidance(scheme, category_meanings, file_name, test_files),
     categories = if (scheme$categorised) scheme$categories,
     test_files = test_files,
     examples = if (length(test_files) == 0) example_test_files(scheme) else list(),
@@ -225,12 +232,12 @@ for (f in files) {
     list()
   }
   target_of <- function(t) {
-    if (!scheme$categorised) return(test_file_path(function_name))
+    if (!scheme$categorised) return(test_file_path(file_name))
     if (!isTRUE(t$category %in% scheme$categories)) {
       message(sprintf("%s: dropping test '%s' — unknown category '%s'.", function_name, t$description, t$category))
       return(NA_character_)
     }
-    test_file_path(function_name, t$category)
+    test_file_path(file_name, t$category)
   }
   targets <- vapply(new_tests, target_of, character(1))
   new_by_file <- list()

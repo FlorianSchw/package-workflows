@@ -13,9 +13,15 @@ config and R conventions (see `CLAUDE.md`).
 Entry script: `R/suggest_tests.R`. Per function file in `files_to_check.txt`:
 
 1. `parse_r_file()` → function name + source; `find_test_files()` finds
-   all its test files — `tests/testthat/test-<function>.R`, plus
-   `test-<category>-<function>.R` in a categorised repository
-   (`detect_test_scheme()`, once per run, see "Test file schemes" below);
+   all test files of the R file — `tests/testthat/test-<R file>.R`, plus
+   `test-<category>-<R file>.R` in a categorised repository. Named after
+   the R file (`test_file_name()`), not the function, since 2026-10-02 (the
+   user's decision; the other workflows pair R files and tests the same
+   way): dsAnalysis' `R/initMockData.R` defined `initMockdata()` (since renamed), and the
+   bot created `test-initMockdata.R` next to `test-initMockData.R`, which
+   case-insensitive file systems can't hold both of. The scheme
+   (`detect_test_scheme()`, once per run, see "Test file schemes" below)
+   recognises R file names and function names;
    `parse_test_file()` finds their `test_that()` blocks (R's parser; only
    uniquely named blocks on their own lines are editable).
 2. Every function is reviewed, tested or not (see
@@ -180,7 +186,7 @@ packages, e.g. `FlorianSchw/dsAnalysis` and `dife-bioinformatics/mepr`.
 They are neither client nor server, and they mix two kinds of functions:
 - **Functions using DataSHIELD connections** (`uses_ds_connections()`: a
   `datasources` argument, `datashield.*()` or `ds.*()` calls), e.g.
-  `initMockdata()`. They take exactly the client path: an existing DSLite
+  dsAnalysis' `initMockData()`. They take exactly the client path: an existing DSLite
   setup is reused, otherwise a dataset is offered and a setup file is
   generated. That setup goes into `setup-dslite.R` when a `setup.R`
   without DSLite exists, as in dsAnalysis, whose `setup.R` reads

@@ -264,6 +264,13 @@ and `CONTRIBUTING.md`); no PRs until a branch model and rules exist.
   `dev-notes/test-suggest.md`. Next changes: note them here again as
   "Docs pending".
 
+- **Docs pending** (changes of 2026-10-02, internals pages already done):
+  `test-suggest.qmd` "Test files": test files are named after the R file
+  (`test-<R file>.R`, `test-<category>-<R file>.R`), not the function;
+  suggestions page: failed Claude calls are retried within the run, give
+  a warning annotation (job stays green), and are checked again in the
+  next run while a bot PR is open (`retry` lines next to the marker).
+
 - Versioning: all workflows are referenced `@main`, and `package-release.yml`
   reads its release config from `main` too. The old `v1` tag is unused.
   Decide after the internal feedback round (inputs may still change) and

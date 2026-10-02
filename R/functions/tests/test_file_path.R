@@ -1,7 +1,15 @@
-# Where a function's tests live: tests/testthat/test-<function>.R, or
-# test-<category>-<function>.R in a categorised repository
-# (detect_test_scheme()).
-test_file_path <- function(function_name, category = NA_character_) {
-  name <- if (is.na(category)) sprintf("test-%s.R", function_name) else sprintf("test-%s-%s.R", category, function_name)
-  file.path("tests", "testthat", name)
+# Where an R file's tests live: tests/testthat/test-<name>.R, or
+# test-<category>-<name>.R in a categorised repository
+# (detect_test_scheme()). `name` is the R file's name without .R
+# (test_file_name()), not the function's: R/initMockData.R has its tests in
+# test-initMockData.R, also when the function is called initMockdata(). The
+# other workflows pair R files and tests the same way.
+test_file_path <- function(name, category = NA_character_) {
+  file <- if (is.na(category)) sprintf("test-%s.R", name) else sprintf("test-%s-%s.R", category, name)
+  file.path("tests", "testthat", file)
+}
+
+# The name an R file's tests are named after: its file name without .R.
+test_file_name <- function(r_file) {
+  sub("[.][Rr]$", "", basename(r_file))
 }
