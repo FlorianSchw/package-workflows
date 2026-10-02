@@ -51,6 +51,17 @@ changed files, filtered to `R/*.R` (roxygen, tests) as today.
   `before` (push, PR `synchronize`), or the whole PR (opened).
 - **The marker disappears with the bot PR** when it is closed: nothing to
   clean up, nothing stored in the repo.
+- **Failed Claude calls are checked again** (added 2026-10-02, after the
+  marker had moved past `initProject.R` in dsAnalysis, whose call was
+  rejected): the R scripts note a file whose Claude call failed
+  (`note_retry_file()` → `retry_files.txt`), the commit action keeps one
+  `<!-- bot-suggest: retry <file> -->` line per such file next to the
+  marker, and `determine-changes.sh` adds those files to the files to
+  check, also when there are no new commits. A run in which the call
+  succeeds writes no retry line, so the file drops out. Same gap as below:
+  without an open bot PR there is nowhere to keep them, so a first run
+  that only fails isn't repeated by the next push (a re-run or a sweep
+  catches it).
 
 Rejected: a hidden Git ref per branch (`refs/bot-suggest/reviewed/…`).
 It would clutter the repo, need cleanup, and isn't needed once the bot PR

@@ -215,7 +215,10 @@ Details per workflow: [dev-notes/roxygen-suggest.md](dev-notes/roxygen-suggest.m
     without force. Roxygen and tests (`pr-body-mode: replace`) rebuild
     the description as one merged report; others append theirs. It
     carries a hidden `reviewed up to <sha>` marker (and for roxygen and
-    tests the findings, `<!-- bot-suggest-state: … -->`).
+    tests the findings, `<!-- bot-suggest-state: … -->`), plus one
+    `retry <file>` line per file whose Claude call failed
+    (`note_retry_file()` → `retry_files.txt`); `determine-changes.sh`
+    checks those again on the next run, even without new commits.
   - **Rebuilt** (force-push) when none is open, with
     `open-suggestion-pr: replace`, after a history rewrite, or when the
     merge fails.

@@ -11,7 +11,9 @@
 #              it is rebuilt from the current branch and force-pushed.
 #              The bot PR's description carries the marker
 #              "<!-- bot-suggest: reviewed up to <REVIEWED_SHA> -->", updated
-#              on every run, also when there is nothing new to commit.
+#              on every run, also when there is nothing new to commit, and
+#              "<!-- bot-suggest: retry <file> -->" for each file in
+#              $RETRY_FILE (Claude call failed; checked again next run).
 #              Design: dev-notes/suggestions-trigger-model.md.
 #   "all":     one commit on this month's sweep branch of the sweep base,
 #              PR against the sweep base.
@@ -33,8 +35,20 @@ git_push_with_token() { git -c "http.https://github.com/.extraheader=" push "$@"
 # merged or closed PR must not stop a new one.
 open_pr() { gh pr list --head "$1" --state open --json number --jq '.[0].number // empty'; }
 
-marker() { [ -n "$REVIEWED_SHA" ] && printf '<!-- bot-suggest: reviewed up to %s -->' "$REVIEWED_SHA"; }
-strip_marker() { sed -E '/<!-- bot-suggest: reviewed up to [0-9a-f]+ -->/d'; }
+# The marker, plus one "retry" line per file whose Claude call failed in
+# this run ($RETRY_FILE, written by note_retry_file()): the next run checks
+# those files again although the marker has moved past them.
+marker() {
+  [ -n "$REVIEWED_SHA" ] || return 1
+  printf '<!-- bot-suggest: reviewed up to %s -->' "$REVIEWED_SHA"
+  if has_content "$RETRY_FILE"; then
+    sort -u "$RETRY_FILE" | while IFS= read -r f; do
+      [ -n "$f" ] && printf '\n<!-- bot-suggest: retry %s -->' "$f"
+    done
+  fi
+  return 0
+}
+strip_marker() { sed -E '/<!-- bot-suggest: (reviewed up to [0-9a-f]+|retry [^ ]+) -->/d'; }
 
 # PR body for a new or rebuilt bot PR: text $1, the report, the marker.
 write_body() {

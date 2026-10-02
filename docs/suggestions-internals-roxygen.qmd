@@ -74,7 +74,8 @@ are read too:
 | [`format_earlier_findings()`](https://github.com/FlorianSchw/package-workflows/blob/main/R/functions/roxygen/format_earlier_findings.R) | Lists the open earlier findings on the function (not applied suggestions, possible bugs) for the prompt, each with an id. |
 | [`build_submit_review_tool()`](https://github.com/FlorianSchw/package-workflows/blob/main/R/functions/roxygen/build_submit_review_tool.R) | Defines the form Claude fills in: one field per documentation part and parameter, a list of changes with a reason each, possible code bugs (reasoning first, then a verdict, a confidence and the one-line summary), and with earlier findings which of them a new one repeats and whether each still holds. |
 | [`suggestion_reasons()`](https://github.com/FlorianSchw/package-workflows/blob/main/R/functions/shared/suggestion_reasons.R) | The fixed list of reasons Claude may give (`missing`, `inaccurate`, `incomplete`, `clarity`, `style`). |
-| [`call_claude_tool()`](https://github.com/FlorianSchw/package-workflows/blob/main/R/functions/shared/call_claude_tool.R) | Sends the request to the Claude API and returns the filled-in form; stops with a clear error if the answer was cut off or refused. |
+| [`call_claude_tool()`](https://github.com/FlorianSchw/package-workflows/blob/main/R/functions/shared/call_claude_tool.R) | Sends the request to the Claude API and returns the filled-in form; stops with a clear error if the answer was cut off or refused. If the API rejects the request, the log shows the form that was sent (never the prompt). |
+| [`note_retry_file()`](https://github.com/FlorianSchw/package-workflows/blob/main/R/functions/shared/note_retry_file.R) | If the call fails, notes the file, so that the next run checks it again although nothing changed in it. |
 
 ## ④ Apply the threshold
 

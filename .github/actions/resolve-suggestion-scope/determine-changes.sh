@@ -8,6 +8,8 @@
 #   2. a PR that was opened or reopened: the PR's base (the whole PR);
 #   3. the event's "before" (push, PR synchronize);
 #   4. none (a new branch): commits that exist on no other branch.
+# Files named in "<!-- bot-suggest: retry <file> -->" lines of the open bot
+# PR (their Claude call failed last time) are checked again in any case.
 # Push and synchronize runs count only commits on no other branch, so
 # commits merged in from dev aren't reviewed or credited. Merge commits
 # and the bot's own commits (author or subject, from bot-authors.json) are
@@ -109,6 +111,16 @@ if [ -n "$FILE_PATTERN" ]; then
   done < commits.txt | sort -u | while IFS= read -r f; do
     [ -f "$f" ] && echo "$f"
   done > files_to_check.txt
+  # Files whose Claude call failed in an earlier run ("retry" lines next to
+  # the marker, written by commit-updated-files): checked again, also when
+  # there are no new commits.
+  printf '%s' "$body" | { grep -oE 'bot-suggest: retry [^ ]+' || true; } | awk '{print $NF}' | sort -u | while IFS= read -r f; do
+    if [ -f "$f" ]; then
+      echo "Checking again (its Claude call failed last time): $f" >&2
+      echo "$f"
+    fi
+  done >> files_to_check.txt
+  sort -u -o files_to_check.txt files_to_check.txt
   count="$(wc -l < files_to_check.txt | tr -d ' ')"
 else
   count="$(wc -l < commits.txt | tr -d ' ')"

@@ -46,6 +46,10 @@ inputs:
   reviewed-sha:
     description: '"changed" mode: the commit this run reviewed, kept as a marker in the bot PR (optional).'
     required: false
+  retry-file:
+    description: '"changed" mode: files whose Claude call failed, one per line (note_retry_file()); kept in the bot PR so the next run checks them again.'
+    required: false
+    default: 'retry_files.txt'
   open-suggestion-pr:
     description: '"changed" mode: "add" builds on an open bot PR, "replace" rebuilds it.'
     required: false
@@ -88,6 +92,7 @@ runs:
         SUB_PR_BODY: ${{ inputs.sub-pr-body }}
         ORIGIN_PR_NUMBER: ${{ inputs.origin-pr-number }}
         REVIEWED_SHA: ${{ inputs.reviewed-sha }}
+        RETRY_FILE: ${{ inputs.retry-file }}
         OPEN_SUGGESTION_PR: ${{ inputs.open-suggestion-pr }}
         REBUILD: ${{ inputs.rebuild }}
         SWEEP_BRANCH_PREFIX: ${{ inputs.sweep-branch-prefix }}
