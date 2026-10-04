@@ -170,6 +170,10 @@ jobs:
         env:
           R_CONFIG_ACTIVE: test-review
           ANTHROPIC_API_KEY: ${{ steps.anthropic_auth.outputs.access-token }}
+          # For renewing the token in a long run (refresh_anthropic_token()).
+          ANTHROPIC_ORG_ID: ${{ secrets.anthropic-organization-id }}
+          ANTHROPIC_SERVICE_ACCOUNT_ID: ${{ secrets.anthropic-service-account-id }}
+          ANTHROPIC_FEDERATION_RULE_ID: ${{ secrets.anthropic-federation-rule-id }}
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           PR_NUMBER: ${{ github.event.pull_request.number }}
           # The state before this run's changes, for the history evidence

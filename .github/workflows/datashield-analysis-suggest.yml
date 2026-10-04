@@ -93,6 +93,10 @@ jobs:
         env:
           R_CONFIG_ACTIVE: datashield-analysis
           ANTHROPIC_API_KEY: ${{ steps.anthropic_auth.outputs.access-token }}
+          # For renewing the token in a long run (refresh_anthropic_token()).
+          ANTHROPIC_ORG_ID: ${{ secrets.anthropic-organization-id }}
+          ANTHROPIC_SERVICE_ACCOUNT_ID: ${{ secrets.anthropic-service-account-id }}
+          ANTHROPIC_FEDERATION_RULE_ID: ${{ secrets.anthropic-federation-rule-id }}
           # Read-only use: open issues of the gap collection repo. The test
           # run of the generated scripts gets no tokens.
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}

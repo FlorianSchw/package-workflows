@@ -8,7 +8,7 @@
 # Optional per profile in config/claude.yml: `effort` (sent as
 # output_config.effort), and `fallbacks` + `betas` (server-side fallback
 # to another model when the request is refused).
-call_claude_tool <- function(config, tool, prompt) {
+call_claude_tool <- function(config, tool, prompt, renewed = FALSE) {
   tool$name <- config$tool_name
 
   body <- list(
@@ -40,6 +40,16 @@ call_claude_tool <- function(config, tool, prompt) {
   if (!is.null(config$betas)) req <- req_headers(req, "anthropic-beta" = paste(unlist(config$betas), collapse = ","))
 
   resp <- req_perform(req)
+
+  # The access token lives shorter than a long run: renew it once
+  # (refresh_anthropic_token()) and repeat the call with the new one.
+  if (resp_status(resp) == 401 && !renewed && grepl("expired", resp_body_string(resp), ignore.case = TRUE)) {
+    token <- refresh_anthropic_token()
+    if (!is.null(token)) {
+      assign("api_key", token, envir = globalenv())
+      return(call_claude_tool(config, tool, prompt, renewed = TRUE))
+    }
+  }
 
   if (resp_status(resp) >= 400) {
     # A rejected request (e.g. "JSON schema is invalid") is only explainable

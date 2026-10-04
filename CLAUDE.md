@@ -228,6 +228,11 @@ Details per workflow: [dev-notes/roxygen-suggest.md](dev-notes/roxygen-suggest.m
     Temporary API failures are retried within the run (`req_retry()` in
     `call_claude_tool()`); a call that still fails gives a warning
     annotation (`warn_failed_call()`), the job stays green.
+    An access token that expires during a long run is renewed once
+    (`refresh_anthropic_token()`, from the IDs the workflows pass to the
+    R step as `ANTHROPIC_ORG_ID` / `_SERVICE_ACCOUNT_ID` /
+    `_FEDERATION_RULE_ID`); the analysis bot blanks them, and GitHub's
+    OIDC request variables, for the analyst's scripts.
   - **Rebuilt** (force-push) when none is open, with
     `open-suggestion-pr: replace`, after a history rewrite, or when the
     merge fails.
@@ -269,6 +274,11 @@ and `CONTRIBUTING.md`); no PRs until a branch model and rules exist.
   started and all examples, roadmap. The dev-note is now
   `dev-notes/test-suggest.md`. Next changes: note them here again as
   "Docs pending".
+
+- **Test bot: generated tests run in the bot's own R process**
+  (`run_test_blocks()`), so they could read `ANTHROPIC_API_KEY` and the
+  token-renewal variables. Consider running them in a child process
+  without credentials, as the analysis bot does (`run_analysis_scripts()`).
 
 - **Test bot: undeclared packages in generated tests** (seen in
   dsAnalysis, 2026-10-04): tests used `withr::local_tempdir()` although

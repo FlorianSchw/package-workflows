@@ -25,7 +25,11 @@ run_analysis_scripts <- function(login_file, scripts, profile, timeout) {
   }
   scripts <- unname(scripts)  # results are looked up by path, whatever names came in
   env <- callr::rcmd_safe_env()
-  env[c("ANTHROPIC_API_KEY", "GH_TOKEN", "GITHUB_TOKEN")] <- ""
+  # No credentials for the analyst's scripts — also nothing to get new ones
+  # with (refresh_anthropic_token()'s inputs, GitHub's OIDC request).
+  env[c("ANTHROPIC_API_KEY", "GH_TOKEN", "GITHUB_TOKEN",
+        "ANTHROPIC_ORG_ID", "ANTHROPIC_SERVICE_ACCOUNT_ID", "ANTHROPIC_FEDERATION_RULE_ID",
+        "ACTIONS_ID_TOKEN_REQUEST_URL", "ACTIONS_ID_TOKEN_REQUEST_TOKEN")] <- ""
   tryCatch(
     c(callr::r(child, args = list(login_file = login_file, scripts = scripts, profile = profile), user_profile = FALSE, env = env, timeout = timeout),
       list(timed_out = FALSE)),
