@@ -1,6 +1,7 @@
 # Points the project's DSLite test setup at the bot's mock data and adds
 # missing server packages, using dsAnalysis's own functions
-# (update_MockData(), add_dsPackage()), sourced from a checkout of the
+# (update_MockData(), add_dsPackage(), with their helpers: all of its R/),
+# sourced from a checkout of the
 # dsAnalysis repository, so dsAnalysis stays the only owner of that file's
 # format. Returns the setup file's path, or NULL with a message if the
 # project has no DSLite setup or dsAnalysis isn't available.
@@ -22,13 +23,16 @@ update_dslite_setup <- function(setup_file, dsanalysis_dir, mock_folder, servers
     message(sprintf("No DSLite setup at %s — skipping its update.", setup_file))
     return(NULL)
   }
-  sources <- file.path(dsanalysis_dir, "R", c("update_MockData.R", "add_dsPackage.R"))
-  if (!all(file.exists(sources))) {
+  # All of dsAnalysis' R/ is loaded: it keeps one function per file, so
+  # add_dsPackage() and update_MockData() need their helpers' files too.
+  # Loading only defines functions; nothing runs.
+  needed <- file.path(dsanalysis_dir, "R", c("update_MockData.R", "add_dsPackage.R"))
+  if (!all(file.exists(needed))) {
     message(sprintf("dsAnalysis functions not found in %s — skipping the DSLite setup update.", dsanalysis_dir))
     return(NULL)
   }
   env <- new.env()
-  for (f in sources) sys.source(f, envir = env)
+  for (f in list.files(file.path(dsanalysis_dir, "R"), pattern = "[.][Rr]$", full.names = TRUE)) sys.source(f, envir = env)
 
   # update_MockData() pairs the files it lists with these names, in
   # list.files() order: byte order, as sort(method = "radix") gives.
