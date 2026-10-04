@@ -270,6 +270,14 @@ and `CONTRIBUTING.md`); no PRs until a branch model and rules exist.
   `dev-notes/test-suggest.md`. Next changes: note them here again as
   "Docs pending".
 
+- **Test bot: undeclared packages in generated tests** (seen in
+  dsAnalysis, 2026-10-04): tests used `withr::local_tempdir()` although
+  `withr` wasn't in DESCRIPTION, so R CMD check warned ("'::' or ':::'
+  import not declared from: 'withr'"). Either tell Claude to use only
+  packages in DESCRIPTION (Imports/Suggests) and base R/testthat, or check
+  the kept tests for `pkg::` calls and add missing packages to
+  `Suggests`.
+
 - **Docs pending** (changes of 2026-10-02, internals pages already done):
   `test-suggest.qmd` "Test files": test files are named after the R file
   (`test-<R file>.R`, `test-<category>-<R file>.R`), not the function;
