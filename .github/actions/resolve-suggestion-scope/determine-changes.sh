@@ -109,7 +109,7 @@ if [ -n "$FILE_PATTERN" ]; then
   while IFS= read -r c; do
     git diff-tree --no-commit-id --name-only -r "$c" -- "$FILE_PATTERN"
   done < commits.txt | sort -u | while IFS= read -r f; do
-    [ -f "$f" ] && echo "$f"
+    if [ -f "$f" ]; then echo "$f"; fi  # a deleted file: skipped (an && would end the script under pipefail)
   done > files_to_check.txt
   # Files whose Claude call failed in an earlier run ("retry" lines next to
   # the marker, written by commit-updated-files): checked again, also when

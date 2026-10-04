@@ -43,7 +43,7 @@ marker() {
   printf '<!-- bot-suggest: reviewed up to %s -->' "$REVIEWED_SHA"
   if has_content "$RETRY_FILE"; then
     sort -u "$RETRY_FILE" | while IFS= read -r f; do
-      [ -n "$f" ] && printf '\n<!-- bot-suggest: retry %s -->' "$f"
+      if [ -n "$f" ]; then printf '\n<!-- bot-suggest: retry %s -->' "$f"; fi
     done
   fi
   return 0
