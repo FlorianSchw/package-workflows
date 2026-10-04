@@ -12,8 +12,10 @@
 # Then `legacy` (the description of a bot PR opened before this format) in
 # a collapsed section, and the hidden state for the next run
 # (encode_suggestion_state()). Heading levels and spacing come from
-# config/report-style.yml. Kept below GitHub's body limit.
-format_roxygen_report <- function(state, latest = NULL, legacy = NULL) {
+# config/report-style.yml. Kept below GitHub's body limit. `open`: ids of
+# findings whose group is shown expanded (the choices workflow passes the
+# ones whose box just changed).
+format_roxygen_report <- function(state, latest = NULL, legacy = NULL, open = integer(0)) {
   style <- report_style()
   entries <- state$entries
   is_active <- function(e) identical(e$status, "active")
@@ -25,13 +27,14 @@ format_roxygen_report <- function(state, latest = NULL, legacy = NULL) {
     if (is.null(text) || !nzchar(trimws(text))) return(character(0))
     paste0("  > ", strsplit(text, "\n", fixed = TRUE)[[1]])
   }
+  is_open <- function(x) any(vapply(x, function(e) as.integer(e$id) %in% open, logical(1)))
 
   applied <- of_kind("applied")
   applied_groups <- report_groups(lapply(unique(vapply(applied, function(e) e$file, character(1))), function(p) {
     of_file <- active_first(Filter(function(e) identical(e$file, p), applied))
     list(title = group_title(p, of_file), lines = vapply(of_file, function(e) {
       choice_line(e, sprintf("`%s` — `%s`: %s", e$field, e$reason, e$explanation), sprintf("`%s` — `%s`: %s", e$field, e$reason, e$explanation))
-    }, character(1)))
+    }, character(1)), open = is_open(of_file))
   }), style)
 
   dropped <- of_kind("dropped")
@@ -43,7 +46,7 @@ format_roxygen_report <- function(state, latest = NULL, legacy = NULL) {
           if (is_active(e)) quote(e$proposed))
       })), "")
     }))
-    list(title = group_title(r, of_reason), lines = lines)
+    list(title = group_title(r, of_reason), lines = lines, open = is_open(of_reason))
   }), style)
 
   latest_line <- if (!is.null(latest) && nzchar(latest$sha)) {

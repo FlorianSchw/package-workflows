@@ -31,6 +31,13 @@ state <- decode_suggestion_state(body)
 choices <- read_suggestion_choices(body)
 before <- state
 state <- record_suggestion_choices(state, choices)
+# The boxes the user just changed (the stored state still has the previous
+# ones): their groups stay expanded in the rebuilt description, so the
+# group they're working in doesn't collapse under them.
+just_changed <- vapply(seq_along(state$entries), function(i) {
+  !identical(suggestion_choice(before$entries[[i]]), suggestion_choice(state$entries[[i]]))
+}, logical(1))
+open_ids <- vapply(state$entries[just_changed], function(e) as.integer(e$id), integer(1))
 tag_order <- if (identical(kind, "docs")) read_json_config("config/roxygen-style.json", required = TRUE)$tag_order
 
 changed_files <- character(0)
@@ -62,7 +69,7 @@ writeLines(unique(changed_files), "updated_files.txt")
 # The description: everything before the report (the bot PR's intro) and
 # the hidden markers after it stay; the report is rebuilt from the state.
 if (length(changed_files) > 0 || !identical(state, before)) {
-  report <- if (identical(kind, "tests")) format_test_report(state, NULL, state$legacy) else format_roxygen_report(state, NULL, state$legacy)
+  report <- if (identical(kind, "tests")) format_test_report(state, NULL, state$legacy, open = open_ids) else format_roxygen_report(state, NULL, state$legacy, open = open_ids)
   lines <- strsplit(body, "\r?\n")[[1]]
   report_start <- which(startsWith(lines, "**Summary:**"))[1]
   intro <- if (!is.na(report_start) && report_start > 1) lines[seq_len(report_start - 1)] else character(0)

@@ -1,7 +1,10 @@
 # Collapsible groups of the suggestion reports, styled per
 # config/report-style.yml (report_style()). `groups` is a list of
-# list(title, lines). Always ends with a blank line: without it, Markdown
-# after the last `</details>` would be swallowed into the HTML block.
+# list(title, lines, open): `open` TRUE shows the group expanded (the
+# choices workflow does that for the groups whose boxes were just changed,
+# so they don't collapse under the user). Always ends with a blank line:
+# without it, Markdown after the last `</details>` would be swallowed into
+# the HTML block.
 report_groups <- function(groups, style = report_style()) {
   summary <- function(title) {
     h <- style$group_heading
@@ -11,7 +14,7 @@ report_groups <- function(groups, style = report_style()) {
   }
   gap <- if (isTRUE(style$blank_line_between_groups)) "" else character(0)
   blocks <- lapply(groups, function(g) {
-    c(sprintf("<details><summary>%s</summary>", summary(g$title)), "", g$lines, "", "</details>")
+    c(sprintf("<details%s><summary>%s</summary>", if (isTRUE(g$open)) " open" else "", summary(g$title)), "", g$lines, "", "</details>")
   })
   c(unlist(Map(function(b, last) c(b, if (!last) gap), blocks, seq_along(blocks) == length(blocks))), "")
 }

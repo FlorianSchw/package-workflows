@@ -15,8 +15,9 @@
 # what the latest review changed; then `legacy` (a description from
 # before this format) collapsed, and the hidden state for the next run.
 # Heading levels and spacing come from config/report-style.yml. Kept
-# below GitHub's body limit.
-format_test_report <- function(state, latest = NULL, legacy = NULL) {
+# below GitHub's body limit. `open`: ids of findings whose group is shown
+# expanded (the choices workflow passes the ones whose box just changed).
+format_test_report <- function(state, latest = NULL, legacy = NULL, open = integer(0)) {
   style <- report_style()
   is_active <- function(e) identical(e$status, "active")
   of_kind <- function(kinds) Filter(function(e) e$kind %in% kinds, state$entries)
@@ -34,7 +35,8 @@ format_test_report <- function(state, latest = NULL, legacy = NULL) {
         of_file <- Filter(function(e) identical(e$file, p), entries)
         of_file <- c(Filter(is_active, of_file), Filter(Negate(is_active), of_file))
         blocks <- lapply(of_file, function(e) c(liner(e, line(e), name(e)), if (is_active(e)) extra(e)))
-        list(title = group_title(p, of_file), lines = Reduce(function(a, b) c(a, sep, b), blocks))
+        list(title = group_title(p, of_file), lines = Reduce(function(a, b) c(a, sep, b), blocks),
+             open = any(vapply(of_file, function(e) as.integer(e$id) %in% open, logical(1))))
       }), style)
     )
   }
