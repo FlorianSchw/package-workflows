@@ -64,6 +64,12 @@ the live caller used to validate changes before wider rollout.
     suggestion workflows; see below.
   - `cleanup-suggestion-branch.yml` — on PR close, deletes a `bot-suggest/*`
     head branch unless another open PR still uses it.
+  - `suggestion-choices.yml` — on `pull_request: edited` of a roxygen or
+    test bot PR by a person: makes the bot branch match the checkboxes in
+    its description (keep, decline, or pick up a not-applied suggestion),
+    no Claude call. Entry script `R/apply_suggestion_choices.R`, functions
+    in `R/functions/choices/`; design in
+    [dev-notes/suggestion-choices.md](dev-notes/suggestion-choices.md).
   - `workflow-keepalive.yml` — wraps `liskin/gh-workflow-keepalive@v1`
     (user's choice over custom `gh api` code). Inside a reusable workflow
     `GITHUB_WORKFLOW_REF` is the caller's, so it re-enables the calling
@@ -270,6 +276,12 @@ and `CONTRIBUTING.md`); no PRs until a branch model and rules exist.
   suggestions page: failed Claude calls are retried within the run, give
   a warning annotation (job stays green), and are checked again in the
   next run while a bot PR is open (`retry` lines next to the marker).
+  Since 2026-10-04 also: a page for `suggestion-choices.yml` (what the
+  checkboxes do, the caller, the commit status, declined suggestions
+  remembered until the code changes), the suggestions page and the
+  roxygen/test pages (reports now have checkboxes), getting started (the
+  new caller), the `workflow-graphs` outcomes (`config/workflow-outcomes.yml`)
+  and the roadmap.
 
 - Versioning: all workflows are referenced `@main`, and `package-release.yml`
   reads its release config from `main` too. The old `v1` tag is unused.

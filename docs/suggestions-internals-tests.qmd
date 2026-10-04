@@ -48,6 +48,7 @@ With an open suggestion PR to build on (a PR or push run), first:
 | Function | What it does |
 |---|---|
 | [`fetch_suggestion_pr_body()`](https://github.com/FlorianSchw/package-workflows/blob/main/R/functions/shared/fetch_suggestion_pr_body.R), [`decode_suggestion_state()`](https://github.com/FlorianSchw/package-workflows/blob/main/R/functions/shared/decode_suggestion_state.R) | As for roxygen: the open suggestion PR's description and the findings of earlier runs kept hidden in it. |
+| [`read_suggestion_choices()`](https://github.com/FlorianSchw/package-workflows/blob/main/R/functions/shared/read_suggestion_choices.R), [`record_suggestion_choices()`](https://github.com/FlorianSchw/package-workflows/blob/main/R/functions/shared/record_suggestion_choices.R) | Reads the checkboxes in that description (which suggestions you kept, declined or picked up) and records them, so the rebuilt description keeps them. |
 | [`fetch_bot_branch()`](https://github.com/FlorianSchw/package-workflows/blob/main/R/functions/shared/fetch_bot_branch.R) | Fetches the suggestion branch. |
 | [`materialize_bot_tests()`](https://github.com/FlorianSchw/package-workflows/blob/main/R/functions/tests/materialize_bot_tests.R) | Puts the test files it changed in place, so its tests count as existing: they are run and shown to Claude, and not generated again. A test file you changed since the last review keeps your version. |
 
@@ -92,6 +93,7 @@ With an open suggestion PR to build on (a PR or push run), first:
 
 | Function | What it does |
 |---|---|
+| [`code_fingerprint()`](https://github.com/FlorianSchw/package-workflows/blob/main/R/functions/shared/code_fingerprint.R), [`declined_suggestions()`](https://github.com/FlorianSchw/package-workflows/blob/main/R/functions/shared/declined_suggestions.R) | Leaves out a new test, update or deletion you unticked earlier, as long as the function's code is unchanged; once the code changes, it may be suggested again. |
 | [`accepted_reasons()`](https://github.com/FlorianSchw/package-workflows/blob/main/R/functions/shared/accepted_reasons.R) | As for roxygen: which reasons a new test needs — the `accept-reasons` input, else `accept_reasons` in `config/claude.yml` (all but `other`). |
 | [`filter_generated_tests()`](https://github.com/FlorianSchw/package-workflows/blob/main/R/functions/tests/filter_generated_tests.R) | Keeps a new test only if its reason is accepted, its name isn't taken, and its assertions aren't already in the file. |
 | [`review_existing_tests()`](https://github.com/FlorianSchw/package-workflows/blob/main/R/functions/tests/review_existing_tests.R) | Checks Claude's decisions on existing tests against the safeguards: the reason fits the action, only a failing test is updated, a possible bug is only reported — as a possible bug in the code if Claude is sure enough, else as a note. |
@@ -125,6 +127,7 @@ With an open suggestion PR to build on (a PR or push run), first:
 
 | Function | What it does |
 |---|---|
+| [`choice_line()`](https://github.com/FlorianSchw/package-workflows/blob/main/R/functions/shared/choice_line.R), [`suggestion_choice()`](https://github.com/FlorianSchw/package-workflows/blob/main/R/functions/shared/suggestion_choice.R) | Writes each suggestion that changes a file as a checkbox: ticked if applied, unticked if declined or not applied. Changing a box starts `suggestion-choices.yml`, which makes the bot branch match. |
 | [`ensure_testthat_setup()`](https://github.com/FlorianSchw/package-workflows/blob/main/R/functions/tests/ensure_testthat_setup.R) | If new tests were kept: creates `tests/testthat.R`, adds `testthat` to `Suggests`, and sets edition 3 for a fresh setup — so R CMD check runs the tests. |
 | [`merge_test_findings()`](https://github.com/FlorianSchw/package-workflows/blob/main/R/functions/tests/merge_test_findings.R) | After each function: merges its findings with the earlier ones — repeats skipped, a reported test that passes now resolved, earlier findings that no longer hold crossed out, never deleted. |
 | [`restore_unproposed_files()`](https://github.com/FlorianSchw/package-workflows/blob/main/R/functions/tests/restore_unproposed_files.R) | Puts back the suggestion branch's test files this run doesn't change, so only this run's files are proposed. |

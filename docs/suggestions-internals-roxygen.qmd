@@ -52,6 +52,7 @@ are read too:
 |---|---|
 | [`fetch_suggestion_pr_body()`](https://github.com/FlorianSchw/package-workflows/blob/main/R/functions/shared/fetch_suggestion_pr_body.R) | The description of the open suggestion PR for this branch, if there is one. |
 | [`decode_suggestion_state()`](https://github.com/FlorianSchw/package-workflows/blob/main/R/functions/shared/decode_suggestion_state.R) | Reads the findings of earlier runs, kept hidden in that description. |
+| [`read_suggestion_choices()`](https://github.com/FlorianSchw/package-workflows/blob/main/R/functions/shared/read_suggestion_choices.R), [`record_suggestion_choices()`](https://github.com/FlorianSchw/package-workflows/blob/main/R/functions/shared/record_suggestion_choices.R) | Reads the checkboxes in that description (which suggestions you kept, declined or picked up) and records them, so the rebuilt description keeps them. |
 | [`fetch_bot_branch()`](https://github.com/FlorianSchw/package-workflows/blob/main/R/functions/shared/fetch_bot_branch.R) | Fetches the suggestion branch, to read the blocks it already proposes. |
 
 ## ② Read the function
@@ -82,6 +83,7 @@ are read too:
 
 | Function | What it does |
 |---|---|
+| [`code_fingerprint()`](https://github.com/FlorianSchw/package-workflows/blob/main/R/functions/shared/code_fingerprint.R), [`declined_suggestions()`](https://github.com/FlorianSchw/package-workflows/blob/main/R/functions/shared/declined_suggestions.R) | Leaves out a change you unticked earlier, as long as the function's code is unchanged; once the code changes, the change may be suggested again. |
 | [`accepted_reasons()`](https://github.com/FlorianSchw/package-workflows/blob/main/R/functions/shared/accepted_reasons.R) | Which reasons lead to a change: the `accept-reasons` input, else `accept_reasons` in `config/claude.yml` (missing, inaccurate, incomplete); stops on an unknown reason. |
 | [`accepted_roxygen_fields()`](https://github.com/FlorianSchw/package-workflows/blob/main/R/functions/roxygen/accepted_roxygen_fields.R) | Keeps a change only if its reason is accepted and the text really differs (more than whitespace, punctuation or case). Records applied and dropped changes for the report. |
 | [`original_roxygen_field()`](https://github.com/FlorianSchw/package-workflows/blob/main/R/functions/roxygen/original_roxygen_field.R) | The current text of one documentation part, for the comparison. |
@@ -102,6 +104,7 @@ are read too:
 
 | Function | What it does |
 |---|---|
+| [`choice_line()`](https://github.com/FlorianSchw/package-workflows/blob/main/R/functions/shared/choice_line.R), [`suggestion_choice()`](https://github.com/FlorianSchw/package-workflows/blob/main/R/functions/shared/suggestion_choice.R) | Writes each suggestion that changes a file as a checkbox: ticked if applied, unticked if declined or not applied. Changing a box starts `suggestion-choices.yml`, which makes the bot branch match. |
 | [`merge_roxygen_findings()`](https://github.com/FlorianSchw/package-workflows/blob/main/R/functions/roxygen/merge_roxygen_findings.R) | After each file: merges its findings with the earlier ones — repeats skipped, earlier findings that no longer hold or were replaced crossed out, never deleted. |
 | [`format_roxygen_summary()`](https://github.com/FlorianSchw/package-workflows/blob/main/R/functions/roxygen/format_roxygen_summary.R) | The summary line of the open findings, e.g. "8 changes applied · 3 not applied · 1 possible bug". |
 | [`format_roxygen_report()`](https://github.com/FlorianSchw/package-workflows/blob/main/R/functions/roxygen/format_roxygen_report.R) | The suggestion PR's description, rebuilt from all findings on every run: applied changes per file, not applied ones per reason with Claude's proposed text, and what the latest review changed. |

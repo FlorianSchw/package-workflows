@@ -1,0 +1,128 @@
+name: Suggestion Choices
+
+# Applies the checkbox choices in a roxygen or test bot PR's description
+# (dev-notes/suggestion-choices.md): the user unticks a suggestion they
+# don't want, or ticks one that wasn't applied, and this rebuilds the bot
+# branch to match — no Claude call. Called on `pull_request: edited` of a
+# bot PR, only when a person edited it (the bots' own edits come from a
+# Bot and would otherwise start it again).
+
+on:
+  workflow_call:
+    secrets:
+      app-client-id:
+        description: 'GitHub App Client ID (Iv23li...); its token lets the push trigger checks (optional).'
+        required: false
+      app-private-key:
+        description: 'Private key of that GitHub App (required with app-client-id).'
+        required: false
+      commit-push-pat:
+        description: 'PAT with contents write, fallback if no App is set (optional).'
+        required: false
+
+jobs:
+  apply-choices:
+    if: >-
+      (startsWith(github.head_ref, 'bot-suggest/tests/') || startsWith(github.head_ref, 'bot-suggest/docs/'))
+      && github.event.sender.type != 'Bot'
+    runs-on: ubuntu-latest
+    # The same group as the bot's own runs for the PR's base branch: a
+    # choice and a bot run never write the bot branch at the same time.
+    concurrency:
+      group: ${{ startsWith(github.head_ref, 'bot-suggest/tests/') && 'test-suggest' || 'roxygen-suggest' }}-${{ github.repository }}-${{ github.base_ref }}
+      cancel-in-progress: false
+    permissions:
+      contents: write
+      pull-requests: write
+      statuses: write
+    env:
+      HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+      STATUS_CONTEXT: suggestion choices
+
+    steps:
+      - name: Resolve push token
+        id: push_token
+        uses: FlorianSchw/package-workflows/.github/actions/resolve-push-token@main
+        with:
+          client-id: ${{ secrets.app-client-id }}
+          app-private-key: ${{ secrets.app-private-key }}
+
+      # Visible on the bot PR: merging right after a change of the boxes
+      # shows that the branch isn't updated yet.
+      - name: Status — applying
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh api "repos/${{ github.repository }}/statuses/$HEAD_SHA" \
+            -f state=pending -f context="$STATUS_CONTEXT" -f description="Applying your choices…" > /dev/null
+
+      - uses: actions/checkout@v7
+        with:
+          ref: ${{ github.head_ref }}
+          fetch-depth: 0
+          token: ${{ steps.push_token.outputs.token || secrets.commit-push-pat || github.token }}
+
+      - name: Fetch the base branch
+        run: git fetch --quiet origin "${{ github.base_ref }}"
+
+      - name: Checkout shared scripts
+        uses: actions/checkout@v7
+        with:
+          repository: FlorianSchw/package-workflows
+          ref: main
+          path: .shared-workflows
+
+      - uses: r-lib/actions/setup-r@v2
+        with:
+          use-public-rspm: true
+
+      - name: Install R packages
+        run: Rscript -e 'install.packages(c("jsonlite", "yaml"))'
+
+      - name: Apply the choices
+        env:
+          KIND: ${{ startsWith(github.head_ref, 'bot-suggest/tests/') && 'tests' || 'docs' }}
+          BASE_REF: origin/${{ github.base_ref }}
+          PR_BODY_FILE: pr_body.md
+        run: |
+          jq -r '.pull_request.body // ""' "$GITHUB_EVENT_PATH" > pr_body.md
+          Rscript .shared-workflows/R/apply_suggestion_choices.R
+
+      - name: Commit and push
+        run: |
+          if [ ! -s updated_files.txt ]; then
+            echo "The files already match the choices."
+            exit 0
+          fi
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          while IFS= read -r f; do
+            [ -n "$f" ] && git add -A -- "$f"
+          done < updated_files.txt
+          git commit -m "chore: apply suggestion choices"
+          git push origin "HEAD:${{ github.head_ref }}"
+
+      - name: Update the description
+        env:
+          GH_TOKEN: ${{ steps.push_token.outputs.token || secrets.commit-push-pat || github.token }}
+        run: |
+          if [ -f new_body.md ]; then
+            gh pr edit "${{ github.event.pull_request.number }}" --body-file new_body.md > /dev/null
+          fi
+
+      - name: Status — applied
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          for sha in "$HEAD_SHA" "$(git rev-parse HEAD)"; do
+            gh api "repos/${{ github.repository }}/statuses/$sha" \
+              -f state=success -f context="$STATUS_CONTEXT" -f description="Your choices are applied." > /dev/null
+          done
+
+      - name: Status — failed
+        if: failure()
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh api "repos/${{ github.repository }}/statuses/$HEAD_SHA" \
+            -f state=failure -f context="$STATUS_CONTEXT" -f description="Applying the choices failed — see the run." > /dev/null
