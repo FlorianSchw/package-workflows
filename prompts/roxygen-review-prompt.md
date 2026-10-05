@@ -30,12 +30,14 @@ what is returned and in which shape, side effects. A claim the code
 doesn't support is inaccurate, however small the wording fix.
 
 For each field: if existing content is already accurate and meets the
-guidance, return that same content essentially unchanged (do not reword
-something already correct). Treat placeholder or lazy content (e.g.
-"XXXXX", "TODO", "tbd") and stale content (e.g. an outdated example
-server) as inadequate and rewrite it.
+guidance, leave it out of your answer — the script keeps the existing
+text (do not reword something already correct). Treat placeholder or
+lazy content (e.g. "XXXXX", "TODO", "tbd") and stale content (e.g. an
+outdated example server) as inadequate and rewrite it. Return text only
+for the fields you change, including a missing one you write from
+scratch (a missing title, description or parameter must be written).
 
-List every field you actually changed in `changes`, with the reason that
+List every field you change in `changes`, with the reason that
 honestly fits and a one-sentence explanation:
 - missing: the field is absent or a placeholder;
 - inaccurate: the existing text states something the code doesn't do —

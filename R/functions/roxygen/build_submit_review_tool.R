@@ -6,6 +6,13 @@
 # changes that aren't real improvements — see
 # dev-notes/suggestion-thresholds.md.
 #
+# The documentation fields are optional: Claude returns only the fields it
+# lists in `changes` (dev-notes/claude-costs.md — output is the expensive
+# part of a call, and rewriting unchanged fields was most of it).
+# build_roxygen_block() keeps the original lines for every field not
+# returned; a required field missing both from the original and from the
+# answer stops the file, as an empty one did before.
+#
 # Possible code bugs are asked for reasoning first: explanation, then a
 # verdict and a confidence, the one-line summary last — so Claude can't
 # commit to a claim in the summary that its own reasoning then refutes
@@ -29,16 +36,16 @@ build_submit_review_tool <- function(parsed, profile, earlier = list(), with_cod
   repeats_issue <- earlier_ids("bug")
   param_properties <- setNames(
     lapply(parsed$params, function(p) {
-      list(type = "string", description = sprintf("Documentation prose for parameter '%s'.", p))
+      list(type = "string", description = sprintf("Documentation prose for parameter '%s'. Only if listed in changes.", p))
     }),
     parsed$params
   )
 
   params_schema <- list(
     type = "object",
-    description = "One entry per function parameter, keyed by exact parameter name.",
+    description = "Only the parameters listed in changes, keyed by exact parameter name; leave out the others.",
     properties = param_properties,
-    required = as.list(parsed$params)
+    required = list()
   )
 
   field_keys <- c("title", "description", "details", "return", "examples", paste0("param:", parsed$params))
@@ -82,11 +89,11 @@ build_submit_review_tool <- function(parsed, profile, earlier = list(), with_cod
   top_level_properties <- list(
     needs_changes = list(type = "boolean", description = "Whether any field needs to change."),
     changes = changes_schema,
-    title = list(type = "string", description = sprintf("Plain-text title, no markup. %s", profile$title$guidance)),
-    description = list(type = "string", description = sprintf("Plain-text description prose. %s", profile$description$guidance)),
-    details = list(type = "string", description = sprintf("Plain-text details prose, empty string if not applicable. %s", profile$details$guidance)),
-    return_doc = list(type = "string", description = sprintf("Plain-text description of the return value. %s", profile$return$guidance)),
-    examples_body = list(type = "string", description = sprintf("Raw runnable example code only, no comment markers, no tag label, no wrapper syntax, empty string if not required. %s", profile$examples$guidance)),
+    title = list(type = "string", description = sprintf("Plain-text title, no markup. Only if listed in changes. %s", profile$title$guidance)),
+    description = list(type = "string", description = sprintf("Plain-text description prose. Only if listed in changes. %s", profile$description$guidance)),
+    details = list(type = "string", description = sprintf("Plain-text details prose. Only if listed in changes. %s", profile$details$guidance)),
+    return_doc = list(type = "string", description = sprintf("Plain-text description of the return value. Only if listed in changes. %s", profile$return$guidance)),
+    examples_body = list(type = "string", description = sprintf("Raw runnable example code only, no comment markers, no tag label, no wrapper syntax. Only if listed in changes. %s", profile$examples$guidance)),
     params = params_schema,
     code_issues = list(
       type = "array",
@@ -98,7 +105,7 @@ build_submit_review_tool <- function(parsed, profile, earlier = list(), with_cod
       )
     )
   )
-  required <- list("needs_changes", "changes", "title", "description", "return_doc", "params", "code_issues")
+  required <- list("needs_changes", "changes", "code_issues")
   if (!with_code_issues) {
     top_level_properties$code_issues <- NULL
     required <- setdiff(required, "code_issues")

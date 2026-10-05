@@ -10,7 +10,14 @@
 # and this bot's open earlier findings (`context$earlier`) to judge and not
 # repeat.
 # `context` bundles the per-run and per-function inputs; see
-# R/suggest_tests.R.
+# R/suggest_tests.R. When the run reviews several files
+# (`context$cache_prompt`), the prompt's shared part (instructions and the
+# package's test material) is sent with a cache marker
+# (split_cached_prompt()); the tool definition is the same for every
+# function of the run, so from the second function on that part is read
+# from the prompt cache. `context$dataset_choices` are the run's DSLite
+# datasets for the tool schema; `context$dslite_datasets` the ones offered
+# to this function (NULL unless it gets a fresh setup).
 ask_claude_for_tests <- function(parsed, context) {
   prompt <- fill_template(test_review_prompt_template, list(
     ROLE_GUIDANCE         = context$role_text,
@@ -27,11 +34,10 @@ ask_claude_for_tests <- function(parsed, context) {
     EARLIER_FINDINGS      = format_earlier_test_findings(context$earlier)
   ))
 
-  tool <- build_submit_tests_tool(
-    context$dslite_datasets, context$max_new_tests,
-    categories = context$categories,
-    existing_file_names = vapply(context$test_files, function(f) basename(f$path), character(1)),
-    earlier = context$earlier
-  )
-  call_claude_tool(anthropic_config, tool, prompt)
+  tool <- build_submit_tests_tool(context$dataset_choices, context$max_new_tests, categories = context$categories)
+  # Cached only when the run reviews more than one file: the cache lives
+  # minutes, runs are hours or days apart, and a single call would pay the
+  # cache write (1.25x input) without ever reading it.
+  sent <- if (isTRUE(context$cache_prompt)) split_cached_prompt(prompt) else sub("<!-- per function -->\n", "", prompt, fixed = TRUE)
+  call_claude_tool(anthropic_config, tool, sent)
 }

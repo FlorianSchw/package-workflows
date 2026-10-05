@@ -380,7 +380,19 @@ and `CONTRIBUTING.md`); no PRs until a branch model and rules exist.
   but only after reordering `test-review-prompt.md` so the shared part
   (instructions, guidance, support files, test data) comes first with a
   `cache_control` breakpoint, and the function-specific part last.
-  Revisit if sweep costs grow.
+  Revisit if sweep costs grow. **Done in the cost pass of 2026-10-05**
+  (setup files had grown, e.g. dsBaseClient ≈ 60k characters): the test
+  prompt is split at `<!-- per function -->` (`split_cached_prompt()`)
+  when the run reviews more than one file (the cache lives minutes, runs
+  are hours or days apart),
+  the test tool schema is the same for every function of a run (no
+  per-function enums — R checks returned values), roxygen returns only
+  the fields it changes, and every call logs its token usage
+  (`log_claude_usage()`). **Not yet verified in CI:** "cache read" > 0
+  from the second test function of a run. Proposed, not applied (no
+  eval): Opus 5.5 (cheaper, but forced `tool_choice` is a 400 there),
+  effort `medium` for tests, Sonnet for the failure classification.
+  Details: [dev-notes/claude-costs.md](dev-notes/claude-costs.md).
 - ~~**Rename the workflows before rolling out to more repos**~~ Done
   (2026-09-26): `test-coverage-suggest` → `test-suggest`, `R-CMD-Check` →
   `r-cmd-check` (casing), `check-description-authors` → `authors-suggest`

@@ -14,7 +14,9 @@
 # 1. a test file the user changed since the last review: the bot's earlier
 #    entries for it gave way to their version;
 # 2. Claude judged an earlier note, bug or failure superseded or resolved
-#    (`run$decisions`);
+#    (`run$decisions`) — only this function's: ids are plain strings in the
+#    tool schema (it stays the same across functions, for the prompt
+#    cache), so an id of another function's finding is ignored, as in 6;
 # 3. an earlier note or bug about an existing test that passes now, or no
 #    longer exists, is resolved (`run$current`: this run's results before
 #    any change, as list(file, description, passed));
@@ -66,7 +68,7 @@ merge_test_findings <- function(state, fn, run, sha) {
   for (d in run$decisions) {
     if (!isTRUE(d$status %in% c("superseded", "resolved"))) next
     id <- id_of(d$id)
-    cross(function(e) is_open(e, c("note", "bug", "failed")) && identical(as.integer(e$id), id), d$status, text(d$note))
+    cross(function(e) is_open(e, c("note", "bug", "failed")) && identical(e$fn, fn) && identical(as.integer(e$id), id), d$status, text(d$note))
   }
 
   # A file that produced no results at all (it didn't run) proves nothing.
@@ -98,7 +100,7 @@ merge_test_findings <- function(state, fn, run, sha) {
   # Same earlier finding: by the id Claude gave, or the same file and test.
   repeats <- function(x, kinds) {
     id <- id_of(x$repeats_earlier)
-    any(vapply(entries, function(e) is_open(e, kinds) && (identical(as.integer(e$id), id) || same_test(e, x$file, x$description)), logical(1)))
+    any(vapply(entries, function(e) is_open(e, kinds) && ((identical(e$fn, fn) && identical(as.integer(e$id), id)) || same_test(e, x$file, x$description)), logical(1)))
   }
 
   for (b in run$bugs) {

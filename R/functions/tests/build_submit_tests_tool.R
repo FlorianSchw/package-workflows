@@ -6,34 +6,31 @@
 # (max_new_tests in config/claude.yml), not just prompt wording.
 #
 # Each new test carries a `reason` from a fixed list; filter_generated_tests()
-# keeps only the reasons accepted in config/claude.yml. "other" is the
-# honest way out for a test that adds no real value. Decisions on existing
-# tests (update / delete / report) are checked by review_existing_tests() —
-# see dev-notes/suggestion-thresholds.md.
+# keeps only the accepted reasons. "other" is the honest way out for a test
+# that adds no real value. Decisions on existing tests (update / delete /
+# report) are checked by review_existing_tests() — see
+# dev-notes/suggestion-thresholds.md.
 #
-# dslite_datasets is the loaded config/dslite-canned-datasets.json$datasets
-# list (NULL when not a client-side/fresh-setup scenario) — its enum is
-# derived from the SAME list build_test_role_guidance() presents in the
-# prompt, so the allowed values can never drift from what Claude was
-# actually offered.
-#
-# categories (detect_test_scheme(), categorised repositories only) adds a
-# category per new test; existing_file_names (the function's test files)
-# restricts which file a decision on an existing test names. A new test
-# file can get top-level setup and teardown code (new_test_file_content()).
-#
-# `earlier` are this bot's open earlier findings on the function
-# (format_earlier_test_findings()): a new test that repeats an earlier
-# failed one, and a report that repeats an earlier one, name it in
-# `repeats_earlier` (an enum of their ids); `earlier_findings` judges each.
-# merge_test_findings() and the entry script apply both.
-build_submit_tests_tool <- function(dslite_datasets, max_new_tests, categories = NULL, existing_file_names = character(0), earlier = list()) {
-  earlier_ids <- function(kinds) {
-    ids <- vapply(Filter(function(e) e$kind %in% kinds, earlier), function(e) sprintf("E%d", e$id), character(1), USE.NAMES = FALSE)
-    if (length(ids) == 0) return(NULL)
-    list(type = "string", enum = as.list(c("", ids)),
-         description = "The id of an earlier finding (listed in the prompt) that this one repeats, also in other words; empty string if it is new.")
-  }
+# **The same for every function of a run** (dev-notes/claude-costs.md): the
+# tool definition comes first in the request, before the prompt part that
+# is cached (split_cached_prompt()), so any per-function difference here
+# would invalidate the cache for every call. Hence no per-function enums:
+# the function's test file names (`test_file`) and the ids of earlier
+# findings (`repeats_earlier`, `earlier_findings`) are plain strings, and R
+# checks every value Claude returns — an unknown file or id is ignored
+# (sort_test_decisions(), merge_test_findings(),
+# handle_failed_new_test()). What may vary is per run only:
+# - `dslite_datasets`: config/dslite-canned-datasets.json$datasets when the
+#   run may create a DSLite setup, else NULL. The enum covers all of them;
+#   the prompt offers them only for a function that gets a fresh setup, and
+#   the entry script uses the choice only then;
+# - `categories` (detect_test_scheme(), categorised repositories only): a
+#   category per new test.
+# A new test file can get top-level setup and teardown code
+# (new_test_file_content()).
+build_submit_tests_tool <- function(dslite_datasets, max_new_tests, categories = NULL) {
+  repeats_earlier <- list(type = "string",
+                          description = "The id of an earlier finding listed with the function (e.g. \"E3\") that this one repeats, also in other words; empty string if it is new or there are no earlier findings.")
   code_fields <- list(
     setup_code = list(type = "string", description = "Raw runnable R code needed only for this specific test (e.g. extra assigns), beyond the shared connection/setup. Empty string if nothing extra is needed."),
     assertions_code = list(type = "string", description = "Raw runnable R code containing the actual expect_*() assertion(s) for this test. No comment markers, no test_that() wrapper — the script adds that.")
@@ -53,8 +50,8 @@ build_submit_tests_tool <- function(dslite_datasets, max_new_tests, categories =
           "other: none of these."
         )
       )
-    ), code_fields),
-    required = list("description", "reason", "setup_code", "assertions_code")
+    ), code_fields, list(repeats_earlier = repeats_earlier)),
+    required = list("description", "reason", "setup_code", "assertions_code", "repeats_earlier")
   )
   if (length(categories) > 0) {
     test_item_schema$properties$category <- list(
@@ -63,21 +60,11 @@ build_submit_tests_tool <- function(dslite_datasets, max_new_tests, categories =
     )
     test_item_schema$required <- c(test_item_schema$required, list("category"))
   }
-  if (!is.null(earlier_ids(c("failed", "bug")))) {
-    test_item_schema$properties$repeats_earlier <- earlier_ids(c("failed", "bug"))
-    test_item_schema$required <- c(test_item_schema$required, list("repeats_earlier"))
-  }
-
-  test_file_schema <- list(type = "string", description = "The file name of the test, e.g. test-ds.mean.R, exactly as shown.")
-  # unname(): a named vector (suggest_tests.R names the test files by their
-  # paths) would become a JSON object, and the API rejects the schema
-  # ("JSON schema is invalid") — an enum must be an array.
-  if (length(existing_file_names) > 0) test_file_schema$enum <- as.list(unname(existing_file_names))
 
   existing_item_schema <- list(
     type = "object",
     properties = c(list(
-      test_file = test_file_schema,
+      test_file = list(type = "string", description = "The file name of the test, exactly as listed with the function's test files (e.g. test-ds.mean.R)."),
       description = list(type = "string", description = "The existing test_that() description, copied exactly."),
       action = list(
         type = "string",
@@ -97,25 +84,17 @@ build_submit_tests_tool <- function(dslite_datasets, max_new_tests, categories =
       explanation = list(type = "string", description = "One or two sentences why, citing the evidence (history, diff, failure output)."),
       confidence = list(type = "string", enum = list("high", "medium", "low"),
                         description = "How sure you are of this decision; for a report, how sure you are that the code, not the test, is wrong.")
-    ), code_fields),
-    required = list("test_file", "description", "action", "reason", "explanation", "confidence", "setup_code", "assertions_code")
+    ), code_fields, list(repeats_earlier = repeats_earlier)),
+    required = list("test_file", "description", "action", "reason", "explanation", "confidence", "setup_code", "assertions_code", "repeats_earlier")
   )
-  if (!is.null(earlier_ids(c("note", "bug")))) {
-    existing_item_schema$properties$repeats_earlier <- earlier_ids(c("note", "bug"))
-    existing_item_schema$required <- c(existing_item_schema$required, list("repeats_earlier"))
-  }
-
-  dataset_names <- if (!is.null(dslite_datasets)) {
-    c("", vapply(dslite_datasets, function(d) d$name, character(1)))
-  } else {
-    NULL
-  }
 
   dslite_dataset_schema <- list(
     type = "string",
-    description = "For a fresh DSLite client-side setup only: the chosen canned dataset's name from the options given. Empty string for server-side functions, functions that don't use DataSHIELD connections, or when reusing an existing setup."
+    description = "Only when the function's part offers a fresh DSLite setup: the chosen canned dataset's name from the options given. Empty string otherwise (server-side functions, functions that don't use DataSHIELD connections, or when reusing an existing setup)."
   )
-  if (!is.null(dataset_names)) dslite_dataset_schema$enum <- as.list(dataset_names)
+  if (!is.null(dslite_datasets)) {
+    dslite_dataset_schema$enum <- as.list(c("", vapply(dslite_datasets, function(d) d$name, character(1), USE.NAMES = FALSE)))
+  }
 
   input_schema <- list(
     type = "object",
@@ -134,27 +113,24 @@ build_submit_tests_tool <- function(dslite_datasets, max_new_tests, categories =
         type = "array",
         description = "Decisions on existing tests that need action. Leave out tests that are fine — an empty array is the normal case.",
         items = existing_item_schema
+      ),
+      earlier_findings = list(
+        type = "array",
+        description = "Your judgement of each earlier finding listed with the function; an empty array if there are none.",
+        items = list(
+          type = "object",
+          properties = list(
+            id = list(type = "string", description = "The earlier finding's id as listed, e.g. \"E3\"."),
+            status = list(type = "string", enum = list("still_valid", "superseded", "resolved"),
+                          description = "still_valid: still correct and open. superseded: no longer correct, e.g. the code changed or it was wrong. resolved: the code or tests now do what it asked for."),
+            note = list(type = "string", description = "One sentence why, for superseded or resolved; empty string for still_valid.")
+          ),
+          required = list("id", "status", "note")
+        )
       )
     ),
-    required = list("needs_tests", "dslite_dataset", "file_setup_code", "file_teardown_code", "tests", "existing_tests")
+    required = list("needs_tests", "dslite_dataset", "file_setup_code", "file_teardown_code", "tests", "existing_tests", "earlier_findings")
   )
-  if (length(earlier) > 0) {
-    input_schema$properties$earlier_findings <- list(
-      type = "array",
-      description = "Your judgement of each earlier finding listed in the prompt.",
-      items = list(
-        type = "object",
-        properties = list(
-          id = list(type = "string", enum = as.list(vapply(earlier, function(e) sprintf("E%d", e$id), character(1), USE.NAMES = FALSE))),
-          status = list(type = "string", enum = list("still_valid", "superseded", "resolved"),
-                        description = "still_valid: still correct and open. superseded: no longer correct, e.g. the code changed or it was wrong. resolved: the code or tests now do what it asked for."),
-          note = list(type = "string", description = "One sentence why, for superseded or resolved; empty string for still_valid.")
-        ),
-        required = list("id", "status", "note")
-      )
-    )
-    input_schema$required <- c(input_schema$required, list("earlier_findings"))
-  }
 
   list(
     description = "Submit new and changed testthat tests as individual structured fields, never as assembled test_that() syntax.",

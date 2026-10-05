@@ -27,6 +27,9 @@ test-review:
     effort: high
     fallbacks: default
     betas: [server-side-fallback-2026-07-01]
+    # The shared part of the prompt is cached (dev-notes/claude-costs.md);
+    # default 5 minutes. "1h" only if a run's calls start > 5 min apart.
+    # cache_ttl: 1h
   accept_reasons: [uncovered_branch, error_handling, edge_case, regression]   # not: other
   max_new_tests: 10   # per function and run; changes to existing tests don't count
 

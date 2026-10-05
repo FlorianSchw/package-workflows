@@ -183,6 +183,8 @@ for (f in files) {
     test_results = format_test_results(baseline),
     evidence = build_test_evidence(f, paths, base_rev),
     dslite_datasets = offered_datasets,
+    dataset_choices = dslite_datasets,  # the run's, for a tool schema that is the same for every function
+    cache_prompt = length(files) > 1,   # the prompt cache only pays with a second call in the run
     max_new_tests = max_new_tests,
     earlier = earlier
   )

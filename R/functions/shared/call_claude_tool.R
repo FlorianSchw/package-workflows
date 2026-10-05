@@ -6,18 +6,35 @@
 # schema builders deliberately leave `name` out.
 #
 # Optional per profile in config/claude.yml: `effort` (sent as
-# output_config.effort), and `fallbacks` + `betas` (server-side fallback
-# to another model when the request is refused).
+# output_config.effort), `fallbacks` + `betas` (server-side fallback to
+# another model when the request is refused), and `cache_ttl` ("5m" or
+# "1h", for prompts split by split_cached_prompt()).
+#
+# `prompt` is a string, or list(cached, rest): the shared part then goes
+# first with a cache marker, so the next call of the run with the same
+# shared part (and the same tool definition, which comes before it) reads
+# it from the prompt cache. Every call logs its token usage — the
+# measurement channel for what a run costs (dev-notes/claude-costs.md).
 call_claude_tool <- function(config, tool, prompt, renewed = FALSE) {
   tool$name <- config$tool_name
 
+  content <- if (is.list(prompt)) {
+    marker <- list(type = "ephemeral")
+    if (identical(config$cache_ttl, "1h")) marker$ttl <- "1h"
+    list(
+      list(type = "text", text = prompt$cached, cache_control = marker),
+      list(type = "text", text = prompt$rest)
+    )
+  } else {
+    prompt
+  }
   body <- list(
     model = config$model,
     max_tokens = config$max_tokens,
     thinking = config$thinking,
     tools = list(tool),
     tool_choice = list(type = config$tool_choice_type, name = config$tool_name),
-    messages = list(list(role = "user", content = prompt))
+    messages = list(list(role = "user", content = content))
   )
   if (!is.null(config$effort)) body$output_config <- list(effort = config$effort)
   if (!is.null(config$fallbacks)) body$fallbacks <- config$fallbacks
@@ -66,6 +83,7 @@ call_claude_tool <- function(config, tool, prompt, renewed = FALSE) {
   }
 
   body <- resp_body_json(resp)
+  log_claude_usage(config, body$usage)
 
   if (identical(body$stop_reason, "max_tokens")) {
     stop(sprintf("Claude's response was cut off at max_tokens (%s) — raise max_tokens for this profile in config/claude.yml.", config$max_tokens))
