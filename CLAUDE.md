@@ -125,7 +125,10 @@ the live caller used to validate changes before wider rollout.
   `analysis/`. Each entry script loads only
   `shared/` plus its own folder (`purrr::walk()`), so a function used by
   two workflows must move to `shared/` — no calls across workflow
-  folders (checked on the 2026-09-26 split). No R inlined in workflow
+  folders (checked on the 2026-09-26 split, again 2026-10-04). **One
+  deliberate exception:** `apply_suggestion_choices.R` loads `roxygen/`
+  and `tests/` too, because it re-applies their suggestions and rebuilds
+  their reports with their own functions. No R inlined in workflow
   YAML.
 - `config/`, `prompts/` — guidance, prompt templates and
   Claude call settings for the suggestion workflows.

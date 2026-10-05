@@ -41,15 +41,7 @@ format_test_report <- function(state, latest = NULL, legacy = NULL, open = integ
     )
   }
 
-  latest_line <- if (!is.null(latest) && nzchar(latest$sha)) {
-    s <- latest$stats
-    parts <- c(
-      sprintf("%d new", s[["new"]]),
-      if (s[["crossed"]] > 0) sprintf("%d crossed out", s[["crossed"]]),
-      if (s[["repeats"]] > 0) sprintf("%d %s of earlier findings skipped", s[["repeats"]], if (s[["repeats"]] == 1) "repeat" else "repeats")
-    )
-    sprintf("**Latest review** (`%s`): %s", latest$sha, paste(parts, collapse = " · "))
-  }
+  latest_line <- format_latest_review(latest)
 
   body <- c(
     paste("**Summary:**", format_test_summary(state)),
@@ -73,13 +65,5 @@ format_test_report <- function(state, latest = NULL, legacy = NULL, open = integ
     section("Functions not tested", of_kind("untested"), "They need DataSHIELD connections, but the tests have no way to connect and `dslite-setup` is `never`.",
             function(e) sprintf("`%s`", e$fn))
   )
-  hidden <- encode_suggestion_state(state)
-  body <- paste(body, collapse = "\n")
-  room <- 62000 - nchar(hidden)
-  if (!is.null(legacy)) {
-    legacy <- substr(legacy, 1, max(0, min(20000, room - nchar(body) - 200)))
-    if (nzchar(legacy)) body <- paste0(body, "\n\n<details><summary>Earlier reports (before this report format)</summary>\n\n", legacy, "\n\n</details>")
-  }
-  if (nchar(body) > room) body <- paste0(substr(body, 1, room), "\n\n… truncated — see the job log for the rest.")
-  paste0(body, "\n\n", hidden)
+  finish_suggestion_report(body, state, legacy)
 }

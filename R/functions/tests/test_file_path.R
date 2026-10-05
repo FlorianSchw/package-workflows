@@ -8,8 +8,3 @@ test_file_path <- function(name, category = NA_character_) {
   file <- if (is.na(category)) sprintf("test-%s.R", name) else sprintf("test-%s-%s.R", category, name)
   file.path("tests", "testthat", file)
 }
-
-# The name an R file's tests are named after: its file name without .R.
-test_file_name <- function(r_file) {
-  sub("[.][Rr]$", "", basename(r_file))
-}

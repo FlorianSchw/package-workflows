@@ -199,79 +199,17 @@ for (f in files) {
   }
   run$decisions <- result$earlier_findings
 
-  # Decisions on existing tests, per test file. With a single test file, a
-  # decision naming no (or another) file belongs to it.
-  decision_file <- function(d) {
-    name <- if (is.null(d$test_file)) "" else d$test_file
-    hit <- paths[basename(paths) == name]
-    if (length(hit) == 1) hit else if (length(paths) == 1) paths else NA_character_
-  }
-  # An update or deletion the user declined isn't proposed again.
-  declined_decision <- function(d) {
-    (identical(d$action, "update") && d$description %in% declined_of("updated")) ||
-      (identical(d$action, "delete") && d$description %in% declined_of("deleted"))
-  }
-  for (d in Filter(declined_decision, result$existing_tests)) {
-    message(sprintf("%s: not proposing to %s '%s' again — declined.", function_name, d$action, d$description))
-  }
-  result$existing_tests <- Filter(Negate(declined_decision), result$existing_tests)
-  decision_paths <- vapply(result$existing_tests, decision_file, character(1))
-  for (d in result$existing_tests[is.na(decision_paths)]) {
-    message(sprintf("%s: ignoring decision on '%s' — unknown test file '%s'.", function_name, d$description, d$test_file))
-  }
-  reviews <- list()
-  for (path in paths) {
-    review <- review_existing_tests(result$existing_tests[decision_paths %in% path], blocks[[path]], baseline[[path]], function_name)
-    # A report of a possible bug Claude is sure enough of
-    # (code-issue-confidence) goes to "Possible bugs in the code", any
-    # other report stays a note.
-    for (n in review$notes) {
-      n$file <- path
-      if (isTRUE(n$possible_bug) && isTRUE(n$confidence %in% code_issue_confidence)) {
-        run$bugs[[length(run$bugs) + 1]] <- c(n, list(origin = "existing"))
-      } else {
-        run$notes[[length(run$notes) + 1]] <- n
-      }
-    }
-    # A failing existing test Claude left without any decision is reported too.
-    decided <- vapply(result$existing_tests[decision_paths %in% path], function(d) d$description, character(1))
-    for (r in Filter(function(r) !isTRUE(r$passed) && !r$description %in% decided, baseline[[path]])) {
-      run$notes[[length(run$notes) + 1]] <- list(file = path, description = r$description, text = sprintf("fails, no change proposed. %s", gsub("\\s+", " ", r$message)))
-    }
-    reviews[[path]] <- review
-  }
+  # Decisions on existing tests, per test file; declined ones stay out.
+  sorted <- sort_test_decisions(result$existing_tests, paths, blocks, baseline, declined_of("updated"), declined_of("deleted"), code_issue_confidence, function_name)
+  reviews <- sorted$reviews
+  run$notes <- c(run$notes, sorted$notes)
+  run$bugs <- c(run$bugs, sorted$bugs)
 
-  # New tests, each into its file: test-<function>.R, or
-  # test-<category>-<function>.R in a categorised repository.
-  all_content <- paste(vapply(test_files, function(t) t$content, character(1)), collapse = "\n")
-  all_descriptions <- unlist(lapply(blocks, function(b) vapply(b, function(x) x$description, character(1))))
-  new_tests <- if (isTRUE(result$needs_tests)) {
-    filter_generated_tests(result$tests, all_content, accept_reasons, function_name, all_descriptions)
-  } else {
-    list()
-  }
-  # A new test the user declined isn't proposed again (same name).
-  for (t in Filter(function(t) t$description %in% declined_of("new"), new_tests)) {
-    message(sprintf("%s: not proposing '%s' again — declined.", function_name, t$description))
-  }
-  new_tests <- Filter(function(t) !t$description %in% declined_of("new"), new_tests)
-  target_of <- function(t) {
-    if (!scheme$categorised) return(test_file_path(file_name))
-    if (!isTRUE(t$category %in% scheme$categories)) {
-      message(sprintf("%s: dropping test '%s' — unknown category '%s'.", function_name, t$description, t$category))
-      return(NA_character_)
-    }
-    test_file_path(file_name, t$category)
-  }
-  targets <- vapply(new_tests, target_of, character(1))
-  new_by_file <- list()
-  for (path in unique(targets[!is.na(targets)])) {
-    blocks_for_file <- tryCatch(assemble_test_block(new_tests[targets %in% path], function_name), error = function(e) {
-      message(sprintf("Failed to assemble test blocks for %s: %s", function_name, conditionMessage(e)))
-      character(0)
-    })
-    if (length(blocks_for_file) > 0) new_by_file[[path]] <- blocks_for_file
-  }
+  # New tests, each into its file; declined ones stay out.
+  placed <- place_new_tests(result, test_files, blocks, declined_of("new"), scheme, file_name, accept_reasons, function_name)
+  new_tests <- placed$tests
+  targets <- placed$targets
+  new_by_file <- placed$by_file
   new_test_of <- function(description) Find(function(t) identical(t$description, description), new_tests)
 
   changed_paths <- unique(c(
@@ -325,45 +263,15 @@ for (f in files) {
       message(sprintf("%s: %d new test(s), %d update(s), %d deletion(s) in %s.", function_name, length(applied$passing_new), length(applied$kept_updates), length(review$deletes), path))
     }
 
+    # Failed new tests: repeats skipped, real bugs reported, others
+    # commented or listed (handle_failed_new_test()).
     for (fail in applied$failing_new) {
-      # A test that failed before (same name, or one Claude says it
-      # repeats) isn't classified, commented or filed again.
-      t <- new_test_of(fail$description)
-      repeated_id <- if (!is.null(t$repeats_earlier) && nzchar(t$repeats_earlier)) suppressWarnings(as.integer(sub("^E", "", t$repeats_earlier))) else NA_integer_
-      failed_before <- function(e) identical(e$kind, "failed") || (identical(e$kind, "bug") && identical(e$origin, "failure"))
-      if (any(vapply(earlier, function(e) failed_before(e) && (identical(as.integer(e$id), repeated_id) || identical(e$description, fail$description)), logical(1)))) {
-        message(sprintf("%s: '%s' failed again — reported before.", function_name, fail$description))
-        run$repeats <- run$repeats + 1L
-        next
-      }
-      block_text <- test_blocks[[fail$description]]
-      classification <- tryCatch(
-        ask_claude_to_classify_failure(fn_source(parsed), block_text, fail$message),
-        error = function(e) {
-          message(sprintf("Failure classification call failed for %s: %s", function_name, conditionMessage(e)))
-          NULL
-        }
-      )
-      if (is.null(classification)) next
-
-      # A real bug Claude is sure enough of (code-issue-confidence) is a
-      # possible bug in the code — with an issue only at high confidence;
-      # anything else is a failed test, commented on the PR or, without
-      # one, listed in the report.
-      if (identical(classification$category, "real_bug") && isTRUE(classification$confidence %in% code_issue_confidence)) {
-        issue <- if (identical(classification$confidence, "high")) create_bug_issue(function_name, block_text, fail$message, classification)
-        run$bugs[[length(run$bugs) + 1]] <- list(
-          file = path, description = fail$description, origin = "failure", explanation = classification$explanation,
-          confidence = classification$confidence, issue = if (is.null(issue)) "" else issue
-        )
-        next
-      }
-      if (!is_sweep) post_test_failure_comment(function_name, block_text, fail$message, classification)
-      in_report <- is_sweep
-      run$failed[[length(run$failed) + 1]] <- list(
-        file = path, description = fail$description, classification = classification$category, in_report = in_report,
-        explanation = if (in_report) format_test_failure(function_name, block_text, fail$message, classification) else classification$explanation
-      )
+      outcome <- handle_failed_new_test(fail, new_test_of(fail$description), test_blocks[[fail$description]], path, earlier,
+                                        fn_source(parsed), function_name, code_issue_confidence, is_sweep)
+      if (is.null(outcome)) next
+      if (outcome$kind == "repeat") run$repeats <- run$repeats + 1L
+      if (outcome$kind == "bug") run$bugs[[length(run$bugs) + 1]] <- outcome$entry
+      if (outcome$kind == "failed") run$failed[[length(run$failed) + 1]] <- outcome$entry
     }
   }
 
