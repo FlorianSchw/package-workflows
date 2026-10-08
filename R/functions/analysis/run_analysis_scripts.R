@@ -17,7 +17,14 @@ run_analysis_scripts <- function(login_file, scripts, profile, timeout) {
     run <- function(path) tryCatch({
       source(path, local = globalenv(), echo = FALSE)
       NA_character_
-    }, error = function(e) conditionMessage(e))
+    }, error = function(e) {
+      msg <- conditionMessage(e)
+      ds <- tryCatch(unlist(DSI::datashield.errors()), error = function(e2) character(0))
+      if (length(ds) > 0) {
+        msg <- paste0(msg, " Server errors: ", substr(paste(ds, collapse = " | "), 1, 1500))
+      }
+      msg
+    })
     login_error <- run(login_file)
     if (!is.na(login_error)) return(list(login_error = login_error, errors = character(0)))
     errors <- vapply(scripts, run, character(1), USE.NAMES = FALSE)
