@@ -48,6 +48,12 @@ outcome), follow it as far as possible and say so in a `limitation` note.
   function or explain the limitation in a note.
 - To create a constant or a vector as long as an existing variable, use
   `ds.make()` or `ds.vectorCalc()` on that variable, not `ds.rep()`.
+- Study-level meta-analysis (ds.glmSLMA) and forest plots aren't
+  available in the test environment. Fit models with ds.glm() on the
+  pooled data. If the plan asks for study-level estimates or a forest
+  plot, add a `limitation` note saying the step needs ds.glmSLMA and
+  ds.forestplot, which couldn't be tested here, instead of writing
+  that code.
 
 ## What you may use
 

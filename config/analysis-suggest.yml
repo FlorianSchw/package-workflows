@@ -83,7 +83,7 @@ client_suffix: Client    # dsBase -> dsBaseClient
 package_status: [production]
 
 # Installed functions Claude must not use (the login already ran).
-excluded_functions: [datashield.login, datashield.logout]
+excluded_functions: [datashield.login, datashield.logout, ds.glmSLMA, ds.forestplot]
 
 # A line in the real login file matching this is reported as a possible
 # plain-text credential (case-insensitive; comments are ignored).
