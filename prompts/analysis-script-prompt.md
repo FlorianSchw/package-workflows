@@ -28,6 +28,19 @@ outcome), follow it as far as possible and say so in a `limitation` note.
 - Output files: tables to `here::here("results", "tables", "<name>.csv")`,
   figures to `here::here("results", "figures", "<name>.png")`.
 - Client packages are already loaded. Don't call `library()`.
+- Prefer keeping the original data frame and its column names. For
+  complete cases use ds.completeCases() on the data frame itself; create
+  derived variables with `newobj`. Build a new data frame with
+  ds.dataFrame() only if a later step needs it, and then print
+  ds.colnames() of the result and use exactly those names in formulas.
+- If an earlier script already creates the analysis data frame (see
+  "Steps already in the project"), use that object. Don't build a
+  second one under another name.
+- Before you call a `ds.*` function, find it in the list below and use
+  only the arguments shown there. Don't carry arguments over from
+  similar functions (e.g. `ALONG.WITH.name` belongs to `ds.seq`, not
+  `ds.rep`). If a function can't do what you need, pick another listed
+  function or explain the limitation in a note.
 - Before you call a `ds.*` function, find it in the list below and use
   only the arguments shown there. Don't carry arguments over from
   similar functions (e.g. `ALONG.WITH.name` belongs to `ds.seq`, not

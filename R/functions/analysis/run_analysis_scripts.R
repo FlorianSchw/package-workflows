@@ -14,24 +14,26 @@
 run_analysis_scripts <- function(login_file, scripts, profile, timeout) {
   child <- function(login_file, scripts, profile) {
     Sys.setenv(R_CONFIG_ACTIVE = profile)
-    run <- function(path) tryCatch({
-      source(path, local = globalenv(), echo = FALSE)
+    run <- function(path) {
+      exprs <- tryCatch(parse(path, keep.source = FALSE), error = function(e) e)
+      if (inherits(exprs, "error")) return(conditionMessage(exprs))
+      for (i in seq_along(exprs)) {
+        res <- tryCatch({
+          eval(exprs[[i]], envir = globalenv())
+          NA_character_
+        }, error = function(e) {
+          msg <- conditionMessage(e)
+          ds <- tryCatch(unlist(DSI::datashield.errors()), error = function(e2) character(0))
+          if (length(ds) > 0) {
+            msg <- paste0(msg, " Server errors: ", substr(paste(ds, collapse = " | "), 1, 1500))
+          }
+          stmt <- paste(deparse(exprs[[i]], width.cutoff = 500L), collapse = " ")
+          paste0(msg, " [failing statement: ", substr(stmt, 1, 400), "]")
+        })
+        if (!is.na(res)) return(res)
+      }
       NA_character_
-    }, error = function(e) {
-      msg <- conditionMessage(e)
-      call_txt <- tryCatch({
-        cl <- conditionCall(e)
-        if (is.null(cl)) "" else paste(deparse(cl, width.cutoff = 200L), collapse = " ")
-      }, error = function(e2) "")
-      if (nzchar(call_txt) && !grepl("^eval\\(ei, envir\\)", call_txt)) {
-        msg <- paste0(msg, " [in: ", substr(call_txt, 1, 300), "]")
-      }
-      ds <- tryCatch(unlist(DSI::datashield.errors()), error = function(e2) character(0))
-      if (length(ds) > 0) {
-        msg <- paste0(msg, " Server errors: ", substr(paste(ds, collapse = " | "), 1, 1500))
-      }
-      msg
-    })
+    }
     login_error <- run(login_file)
     if (!is.na(login_error)) return(list(login_error = login_error, errors = character(0)))
     errors <- vapply(scripts, run, character(1), USE.NAMES = FALSE)
