@@ -28,6 +28,13 @@ outcome), follow it as far as possible and say so in a `limitation` note.
 - Output files: tables to `here::here("results", "tables", "<name>.csv")`,
   figures to `here::here("results", "figures", "<name>.png")`.
 - Client packages are already loaded. Don't call `library()`.
+- Before you call a `ds.*` function, find it in the list below and use
+  only the arguments shown there. Don't carry arguments over from
+  similar functions (e.g. `ALONG.WITH.name` belongs to `ds.seq`, not
+  `ds.rep`). If a function can't do what you need, pick another listed
+  function or explain the limitation in a note.
+- To create a constant or a vector as long as an existing variable, use
+  `ds.make()` or `ds.vectorCalc()` on that variable, not `ds.rep()`.
 
 ## What you may use
 

@@ -20,7 +20,7 @@ numbering:
   first: 2               # 01 is the login
   reserved_from: 90      # numbers from here up are left alone (e.g. 99_DSLiteLearning.R)
 
-repair_rounds: 1         # extra Claude rounds for steps that failed the checks
+repair_rounds: 2         # extra Claude rounds for steps that failed the checks
 test_run_timeout_seconds: 1800
 
 # Where things are in a dsAnalysis project. The login files are read from
