@@ -149,7 +149,7 @@ date,workflow,outcome,channel,runs_total
 2026-10-08,authors-suggest,nothing,release,0
 2026-10-08,authors-suggest,proposed,dev,0
 2026-10-08,authors-suggest,proposed,release,0
-2026-10-08,datashield-analysis-suggest,failed,dev,0
+2026-10-08,datashield-analysis-suggest,failed,dev,3
 2026-10-08,datashield-analysis-suggest,failed,release,0
 2026-10-08,datashield-analysis-suggest,nothing,dev,0
 2026-10-08,datashield-analysis-suggest,nothing,release,0
