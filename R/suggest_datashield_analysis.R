@@ -131,6 +131,15 @@ old_content <- setNames(lapply(rewritten$path, readLines, warn = FALSE), rewritt
 drafted <- draft_and_test_steps(to_write, plan, steps, existing, context, checks, settings, texts)
 notes <- c(notes, drafted$notes)
 
+# Debug: show the scripts of failing steps before they are removed
+for (id in names(drafted$outcome$problems)) {
+  for (f in drafted$candidate[[id]]) {
+    cat(sprintf("::group::Failed script %s (step %s)\n", f, id))
+    cat(readLines(f, warn = FALSE), sep = "\n")
+    cat("\n::endgroup::\n")
+  }
+}
+
 # --- 6. Results ------------------------------------------------------------------------
 
 settled <- settle_step_results(steps, to_write, drafted, rewritten, old_content, texts)

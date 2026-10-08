@@ -9,7 +9,7 @@ check_column_references <- function(code, all_code, variables, texts) {
   strings_in <- function(text, only_arg = NULL) {
     found <- character(0)
     walk_code(text, function(x, arg) {
-      if (is.character(x) && length(x) == 1 && (is.null(only_arg) || arg == only_arg)) found <<- c(found, x)
+      if (is.character(x) && length(x) == 1 && (is.null(only_arg) || startsWith(arg, only_arg))) found <<- c(found, x)
     })
     found
   }
