@@ -19,6 +19,13 @@ run_analysis_scripts <- function(login_file, scripts, profile, timeout) {
       NA_character_
     }, error = function(e) {
       msg <- conditionMessage(e)
+      call_txt <- tryCatch({
+        cl <- conditionCall(e)
+        if (is.null(cl)) "" else paste(deparse(cl, width.cutoff = 200L), collapse = " ")
+      }, error = function(e2) "")
+      if (nzchar(call_txt) && !grepl("^eval\\(ei, envir\\)", call_txt)) {
+        msg <- paste0(msg, " [in: ", substr(call_txt, 1, 300), "]")
+      }
       ds <- tryCatch(unlist(DSI::datashield.errors()), error = function(e2) character(0))
       if (length(ds) > 0) {
         msg <- paste0(msg, " Server errors: ", substr(paste(ds, collapse = " | "), 1, 1500))
