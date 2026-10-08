@@ -14,6 +14,17 @@
 run_analysis_scripts <- function(login_file, scripts, profile, timeout) {
   child <- function(login_file, scripts, profile) {
     Sys.setenv(R_CONFIG_ACTIVE = profile)
+    describe_objects <- function(expr) {
+      out <- character(0)
+      for (s in unique(all.vars(expr))) {
+        if (!exists(s, envir = globalenv(), inherits = FALSE)) next
+        obj <- get(s, envir = globalenv())
+        if (is.function(obj)) next
+        d <- paste(utils::capture.output(utils::str(obj, max.level = 2, give.attr = FALSE, vec.len = 3)), collapse = "\n")
+        out <- c(out, sprintf("%s: %s", s, substr(d, 1, 500)))
+      }
+      paste(utils::head(out, 6), collapse = "\n")
+    }
     run <- function(path) {
       exprs <- tryCatch(parse(path, keep.source = FALSE), error = function(e) e)
       if (inherits(exprs, "error")) return(conditionMessage(exprs))
@@ -28,7 +39,9 @@ run_analysis_scripts <- function(login_file, scripts, profile, timeout) {
             msg <- paste0(msg, " Server errors: ", substr(paste(ds, collapse = " | "), 1, 1500))
           }
           stmt <- paste(deparse(exprs[[i]], width.cutoff = 500L), collapse = " ")
-          paste0(msg, " [failing statement: ", substr(stmt, 1, 400), "]")
+          objs <- tryCatch(describe_objects(exprs[[i]]), error = function(e2) "")
+          paste0(msg, " [failing statement: ", substr(stmt, 1, 400), "]",
+                 if (nzchar(objs)) paste0("\nObjects used in that statement:\n", objs) else "")
         })
         if (!is.na(res)) return(res)
       }
