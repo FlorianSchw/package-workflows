@@ -104,7 +104,7 @@ jobs:
           DSANALYSIS_DIR: .dsanalysis
         # --no-init-file: a dsAnalysis project's .Rprofile activates renv,
         # which would hide the packages installed for this run.
-        run: Rscript --no-init-file .shared-workflows/R/suggest_datashield_analysis.R
+        run: Rscript .shared-workflows/R/suggest_datashield_analysis.R
 
       - name: Resolve push token
         id: push_token
