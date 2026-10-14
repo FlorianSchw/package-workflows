@@ -6,10 +6,12 @@
 # project's other bot scripts, so each step runs with the objects of the
 # steps before it. `settings` gives the test profile and timeout, `texts`
 # the wording of the problems.
-# Returns list(problems, broken_other): problems per step id with any
-# (only failing steps), and errors of other_files (named by path).
+# Returns list(problems, broken_other, objects): problems per step id with any
+# (only failing steps), errors of other_files (named by path), and what is
+# on the servers afterwards (run_analysis_scripts(); `connections` names
+# the connections object).
 # Stops if the DSLite setup itself fails: then nothing can be judged.
-test_step_scripts <- function(candidate, answers, reference, variables, login_file, other_files, settings, texts) {
+test_step_scripts <- function(candidate, answers, reference, variables, login_file, other_files, settings, texts, connections = NULL) {
   ids <- names(candidate)
   all_code <- paste(c(vapply(answers[ids], step_code, character(1)), unlist(lapply(other_files, readLines, warn = FALSE))), collapse = "\n")
   problems <- lapply(setNames(ids, ids), function(id) {
@@ -18,7 +20,7 @@ test_step_scripts <- function(candidate, answers, reference, variables, login_fi
   })
 
   run <- run_analysis_scripts(login_file, sort(c(other_files, unlist(candidate, use.names = FALSE))),
-    settings$profiles$testing, settings$test_run_timeout_seconds)
+    settings$profiles$testing, settings$test_run_timeout_seconds, connections)
   if (!is.na(run$login_error)) {
     stop(sprintf("The DSLite test setup (%s) failed: %s", login_file, run$login_error), call. = FALSE)
   }
@@ -37,5 +39,5 @@ test_step_scripts <- function(candidate, answers, reference, variables, login_fi
     }
   }
   broken <- run$errors[other_files]
-  list(problems = Filter(length, problems), broken_other = broken[!is.na(broken)])
+  list(problems = Filter(length, problems), broken_other = broken[!is.na(broken)], objects = run$objects %||% "")
 }

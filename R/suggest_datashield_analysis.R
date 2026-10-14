@@ -8,9 +8,11 @@
 #   3. install the studies' server packages and matching clients;
 #   4. write mock data from the plan and point the project's DSLite setup
 #      at it (dsAnalysis's own functions);
-#   5. ask Claude for the steps, check every DataSHIELD call and column
-#      against the installed clients and the plan, run all scripts in
-#      testing mode; repair rounds for failing steps;
+#   5. one step at a time, in plan order: ask Claude for it, check every
+#      DataSHIELD call and column against the installed clients and the
+#      plan, run all scripts in testing mode, repair rounds if it fails;
+#      steps depending on a failed one (depends_on, else all earlier
+#      steps) wait for the next run;
 #   6. keep the passing scripts, write the main.R and dependencies.R
 #      blocks, the report, and updated_files.txt for the suggestion PR.
 # Settings: config/analysis-suggest.yml; wording: config/analysis-texts.yml
@@ -128,17 +130,11 @@ checks <- list(
 rewritten <- existing[existing$step %in% to_write, ]
 old_content <- setNames(lapply(rewritten$path, readLines, warn = FALSE), rewritten$path)
 
-drafted <- draft_and_test_steps(to_write, plan, steps, existing, context, checks, settings, texts)
+# One step at a time, in plan order; a step waits while one it depends on
+# fails (the plan's depends_on, else all earlier steps). Failed scripts are
+# shown in the job log before they are removed.
+drafted <- draft_steps_in_order(to_write, plan, steps, existing, context, checks, settings, texts, rewritten, old_content)
 notes <- c(notes, drafted$notes)
-
-# Debug: show the scripts of failing steps before they are removed
-for (id in names(drafted$outcome$problems)) {
-  for (f in drafted$candidate[[id]]) {
-    cat(sprintf("::group::Failed script %s (step %s)\n", f, id))
-    cat(readLines(f, warn = FALSE), sep = "\n")
-    cat("\n::endgroup::\n")
-  }
-}
 
 # --- 6. Results ------------------------------------------------------------------------
 

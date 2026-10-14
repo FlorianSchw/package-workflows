@@ -41,11 +41,6 @@ outcome), follow it as far as possible and say so in a `limitation` note.
   similar functions (e.g. `ALONG.WITH.name` belongs to `ds.seq`, not
   `ds.rep`). If a function can't do what you need, pick another listed
   function or explain the limitation in a note.
-- Before you call a `ds.*` function, find it in the list below and use
-  only the arguments shown there. Don't carry arguments over from
-  similar functions (e.g. `ALONG.WITH.name` belongs to `ds.seq`, not
-  `ds.rep`). If a function can't do what you need, pick another listed
-  function or explain the limitation in a note.
 - To create a constant or a vector as long as an existing variable, use
   `ds.make()` or `ds.vectorCalc()` on that variable, not `ds.rep()`.
 - Study-level meta-analysis (ds.glmSLMA) and forest plots aren't
@@ -83,6 +78,17 @@ Each with its client functions, where known.
 
 {{GAP_ISSUES}}
 
+## The analysis plan
+
+Steps are written one at a time, in plan order; a step's `depends_on`
+lists the steps it builds on (without it: all steps above it).
+
+```yaml
+{{PLAN}}
+```
+
+<!-- per request -->
+
 ## Steps already in the project
 
 All scripts run in the order of their file numbers, these together with
@@ -91,11 +97,12 @@ numbers. Don't repeat their work.
 
 {{EXISTING_STEPS}}
 
-## The analysis plan
+## Objects on the servers after those scripts
 
-```yaml
-{{PLAN}}
-```
+From the last test run on the mock data (names; classes and columns
+where known). Use these names exactly.
+
+{{CREATED_OBJECTS}}
 
 ## Your task
 

@@ -55,7 +55,7 @@ format_analysis_report <- function(r, texts) {
     for (n in limits) out <- c(out, sprintf("- **%s**: %s", n$step_title, n$text))
   }
 
-  reported <- Filter(function(s) s$status %in% c("failed", "edited", "removed"), r$steps)
+  reported <- Filter(function(s) s$status %in% c("failed", "blocked", "edited", "removed"), r$steps)
   if (length(reported) + length(r$notes) > 0) {
     out <- c(out, "", t$other_notes_heading, "")
     for (s in reported) out <- c(out, sprintf("- **%s**: %s", s$title, s$error))

@@ -2,7 +2,8 @@
 # (character(0) if none), worded by `texts$plan`. Only what the workflow
 # itself relies on is checked: the symbol, the studies with their server
 # packages (mock data, installs) and the variables (mock data). Steps only
-# need a title and a unique id; everything else in a step is free and goes
+# need a title and a unique id, and an optional `depends_on` may only name
+# steps earlier in the plan; everything else in a step is free and goes
 # to Claude as written. An optional `package-status` list may only use
 # package_statuses(). Unknown top-level entries are allowed. `types` are
 # the variable types the settings allow; read_analysis_plan() has already
@@ -77,6 +78,18 @@ validate_analysis_plan <- function(plan, types, texts) {
     }
     ids <- unlist(lapply(steps, function(s) if (is.list(s) && is.character(s$id)) s$id))
     if (anyDuplicated(ids)) add("duplicate_steps", NAMES = duplicated_of(ids))
+    # depends_on: ids of steps earlier in the plan (scripts run in plan order)
+    for (i in seq_along(steps)) {
+      s <- steps[[i]]
+      if (!is.list(s) || !"depends_on" %in% names(s) || is.null(s$depends_on)) next
+      deps <- unlist(s$depends_on)
+      earlier <- unlist(lapply(steps[seq_len(i - 1)], function(x) if (is.list(x) && is.character(x$id)) x$id))
+      if (!is.character(deps) && length(deps) > 0) {
+        add("depends_on", TITLE = s$title, STEPS = paste(deps, collapse = ", "))
+      } else if (length(setdiff(deps, earlier)) > 0) {
+        add("depends_on", TITLE = s$title, STEPS = paste(setdiff(deps, earlier), collapse = ", "))
+      }
+    }
   }
 
   statuses <- plan$`package-status`

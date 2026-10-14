@@ -7,14 +7,21 @@
 #      bot PR's description (catches up dropped or failed runs);
 #   2. a PR that was opened or reopened: the PR's base (the whole PR);
 #   3. the event's "before" (push, PR synchronize);
-#   4. none (a new branch): commits that exist on no other branch.
+#   4. a scheduled or manual run: the last review of this branch, from the
+#      run history (review-history.sh); none yet: nothing to review, this
+#      run becomes the starting point (a full review is scan-mode "all");
+#   5. none (a new branch): commits that exist on no other branch.
 # Files named in "<!-- bot-suggest: retry <file> -->" lines of the open bot
-# PR (their Claude call failed last time) are checked again in any case.
-# Push and synchronize runs count only commits on no other branch, so
-# commits merged in from dev aren't reviewed or credited. Merge commits
-# and the bot's own commits (author or subject, from bot-authors.json) are
-# left out. If the history was rewritten (the starting point is no
-# ancestor of HEAD), rebuild=true: the bot branch can't be built on.
+# PR, or (4.) in that last review's "Suggestion not made" warnings — their
+# Claude call failed — are checked again in any case.
+# Runs other than pull requests count only commits on no other branch, so
+# commits merged in from dev aren't reviewed or credited, and leave out
+# commits a pull request run of this workflow already reviewed (from the
+# run history, so this also holds once the PR's branch is deleted). Merge
+# commits and the bot's own commits (author or subject, from
+# bot-authors.json) are left out. If the history was rewritten (the
+# starting point is no ancestor of HEAD), rebuild=true: the bot branch
+# can't be built on.
 #
 # Env: BRANCH, SUB_BRANCH (the bot branch for BRANCH), FILE_PATTERN
 # (pathspec like 'R/*.R'; empty: commits only), BOT_CONFIG (path to
@@ -28,6 +35,7 @@ out() { echo "$1=$2" >> "$GITHUB_OUTPUT"; }
 field() { jq -r "$1 // empty" "$GITHUB_EVENT_PATH"; }
 exists() { git cat-file -e "$1^{commit}" 2>/dev/null; }
 is_ancestor() { git merge-base --is-ancestor "$1" HEAD 2>/dev/null; }
+is_ancestor_of() { git merge-base --is-ancestor "$1" "$2" 2>/dev/null; }
 zeros="0000000000000000000000000000000000000000"
 
 head="$(git rev-parse HEAD)"
@@ -36,6 +44,7 @@ action="$(field '.action')"
 rebuild=false
 start=""
 range_is_pr=false
+from_history=false
 
 # 1. Marker in the open bot PR
 body="$(gh pr list --head "$SUB_BRANCH" --state open --json body --jq '.[0].body // empty' 2>/dev/null || true)"
@@ -51,8 +60,28 @@ if [ -n "$marker" ]; then
   fi
 fi
 
+# Earlier reviews of this workflow (run history): every run but a pull
+# request's, for 4. and for leaving out what PR runs already reviewed.
+: > history_failed.txt
+: > history_pr.txt
+if [ "$event" != "pull_request" ]; then
+  KIND="${SUB_BRANCH#bot-suggest/}"; KIND="${KIND%%/*}"
+  # shellcheck source=review-history.sh
+  source "$(dirname "$0")/review-history.sh"
+fi
+
 # 2./3. The event
-if [ -z "$start" ]; then
+if [ -z "$start" ] && [ "$event" != "pull_request" ] && [ "$event" != "push" ]; then
+  # 4. A scheduled or manual run
+  if [ -n "$history_start" ]; then
+    start="$history_start"
+    from_history=true
+    echo "Changes since the last review of $BRANCH (run $history_run, ${start:0:7})."
+  else
+    start="$head"
+    echo "::notice::No earlier review of $BRANCH found in this workflow's runs: nothing to review now, this run is the starting point. For a full review, run it with scan-mode \"all\"."
+  fi
+elif [ -z "$start" ]; then
   if [ "$event" = "pull_request" ] && { [ "$action" = "opened" ] || [ "$action" = "reopened" ] || [ -z "$(field '.before')" ]; }; then
     base_ref="$(field '.pull_request.base.ref')"
     start="$(git merge-base "origin/$base_ref" HEAD)"
@@ -98,9 +127,17 @@ while IFS= read -r c; do
     [ -n "$prefix" ] && case "$subject" in "$prefix"*) bot_subject=true ;; esac
   done <<< "$bot_subjects"
   [ "$bot_subject" = true ] && continue
+  # Already reviewed in a pull request run: between that PR's base and the
+  # commit its review reached.
+  reviewed_in_pr=false
+  while read -r pr_base pr_head; do
+    [ -z "$pr_head" ] && continue
+    if is_ancestor_of "$c" "$pr_head" && ! is_ancestor_of "$c" "$pr_base"; then reviewed_in_pr=true; break; fi
+  done < history_pr.txt
+  [ "$reviewed_in_pr" = true ] && continue
   echo "$c" >> commits.txt
 done < all_commits.txt
-rm -f all_commits.txt
+rm -f all_commits.txt history_pr.txt
 
 # --- Files ----------------------------------------------------------------------------
 
@@ -120,6 +157,16 @@ if [ -n "$FILE_PATTERN" ]; then
       echo "$f"
     fi
   done >> files_to_check.txt
+  # The same for a scheduled or manual run: files whose call failed in the
+  # last review it continues from (its "Suggestion not made" warnings).
+  if [ "$from_history" = true ]; then
+    while IFS= read -r f; do
+      if [ -n "$f" ] && [ -f "$f" ]; then
+        echo "Checking again (its Claude call failed in the last review): $f" >&2
+        echo "$f"
+      fi
+    done < history_failed.txt >> files_to_check.txt
+  fi
   sort -u -o files_to_check.txt files_to_check.txt
   count="$(wc -l < files_to_check.txt | tr -d ' ')"
 else
@@ -138,3 +185,4 @@ out count "$count"
 out base_rev "$base_rev"
 out rebuild "$rebuild"
 out reviewed_sha "$head"
+rm -f history_failed.txt

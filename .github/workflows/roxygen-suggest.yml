@@ -4,12 +4,12 @@ on:
   workflow_call:
     inputs:
       scan-mode:
-        description: '"auto" (PR or push: what is new since the last run; schedule or manual run: sweep), "changed" or "all" (every R/*.R file)'
+        description: '"auto" (= "changed": what changed since the last review — for a PR or push since the last run, for a scheduled or manual run since the last review of the branch) or "all" (every R/*.R file, e.g. a manual full review)'
         required: false
         type: string
         default: 'auto'
       sweep-base:
-        description: 'Sweep: branch to scan and to open the sweep PR against; empty: the chosen branch on manual runs, dev on schedules'
+        description: 'Branch of scheduled and manual runs (and of the full review PR); empty: the chosen branch on manual runs, dev on schedules'
         required: false
         type: string
         default: ''
@@ -70,6 +70,8 @@ jobs:
       contents: write
       pull-requests: write
       issues: write         # possible code bugs from a sweep without a suggestion PR
+      actions: read         # earlier runs: what the last review covered (review-history.sh)
+      checks: read          # their annotations: reviewed commit, failed calls
 
     steps:
       - name: Resolve scope
@@ -102,8 +104,10 @@ jobs:
           FILE_PATTERN: 'R/*.R'
         run: |
           if [ "${{ steps.scope.outputs.mode }}" = "all" ]; then
-            find R -name '*.R' > files_to_check.txt
+            find R -name '*.R' | sort > files_to_check.txt
+            echo "Full review of $(wc -l < files_to_check.txt) files."
             echo "count=$(wc -l < files_to_check.txt)" >> "$GITHUB_OUTPUT"
+            echo "reviewed_sha=$(git rev-parse HEAD)" >> "$GITHUB_OUTPUT"
           else
             SUB_BRANCH="bot-suggest/docs/${BRANCH//\//-}"
             echo "sub_branch=$SUB_BRANCH" >> "$GITHUB_OUTPUT"
@@ -186,6 +190,16 @@ jobs:
           sweep-commit-message: 'docs: monthly roxygen suggestion sweep'
           sweep-pr-title: 'Monthly roxygen documentation sweep'
           sweep-pr-body: 'Automated suggestions from the roxygen doc-assist workflow. Review before merging.'
+
+      # What this review covered, as an annotation of the run: the next
+      # scheduled or manual run starts from here (review-history.sh). Files
+      # whose Claude call failed are its "Suggestion not made" warnings.
+      - name: Record review
+        if: success() && steps.scope.outputs.skip != 'true'
+        env:
+          BRANCH: ${{ steps.scope.outputs.branch }}
+          REVIEWED_SHA: ${{ steps.files.outputs.reviewed_sha }}
+        run: echo "::notice title=bot-suggest review::docs $BRANCH $REVIEWED_SHA"
 
       # Counts this run once, anonymously, by workflow, outcome and version
       # (see docs: usage counting). Nothing about this repository is sent.

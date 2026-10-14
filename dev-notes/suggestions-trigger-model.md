@@ -133,9 +133,11 @@ with an open PR) would start two runs writing the same bot branch. So:
 
 ### 4. Mode by event
 
-`scan-mode: auto` (new default): PR or push → changed; schedule or manual
-run → sweep. `changed` and `all` stay available. The example callers no
-longer need the `github.event_name == 'pull_request' && …` expression.
+~~`scan-mode: auto` (new default): PR or push → changed; schedule or manual
+run → sweep.~~ Changed 2026-10-14 (see "Scheduled and manual runs review
+what changed" below): `auto` = `changed` for every event; `all` is the
+deliberate full review. The example callers no longer need the
+`github.event_name == 'pull_request' && …` expression.
 
 ### 5. Branch inputs
 
@@ -288,11 +290,66 @@ Found and fixed while testing: `grep` with no match under `pipefail` ended
 
 None of this needs new permissions or secrets.
 
+## Scheduled and manual runs review what changed (2026-10-14)
+
+User's view: a manual run (`workflow_dispatch`) should only check diffs,
+not unchanged files; the sweep with lookback days and a rotating share
+was a workaround for not knowing what was already reviewed. No hidden git
+ref as the memory (user's decision); nothing stored at all instead:
+
+- **Every review records itself** as a notice annotation of its run
+  (step "Record review", title `bot-suggest review`, message
+  `<kind> <branch> <sha>`, kind `docs` / `tests`). Failed Claude calls
+  already leave "Suggestion not made" warnings with the file.
+- **`review-history.sh`** (sourced by `determine-changes.sh` for every
+  event but a PR) reads the caller workflow's successful runs, newest
+  first (`GITHUB_WORKFLOW_REF` names the caller's file): up to the last
+  review of the branch that is in HEAD's history → `history_start`, its
+  failed files; and PR runs since then → `<PR base> <reviewed head>`.
+  The run's own commit isn't enough: a schedule starts on `main` while
+  reviewing `dev`.
+- **Starting point 4 in `determine-changes.sh`:** a scheduled or manual
+  run continues from that review (after the open bot PR's marker, which
+  still wins); its failed files are checked again. No earlier review:
+  nothing to review, the run becomes the starting point (notice).
+- **Commits a PR run already reviewed** (between that PR's base and the
+  commit its review reached) are left out for every run but a PR's — also
+  once the PR's branch is deleted, which the "commits on no other branch"
+  rule doesn't cover. Squash and rebase merges create new commits, which
+  are reviewed again (accepted).
+- **Modes:** `auto` = `changed` for every event; `all` = every R file (the
+  full review PR as before, `bot-suggest/<kind>-sweep-<base>-YYYY-MM`).
+  Removed from `test-suggest.yml`: `sweep-lookback-days`,
+  `sweep-rotation-months` and the inline file selection. A scheduled or
+  manual `changed` run commits like a push run (bot branch
+  `bot-suggest/<kind>/<branch>`, sub-PR into the branch, built on).
+- **Permissions (breaking for callers):** the roxygen and test jobs request
+  `actions: read` and `checks: read`; caller jobs must grant them, or
+  GitHub doesn't start the run. Without the API data (e.g. the authors
+  workflow, which has neither) nothing breaks: no starting point, no PR
+  exclusion, a notice only for scheduled and manual runs.
+- **Callers:** a manual full review needs a `workflow_dispatch` input
+  passed as `scan-mode`, e.g. `scope: [changed, all]` →
+  `scan-mode: ${{ inputs.scope == 'all' && 'all' || 'auto' }}`. A caller
+  still passing `github.event_name == 'pull_request' && 'changed' ||
+  'all'` (dsSupportClient) gets a full review on every schedule — drop
+  the expression.
+
+Tested locally with `gh`/`jq` stand-ins (scratchpad `history/run_test.sh`):
+last review with a failed file, a PR reviewed and merged since (branch
+deleted), a direct push → only the pushed file and the failed one; first
+run → nothing. **Not in CI yet**; **docs pending:** the trigger sections
+of the roxygen and test pages, the suggestions page, Getting started
+(permissions), the example callers (dispatch input, permissions), a
+release note.
+
 ## Open points
 
-- **Fewer repeated reviews:** skipping functions whose code didn't change
-  since their last review (a hash, like the analysis workflow's markers)
-  could cut cost further. Not in the first version.
+- ~~**Fewer repeated reviews:** skipping functions whose code didn't
+  change since their last review could cut cost further.~~ Largely done
+  for scheduled and manual runs with the run history (above); within a
+  PR, files whose code didn't change are still reviewed (the user
+  triggers runs with trivial changes on purpose).
 - **Testing:** PR mode is confirmed in CI (dsSupportClient PR #21 /
   #24), so the unified model must be re-tested there:
   - PR opened, then further pushes;

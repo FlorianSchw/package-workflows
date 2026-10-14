@@ -611,6 +611,48 @@ convergence; harmless, warnings aren't treated as failures.
 tags), and the PR in CI. That needs the user's test repo created with
 dsAnalysis, with the three Anthropic secrets.
 
+### Step by step, with `depends_on` (2026-10-14)
+
+User's idea: a later step fails anyway when an earlier one (data
+management) didn't work, so write and test one step at a time.
+`draft_steps_in_order()` replaces the single call for all steps:
+
+- **Order:** plan order. Each step goes through `draft_and_test_steps()`
+  on its own (Claude, call and column checks, test run of all scripts so
+  far, repair rounds).
+- **Dependencies** (`step_dependencies()`): a step's optional
+  `depends_on:` (ids of steps above it; checked in
+  `validate_analysis_plan()`), else all steps above it. `depends_on: []`
+  makes a step independent. A step whose dependency failed in this run is
+  not attempted: status `blocked`, report text `step.blocked`; it is
+  requested again on the next run. A notes-only ("not possible") step
+  blocks nothing.
+- **A failed step leaves at once:** its new scripts are removed and its
+  previous version restored before the next step runs (the scripts are
+  printed to the job log first, the former debug block of the entry
+  script).
+- **Context per step:** the scripts that run before it (kept ones and
+  those written in this run; not its own old version, not pending steps)
+  and what the last passing test run left on the servers
+  (`run_analysis_scripts(connections = …)`: symbols, and with
+  dsBaseClient classes, dimensions and columns) — "Objects on the servers
+  after those scripts" in the prompt.
+- **Cost:** a call per step instead of one, but smaller, and no repair
+  rounds spent on consequential errors. The prompt is split at
+  `<!-- per request -->`: instructions, function reference, catalogue,
+  open issues and plan are cached for the run's later calls (minutes
+  apart); the tool schema lists all of the run's step ids so it stays the
+  same.
+- A failed Claude call for one step is that step's "no answer"; the run
+  goes on (before, a failed first call stopped the run).
+
+Tested with stubs (scratchpad `stepwise_test.R`): order, default and
+explicit dependencies, plan check, blocking, restore, statuses. **Not
+tested:** the object listing against a real DSLite session (DLLs blocked
+locally), real Claude, CI. **Docs pending:** `depends_on` and the
+step-by-step order in `datashield-analysis-details.qmd` (plan fields) and
+the main page; a commented `depends_on` in `examples/analysis-plan.yml`.
+
 ## What dsAnalysis needs (checklist for the user, 2026-09-30)
 
 Template (`initProject()`):

@@ -1,4 +1,5 @@
-# Asks Claude for the steps to write, writes their scripts and tests them
+# Asks Claude for the steps to write (one at a time, from
+# draft_steps_in_order()), writes their scripts and tests them
 # (test_step_scripts()); steps that fail get up to
 # `settings$repair_rounds` more rounds, each with their problems and code
 # (format_repair_request()). A step's previous scripts are removed when its
@@ -46,7 +47,7 @@ draft_and_test_steps <- function(to_write, plan, steps, existing, context, check
     # Every other bot script runs too: kept steps, and requested steps that
     # have no new version (yet), so each step finds the objects it needs.
     others <- sort(existing$path[!existing$step %in% names(candidate)])
-    outcome <- test_step_scripts(candidate, answers, checks$reference, checks$variables, checks$login_file, others, settings, texts)
+    outcome <- test_step_scripts(candidate, answers, checks$reference, checks$variables, checks$login_file, others, settings, texts, context$connections)
     if (length(outcome$problems) == 0 || round == attempts) break
     requested <- names(outcome$problems)
     message(sprintf("Repair round for: %s", paste(requested, collapse = ", ")))

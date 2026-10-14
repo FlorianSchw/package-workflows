@@ -33,37 +33,38 @@ fi
 
 # --- Mode ------------------------------------------------------------------------
 
+# Scheduled and manual runs are about a branch other than the event's: the
+# one chosen in "Run workflow", dev on schedules (a schedule always starts
+# on the default branch), or sweep-base.
+case "$event" in
+  pull_request|push) ;;
+  *)
+    [ "$ALLOW_SWEEP" = "true" ] || skip "this workflow runs on pull requests and pushes only."
+    if [ -n "$SWEEP_BASE" ]; then branch="$SWEEP_BASE"
+    elif [ "$event" = "workflow_dispatch" ]; then branch="$REF_NAME"
+    else branch="dev"; fi
+    ;;
+esac
+
+# "auto": what changed since the last review — for a PR or push since the
+# last run (determine-changes.sh), for a scheduled or manual run since the
+# last review of the branch in the run history. "all": every file.
 mode="$SCAN_MODE"
-if [ "$mode" = "auto" ]; then
-  case "$event" in
-    pull_request|push) mode="changed" ;;
-    *) mode="all" ;;
-  esac
-fi
+[ "$mode" = "auto" ] && mode="changed"
 case "$mode" in
   changed)
-    case "$event" in
-      pull_request|push) ;;
-      *) skip "scan-mode \"changed\" needs a pull request or a push, this run was started by $event." ;;
-    esac
     out skip false
     out mode changed
     out ref "$branch"
     out branch "$branch"
     ;;
   all)
-    [ "$ALLOW_SWEEP" = "true" ] || skip "this workflow has no sweep; it runs on pull requests and pushes."
-    base="$SWEEP_BASE"
-    if [ -z "$base" ]; then
-      # A schedule always starts on the default branch, so it sweeps dev;
-      # a manual run sweeps the branch chosen in "Run workflow".
-      if [ "$event" = "workflow_dispatch" ]; then base="$REF_NAME"; else base="dev"; fi
-    fi
-    echo "Sweep of $base."
+    [ "$ALLOW_SWEEP" = "true" ] || skip "this workflow has no full review; it runs on pull requests and pushes."
+    echo "Full review of $branch."
     out skip false
     out mode all
-    out ref "$base"
-    out branch "$base"
+    out ref "$branch"
+    out branch "$branch"
     ;;
   *) echo "::error::Unknown scan-mode \"$SCAN_MODE\" (auto, changed or all)."; exit 1 ;;
 esac

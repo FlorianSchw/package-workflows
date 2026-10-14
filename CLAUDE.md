@@ -123,7 +123,8 @@ the live caller used to validate changes before wider rollout.
   workflows), `count-run` (usage counting, see below),
   `resolve-suggestion-scope` (roxygen/tests/authors: skip,
   mode and branch from the event; its folder also holds
-  `determine-changes.sh`, what is new since the last run),
+  `determine-changes.sh`, what is new since the last run, and
+  `review-history.sh`, the last review from the run history),
   `resolve-push-token` (also `package-release.yml`),
   `commit-updated-files` (also `authors-suggest.yml`), `commit-and-push`
   (plain commit to the current branch, commit message as input;
@@ -352,6 +353,13 @@ and `CONTRIBUTING.md`); no PRs until a branch model and rules exist.
     `@vX` in the docs.
 - Federation rules for the other two accounts, before rolling out beyond
   dsSupportClient.
+- **Review of the Claude-assisted workflows** (2026-10-14): token levers
+  and refactoring, ordered —
+  [dev-notes/claude-workflow-review.md](dev-notes/claude-workflow-review.md).
+  Decided: manual runs review only what changed since the last review,
+  no hidden git ref as memory; built from the run history (see the
+  trigger-model item). Analysis step by step with `depends_on`: done (see
+  the analysis item).
 - **CI test round prepared** (2026-10-14): what to trigger on
   dsSupportClient and what to check, for everything built since late
   September — [dev-notes/ci-test-round.md](dev-notes/ci-test-round.md).
@@ -466,8 +474,18 @@ and `CONTRIBUTING.md`); no PRs until a branch model and rules exist.
   answer, the pak installs, the PR.
   - **Test bed:** a GitHub repo created with dsAnalysis, with the three
     Anthropic secrets. The user will set it up.
+  - **Step by step with `depends_on`** (built 2026-10-14, tested with
+    stubs, not yet with DSLite or in CI): steps are written and tested one
+    at a time in plan order (`draft_steps_in_order()`); a step waits while
+    one it depends on fails (plan `depends_on`, else all earlier steps);
+    each prompt gets the scripts so far and the objects on the servers;
+    the shared prompt part is cached. **Docs pending:** `depends_on` and
+    the order on the analysis pages, a commented `depends_on` in
+    `examples/analysis-plan.yml`.
   - **Later stages:** models, figures/tables, and then tuning of the
-    incremental updates.
+    incremental updates. Structured `model:` steps could be built from an
+    R template instead of Claude
+    ([dev-notes/claude-workflow-review.md](dev-notes/claude-workflow-review.md)).
   - **dsAnalysis:** its changes are a checklist in
     [dev-notes/analysis-suggest.md](dev-notes/analysis-suggest.md),
     including a bug in `add_dsPackage()`.
@@ -503,6 +521,21 @@ and `CONTRIBUTING.md`); no PRs until a branch model and rules exist.
   on manual runs and `dev` on schedules; sweep branch names include the
   base. Decisions, consequences and the test list are in
   [dev-notes/suggestions-trigger-model.md](dev-notes/suggestions-trigger-model.md).
+  **Changed 2026-10-14** (tested locally with `gh`/`jq` stand-ins, not in
+  CI): scheduled and manual runs review only what changed since the last
+  review of the branch, read from the run history
+  (`review-history.sh`: each review leaves a `bot-suggest review` notice
+  annotation, failed calls their warnings; no storage, no ref — user's
+  decision); commits a PR run already reviewed are left out for all other
+  runs; `auto` = `changed` for every event, `all` = deliberate full
+  review; `sweep-lookback-days` / `sweep-rotation-months` removed.
+  **Breaking for callers:** roxygen and test caller jobs must grant
+  `actions: read` and `checks: read`; dsSupportClient's test caller should
+  drop its `scan-mode` expression (else every schedule is a full review).
+  **Docs pending:** trigger sections of the roxygen/test pages (the test
+  page still describes lookback/rotation), suggestions page, Getting
+  started (permissions), example callers (a `scope` dispatch input,
+  permissions), release note.
 - **Test workflow: test file schemes and existing setups** (designed
   and built 2026-10-01, tested locally with mocked Claude, **not yet in
   CI**; first real check: a repository named by category, e.g. a
@@ -681,9 +714,9 @@ and `CONTRIBUTING.md`); no PRs until a branch model and rules exist.
     PR like #21 (contract change + outdated test) as the first real check.
   - ~~**Max number of test suggestions:** currently 5~~ Done:
     `max_new_tests` (10) in `config/claude.yml`. Sweep cost is handled by
-    scope instead: `sweep-lookback-days` / `sweep-rotation-months` in
-    `test-suggest.yml` (recently changed + rotating share; tested
-    locally). A cheaper sweep model was considered and not done — the
+    scope instead: ~~`sweep-lookback-days` / `sweep-rotation-months`~~
+    (removed 2026-10-14) scheduled and manual runs review only what
+    changed since the last review (run history). A cheaper sweep model was considered and not done — the
     existing-test diagnosis needs the strong model.
   - **Author contributions in `DESCRIPTION`:** ~~`aut` vs `ctb`~~ done
     (`R/` changes → `aut`, otherwise `ctb`, upgrade only; tested locally
