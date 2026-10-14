@@ -1,0 +1,59 @@
+name: 'Propose Branch'
+description: >-
+  Commits the files listed in a manifest on top of the checked-out commit,
+  force-pushes them to a fixed branch and opens a PR against the base
+  branch, or updates the open one's description. No-op when nothing
+  actually changed. Works on any checked-out repository (directory +
+  repository), e.g. a second one checked out next to the caller. The
+  logic is in propose-branch.sh next to this file.
+inputs:
+  manifest:
+    description: 'Manifest file, one path per line, relative to the directory.'
+    required: true
+  branch:
+    description: 'Branch to push to (rewritten on every run).'
+    required: true
+  base:
+    description: 'Branch the PR goes into.'
+    required: true
+  title:
+    description: 'PR title.'
+    required: true
+  body-file:
+    description: 'File with the PR description.'
+    required: true
+  commit-message:
+    description: 'Commit message.'
+    required: true
+  token:
+    description: 'Token used to push and open the PR — an App token so the PR''s checks run.'
+    required: true
+  directory:
+    description: 'Directory of the repository checkout.'
+    required: false
+    default: '.'
+  repository:
+    description: 'owner/repo of that checkout.'
+    required: false
+    default: ${{ github.repository }}
+outputs:
+  pr-url:
+    description: 'URL of the opened or updated PR, empty when nothing changed.'
+    value: ${{ steps.propose.outputs.pr_url }}
+runs:
+  using: 'composite'
+  steps:
+    - name: Commit, push and open PR
+      id: propose
+      shell: bash
+      env:
+        GH_TOKEN: ${{ inputs.token }}
+        MANIFEST: ${{ inputs.manifest }}
+        BRANCH: ${{ inputs.branch }}
+        BASE: ${{ inputs.base }}
+        TITLE: ${{ inputs.title }}
+        BODY_FILE: ${{ inputs.body-file }}
+        COMMIT_MESSAGE: ${{ inputs.commit-message }}
+        DIRECTORY: ${{ inputs.directory }}
+        REPOSITORY: ${{ inputs.repository }}
+      run: bash "$GITHUB_ACTION_PATH/propose-branch.sh"

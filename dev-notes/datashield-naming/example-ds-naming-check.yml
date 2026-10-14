@@ -1,0 +1,32 @@
+# Caller for the naming check, in a client package (e.g. dsBaseClient).
+# Not in examples/ (the docs) until the rules are agreed.
+name: DataSHIELD Argument Naming Check
+
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: '0 6 1 * *'   # monthly: keeps the review up to date with the code
+
+jobs:
+  check-naming:
+    permissions:
+      id-token: write
+      contents: write
+      pull-requests: write
+    uses: FlorianSchw/package-workflows/.github/workflows/ds-naming-check.yml@main
+    with:
+      server-repository: datashield/dsBase
+      server-ref: v7.0-dev
+      base-branch: v7.0-dev
+    secrets:
+      anthropic-organization-id: ${{ secrets.ANTHROPIC_ORG_ID }}
+      anthropic-service-account-id: ${{ secrets.ANTHROPIC_SVAC_ID }}
+      anthropic-federation-rule-id: ${{ secrets.ANTHROPIC_FDRL_NAMING }}
+      app-client-id: ${{ secrets.APP_CLIENT_ID }}
+      app-private-key: ${{ secrets.APP_PRIVATE_KEY }}
+
+  keepalive:
+    if: github.event_name == 'schedule'
+    permissions:
+      actions: write
+    uses: FlorianSchw/package-workflows/.github/workflows/workflow-keepalive.yml@main

@@ -7,6 +7,10 @@ inputs:
   app-private-key:
     description: 'GitHub App private key. Required if client-id is set.'
     required: false
+  repositories:
+    description: 'Further repositories of the same owner the token must reach (comma-separated names, e.g. "dsBase"); empty: only the current one.'
+    required: false
+    default: ''
 outputs:
   token:
     description: 'Resolved App installation token, or empty string if client-id was not supplied.'
@@ -14,6 +18,14 @@ outputs:
 runs:
   using: 'composite'
   steps:
+    - name: List repositories
+      id: scope
+      if: inputs.client-id != '' && inputs.repositories != ''
+      shell: bash
+      env:
+        MORE: ${{ inputs.repositories }}
+      run: echo "repositories=${GITHUB_REPOSITORY#*/},${MORE}" >> "$GITHUB_OUTPUT"
+
     - name: Generate App token
       id: app_token
       if: inputs.client-id != ''
@@ -21,3 +33,6 @@ runs:
       with:
         client-id: ${{ inputs.client-id }}
         private-key: ${{ inputs.app-private-key }}
+        # Empty: the current repository only (the action's default).
+        owner: ${{ steps.scope.outputs.repositories != '' && github.repository_owner || '' }}
+        repositories: ${{ steps.scope.outputs.repositories }}

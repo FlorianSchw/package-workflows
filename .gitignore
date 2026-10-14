@@ -7,3 +7,6 @@
 docs/_site/
 docs/.quarto/
 /.quarto/
+
+# DataSHIELD naming inventory data (large / survey answers), not for git
+dev-notes/datashield-naming/*.csv

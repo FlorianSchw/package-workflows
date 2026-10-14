@@ -105,6 +105,18 @@ the live caller used to validate changes before wider rollout.
     which replace the whole file. Adjustments go there rather than into R.
     Design, marker formats and the dsAnalysis checklist are in
     [dev-notes/analysis-suggest.md](dev-notes/analysis-suggest.md).
+  - `ds-naming-check.yml`, `ds-naming-apply.yml` — DataSHIELD argument
+    naming harmonisation (internal, kept off the docs until the rules are
+    agreed). Run from a client package, which checks out its server
+    package. Check: rules (`config/ds-naming-rules.yml`, merged key by key
+    via `read_config_yaml()`, now in `shared/`) + Claude for unclear
+    arguments → `.github/ds-naming/transformations.yml` in a review PR,
+    people set `status: approved|skip`. Apply (on push of that file):
+    approved renames via parse data in code/tests/roxygen/Rd/vignette
+    chunks, one `refactor!:` PR per repository. Entry scripts
+    `R/check_ds_naming.R`, `R/apply_ds_naming.R`, functions in
+    `R/functions/ds-naming/`; generic `propose-branch` action. Design and
+    state: [dev-notes/datashield-naming/](dev-notes/datashield-naming/README.md).
 - Branch-protection rulesets (formerly `rulesets/` + `apply-ruleset.yml`)
   now live in a separate private repo.
 - `.github/actions/` — composite actions: `anthropic-token` (suggestion
@@ -115,14 +127,19 @@ the live caller used to validate changes before wider rollout.
   `resolve-push-token` (also `package-release.yml`),
   `commit-updated-files` (also `authors-suggest.yml`), `commit-and-push`
   (plain commit to the current branch, commit message as input;
-  `workflow-graphs.yml`, meant for future generated-file workflows too).
+  `workflow-graphs.yml`, meant for future generated-file workflows too),
+  `propose-branch` (commit a manifest on top of the checkout, force-push
+  a fixed branch, open or update its PR; any checkout incl. a second
+  repository; the ds-naming workflows). `resolve-push-token` takes
+  `repositories` for a token reaching more repositories of the owner.
 - `R/` — entry scripts `suggest_roxygen.R`, `suggest_tests.R`,
-  `suggest_authors.R`, `workflow_graphs.R`, `suggest_datashield_analysis.R`
+  `suggest_authors.R`, `workflow_graphs.R`, `suggest_datashield_analysis.R`,
+  `check_ds_naming.R`, `apply_ds_naming.R`
   (env/config wiring + main loop only) and `R/functions/` (all logic, one
   function per file), split into `shared/` (config/prompt files, GitHub
   API, report layout, reading R files, the Claude call) and one folder per
   workflow: `roxygen/`, `tests/`, `authors/`, `workflow-graphs/`,
-  `analysis/`. Each entry script loads only
+  `analysis/`, `ds-naming/`. Each entry script loads only
   `shared/` plus its own folder (`purrr::walk()`), so a function used by
   two workflows must move to `shared/` — no calls across workflow
   folders (checked on the 2026-09-26 split, again 2026-10-04). **One
@@ -135,13 +152,13 @@ the live caller used to validate changes before wider rollout.
 - `dev-notes/` — internal design notes and status per suggestion workflow
   (not published).
 - **Usage counting:** the Claude-assisted workflows (roxygen, tests,
-  analysis scripts) and `authors-suggest.yml` end with a "Count this run"
+  analysis scripts, naming check) and `authors-suggest.yml` end with a "Count this run"
   step — the composite action `count-run` — that downloads one file from
   the `usage-counter` pre-release, `<workflow>-<outcome>-<channel>`
   (outcome proposed / nothing / failed; channel release = a `vX` tag
   points to the commit that ran, dev = `@main` or a branch, i.e.
   development and testing). Anonymous; the download counts are the runs.
-  Only these four (user's choice). `collect-usage.yml` (not reusable)
+  Only these (user's choice: Claude-assisted + authors). `collect-usage.yml` (not reusable)
   keeps the release complete — the files for every workflow calling
   `count-run` — and records the counts daily on the `usage-data` branch.
   **A new Claude-assisted workflow gets the same last step** (copy it,
@@ -587,6 +604,50 @@ and `CONTRIBUTING.md`); no PRs until a branch model and rules exist.
   (2026-09-26): no pin, stay on `ubuntu-latest`. After 2026-10-19, if
   dependency installs get slow or fail, check P3M support for 26.04
   first; pinning to `ubuntu-24.04` remains the fallback.
+- **DataSHIELD argument naming harmonisation** (designed 2026-10-14;
+  check and apply workflows **built the same day, tested locally on a
+  fixture pair, not yet on a real package or in CI**; keep off
+  `docs/roadmap.qmd` and `examples/` until the rules are agreed with the
+  DataSHIELD developers in person — the callers are in the dev-note
+  folder). Goal: a breaking release with one
+  argument name per object class/role across all DataSHIELD packages
+  (today e.g. `newobj` vs `newobj.name`), done by a workflow, covering R
+  code, server side, tests, test file names, roxygen and vignettes.
+  Everything is in [dev-notes/datashield-naming/](dev-notes/datashield-naming/README.md):
+  survey results, an inventory of 32 packages × prod/dev (1,077
+  user-facing functions; Python prototype + 3.8 MB CSV, git-ignored), the
+  draft rules (now `config/ds-naming-rules.yml`; YAML with per-line
+  comments; `name: [a, b]` = open, the check uses the front-runner and
+  marks `rule_open`), and what was built ("Built" section).
+  - **First real run done locally** (2026-10-14, dsBaseClient + dsBase
+    v7.0-dev, no Claude): 336 proposals; applying all of them leaves every
+    file parsing, no missed use or call of an old name (details and the
+    fixes it needed in the dev-note).
+  - **Next:** a real Claude answer and both workflows in CI (needs a
+    federation rule for `ds-naming-check.yml` per repo, the App on client
+    and server repo of the same owner — a fork pair under one account
+    would do); `propose-branch` (push + PR) is untested.
+  - **Not built yet:** Claude on vignette prose (advisory), the
+    throwaway DataSHIELD stack in CI, deprecation shims, function renames
+    and argument reordering (reported only), `@param` texts from
+    `param_doc`.
+  - **Agreed shape:** rules config → deterministic detect (report +
+    transformation config, one entry per function × argument) → Claude
+    classifies only what code can't (low-confidence args, names like `x`
+    used for 8 classes) as `proposed` entries → human approves →
+    deterministic, idempotent apply via the R parse tree, client and
+    server in lockstep, one PR per package onto a shared branch → Claude
+    advisory on vignette prose. Safety net: a throwaway DataSHIELD stack
+    (or DSLite) in CI running the integration tests.
+  - **Decided:** class names without `.name` suffix (`df`, not
+    `df.name`); test files `test-[<category>[_<category>]-]<target>[-<variant>].R`
+    with the category optional.
+  - **Coordinate first:** dsBase/Client v7.0-dev already renames
+    arguments (`xvect` → `x`, `x` → `x.name`, new `classConsistencyCheck`
+    instead of the survey's `checks`). Open questions are listed in the
+    dev-note.
+  - **Second idea, not started:** functions taking one vector should
+    accept several columns or a selector (all categorical/continuous).
 - Internal only — keep these off `docs/roadmap.qmd` (user's decision):
   - **Name of a generated DSLite setup file:** `setup.R` if none exists,
     else `setup-dslite.R` (must start with `setup` for testthat to run

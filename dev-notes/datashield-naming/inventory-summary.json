@@ -1,0 +1,2930 @@
+{
+ "scale": {
+  "packages": 32,
+  "functions": 1077,
+  "client_functions": 581,
+  "server_functions": 496,
+  "arguments": 4868,
+  "distinct_arg_names": 1213
+ },
+ "per_class": {
+  "any object": {
+   "total_args": 22,
+   "distinct_names": 5,
+   "top": [
+    {
+     "name": "x.name",
+     "n": 10,
+     "pkgs": 2,
+     "client": 5,
+     "server": 5
+    },
+    {
+     "name": "object",
+     "n": 5,
+     "pkgs": 3,
+     "client": 3,
+     "server": 2
+    },
+    {
+     "name": "x",
+     "n": 5,
+     "pkgs": 2,
+     "client": 4,
+     "server": 1
+    },
+    {
+     "name": "test.obj.name",
+     "n": 1,
+     "pkgs": 1,
+     "client": 1,
+     "server": 0
+    },
+    {
+     "name": "objname",
+     "n": 1,
+     "pkgs": 1,
+     "client": 1,
+     "server": 0
+    }
+   ],
+   "high_conf_share": 0.0
+  },
+  "bioc/omics object": {
+   "total_args": 128,
+   "distinct_names": 33,
+   "top": [
+    {
+     "name": "x",
+     "n": 25,
+     "pkgs": 4,
+     "client": 7,
+     "server": 18
+    },
+    {
+     "name": "genoData",
+     "n": 15,
+     "pkgs": 2,
+     "client": 6,
+     "server": 9
+    },
+    {
+     "name": "object",
+     "n": 13,
+     "pkgs": 3,
+     "client": 4,
+     "server": 9
+    },
+    {
+     "name": "Set",
+     "n": 10,
+     "pkgs": 4,
+     "client": 5,
+     "server": 5
+    },
+    {
+     "name": "image_asset",
+     "n": 8,
+     "pkgs": 1,
+     "client": 8,
+     "server": 0
+    },
+    {
+     "name": "set",
+     "n": 7,
+     "pkgs": 3,
+     "client": 2,
+     "server": 5
+    },
+    {
+     "name": "gds",
+     "n": 5,
+     "pkgs": 2,
+     "client": 2,
+     "server": 3
+    },
+    {
+     "name": "geno",
+     "n": 4,
+     "pkgs": 1,
+     "client": 0,
+     "server": 4
+    },
+    {
+     "name": "exposomeSet",
+     "n": 3,
+     "pkgs": 1,
+     "client": 0,
+     "server": 3
+    },
+    {
+     "name": "profile",
+     "n": 3,
+     "pkgs": 1,
+     "client": 3,
+     "server": 0
+    },
+    {
+     "name": "eSet",
+     "n": 3,
+     "pkgs": 2,
+     "client": 1,
+     "server": 2
+    },
+    {
+     "name": "complete_cases",
+     "n": 3,
+     "pkgs": 2,
+     "client": 0,
+     "server": 3
+    },
+    {
+     "name": "segmenter",
+     "n": 3,
+     "pkgs": 1,
+     "client": 3,
+     "server": 0
+    },
+    {
+     "name": "name",
+     "n": 2,
+     "pkgs": 2,
+     "client": 2,
+     "server": 0
+    },
+    {
+     "name": "ld.threshold",
+     "n": 2,
+     "pkgs": 2,
+     "client": 1,
+     "server": 1
+    }
+   ],
+   "high_conf_share": 0.9
+  },
+  "data.frame": {
+   "total_args": 325,
+   "distinct_names": 61,
+   "top": [
+    {
+     "name": "data",
+     "n": 51,
+     "pkgs": 13,
+     "client": 37,
+     "server": 14
+    },
+    {
+     "name": "x",
+     "n": 40,
+     "pkgs": 12,
+     "client": 23,
+     "server": 17
+    },
+    {
+     "name": "df",
+     "n": 38,
+     "pkgs": 7,
+     "client": 28,
+     "server": 10
+    },
+    {
+     "name": "data_name",
+     "n": 30,
+     "pkgs": 2,
+     "client": 21,
+     "server": 9
+    },
+    {
+     "name": "df.name",
+     "n": 27,
+     "pkgs": 4,
+     "client": 11,
+     "server": 16
+    },
+    {
+     "name": "dataset_id",
+     "n": 19,
+     "pkgs": 1,
+     "client": 19,
+     "server": 0
+    },
+    {
+     "name": "dataName",
+     "n": 16,
+     "pkgs": 4,
+     "client": 6,
+     "server": 10
+    },
+    {
+     "name": "formula",
+     "n": 11,
+     "pkgs": 1,
+     "client": 11,
+     "server": 0
+    },
+    {
+     "name": "what",
+     "n": 9,
+     "pkgs": 2,
+     "client": 6,
+     "server": 3
+    },
+    {
+     "name": "table",
+     "n": 6,
+     "pkgs": 4,
+     "client": 1,
+     "server": 5
+    },
+    {
+     "name": "to_combine",
+     "n": 4,
+     "pkgs": 2,
+     "client": 2,
+     "server": 2
+    },
+    {
+     "name": "pheno",
+     "n": 4,
+     "pkgs": 4,
+     "client": 2,
+     "server": 2
+    },
+    {
+     "name": "exposures",
+     "n": 3,
+     "pkgs": 2,
+     "client": 1,
+     "server": 2
+    },
+    {
+     "name": "type",
+     "n": 3,
+     "pkgs": 3,
+     "client": 3,
+     "server": 0
+    },
+    {
+     "name": "na.action",
+     "n": 3,
+     "pkgs": 2,
+     "client": 1,
+     "server": 2
+    }
+   ],
+   "high_conf_share": 0.62
+  },
+  "factor": {
+   "total_args": 40,
+   "distinct_names": 29,
+   "top": [
+    {
+     "name": "x",
+     "n": 5,
+     "pkgs": 2,
+     "client": 3,
+     "server": 2
+    },
+    {
+     "name": "levels",
+     "n": 3,
+     "pkgs": 3,
+     "client": 2,
+     "server": 1
+    },
+    {
+     "name": "exclude.transmit",
+     "n": 2,
+     "pkgs": 1,
+     "client": 0,
+     "server": 2
+    },
+    {
+     "name": "INDEX.names.transmit",
+     "n": 2,
+     "pkgs": 1,
+     "client": 0,
+     "server": 2
+    },
+    {
+     "name": "INDEX.names",
+     "n": 2,
+     "pkgs": 1,
+     "client": 2,
+     "server": 0
+    },
+    {
+     "name": "formula",
+     "n": 2,
+     "pkgs": 1,
+     "client": 2,
+     "server": 0
+    },
+    {
+     "name": "sex",
+     "n": 2,
+     "pkgs": 2,
+     "client": 1,
+     "server": 1
+    },
+    {
+     "name": "binomial_sigmoid_intervals",
+     "n": 1,
+     "pkgs": 1,
+     "client": 1,
+     "server": 0
+    },
+    {
+     "name": "classes",
+     "n": 1,
+     "pkgs": 1,
+     "client": 1,
+     "server": 0
+    },
+    {
+     "name": "data",
+     "n": 1,
+     "pkgs": 1,
+     "client": 1,
+     "server": 0
+    },
+    {
+     "name": "arm_column",
+     "n": 1,
+     "pkgs": 1,
+     "client": 1,
+     "server": 0
+    },
+    {
+     "name": "categories",
+     "n": 1,
+     "pkgs": 1,
+     "client": 1,
+     "server": 0
+    },
+    {
+     "name": ".drop",
+     "n": 1,
+     "pkgs": 1,
+     "client": 0,
+     "server": 1
+    },
+    {
+     "name": "design_analysis_id",
+     "n": 1,
+     "pkgs": 1,
+     "client": 1,
+     "server": 0
+    },
+    {
+     "name": "exclude",
+     "n": 1,
+     "pkgs": 1,
+     "client": 1,
+     "server": 0
+    }
+   ],
+   "high_conf_share": 0.85
+  },
+  "formula": {
+   "total_args": 101,
+   "distinct_names": 30,
+   "top": [
+    {
+     "name": "formula",
+     "n": 49,
+     "pkgs": 13,
+     "client": 29,
+     "server": 20
+    },
+    {
+     "name": "data",
+     "n": 8,
+     "pkgs": 1,
+     "client": 8,
+     "server": 0
+    },
+    {
+     "name": "model",
+     "n": 6,
+     "pkgs": 2,
+     "client": 6,
+     "server": 0
+    },
+    {
+     "name": "tol",
+     "n": 3,
+     "pkgs": 1,
+     "client": 3,
+     "server": 0
+    },
+    {
+     "name": "design_analysis_id",
+     "n": 2,
+     "pkgs": 1,
+     "client": 2,
+     "server": 0
+    },
+    {
+     "name": "levels",
+     "n": 2,
+     "pkgs": 1,
+     "client": 2,
+     "server": 0
+    },
+    {
+     "name": "max_outer",
+     "n": 2,
+     "pkgs": 1,
+     "client": 2,
+     "server": 0
+    },
+    {
+     "name": "sigma.formula",
+     "n": 2,
+     "pkgs": 2,
+     "client": 1,
+     "server": 1
+    },
+    {
+     "name": "warm_tol",
+     "n": 2,
+     "pkgs": 1,
+     "client": 2,
+     "server": 0
+    },
+    {
+     "name": "warm_max_iter",
+     "n": 2,
+     "pkgs": 1,
+     "client": 2,
+     "server": 0
+    },
+    {
+     "name": "tau.formula",
+     "n": 2,
+     "pkgs": 2,
+     "client": 1,
+     "server": 1
+    },
+    {
+     "name": "binomial_sigmoid_intervals",
+     "n": 2,
+     "pkgs": 1,
+     "client": 2,
+     "server": 0
+    },
+    {
+     "name": "nu.formula",
+     "n": 2,
+     "pkgs": 2,
+     "client": 1,
+     "server": 1
+    },
+    {
+     "name": "beta_tol",
+     "n": 1,
+     "pkgs": 1,
+     "client": 1,
+     "server": 0
+    },
+    {
+     "name": "levels_ordered",
+     "n": 1,
+     "pkgs": 1,
+     "client": 1,
+     "server": 0
+    }
+   ],
+   "high_conf_share": 0.66
+  },
+  "list": {
+   "total_args": 60,
+   "distinct_names": 36,
+   "top": [
+    {
+     "name": "tidy_expr",
+     "n": 9,
+     "pkgs": 2,
+     "client": 8,
+     "server": 1
+    },
+    {
+     "name": "ws",
+     "n": 4,
+     "pkgs": 2,
+     "client": 2,
+     "server": 2
+    },
+    {
+     "name": "asset_id",
+     "n": 3,
+     "pkgs": 1,
+     "client": 3,
+     "server": 0
+    },
+    {
+     "name": "expl_vars",
+     "n": 3,
+     "pkgs": 2,
+     "client": 1,
+     "server": 2
+    },
+    {
+     "name": "x",
+     "n": 3,
+     "pkgs": 2,
+     "client": 3,
+     "server": 0
+    },
+    {
+     "name": "weight",
+     "n": 2,
+     "pkgs": 1,
+     "client": 0,
+     "server": 2
+    },
+    {
+     "name": "beta",
+     "n": 2,
+     "pkgs": 1,
+     "client": 0,
+     "server": 2
+    },
+    {
+     "name": "blots",
+     "n": 2,
+     "pkgs": 2,
+     "client": 1,
+     "server": 1
+    },
+    {
+     "name": "resources",
+     "n": 2,
+     "pkgs": 2,
+     "client": 1,
+     "server": 1
+    },
+    {
+     "name": "fillvalue",
+     "n": 2,
+     "pkgs": 2,
+     "client": 1,
+     "server": 1
+    },
+    {
+     "name": "formulas",
+     "n": 2,
+     "pkgs": 2,
+     "client": 1,
+     "server": 1
+    },
+    {
+     "name": "variables",
+     "n": 2,
+     "pkgs": 1,
+     "client": 2,
+     "server": 0
+    },
+    {
+     "name": "cellTypeRef",
+     "n": 1,
+     "pkgs": 1,
+     "client": 0,
+     "server": 1
+    },
+    {
+     "name": "hlight",
+     "n": 1,
+     "pkgs": 1,
+     "client": 1,
+     "server": 0
+    },
+    {
+     "name": "forNA",
+     "n": 1,
+     "pkgs": 1,
+     "client": 1,
+     "server": 0
+    }
+   ],
+   "high_conf_share": 0.62
+  },
+  "matrix": {
+   "total_args": 93,
+   "distinct_names": 26,
+   "top": [
+    {
+     "name": "X",
+     "n": 26,
+     "pkgs": 2,
+     "client": 22,
+     "server": 4
+    },
+    {
+     "name": "x",
+     "n": 16,
+     "pkgs": 4,
+     "client": 6,
+     "server": 10
+    },
+    {
+     "name": "M1.name",
+     "n": 6,
+     "pkgs": 1,
+     "client": 0,
+     "server": 6
+    },
+    {
+     "name": "M1",
+     "n": 6,
+     "pkgs": 1,
+     "client": 6,
+     "server": 0
+    },
+    {
+     "name": "x.name",
+     "n": 5,
+     "pkgs": 2,
+     "client": 2,
+     "server": 3
+    },
+    {
+     "name": "data",
+     "n": 4,
+     "pkgs": 2,
+     "client": 2,
+     "server": 2
+    },
+    {
+     "name": "m",
+     "n": 3,
+     "pkgs": 2,
+     "client": 1,
+     "server": 2
+    },
+    {
+     "name": "nrows.transmit",
+     "n": 3,
+     "pkgs": 2,
+     "client": 0,
+     "server": 3
+    },
+    {
+     "name": "Xs",
+     "n": 2,
+     "pkgs": 1,
+     "client": 2,
+     "server": 0
+    },
+    {
+     "name": "centers",
+     "n": 2,
+     "pkgs": 2,
+     "client": 1,
+     "server": 1
+    },
+    {
+     "name": "y",
+     "n": 2,
+     "pkgs": 1,
+     "client": 0,
+     "server": 2
+    },
+    {
+     "name": "rank",
+     "n": 2,
+     "pkgs": 1,
+     "client": 0,
+     "server": 2
+    },
+    {
+     "name": "mdata.transmit",
+     "n": 2,
+     "pkgs": 2,
+     "client": 0,
+     "server": 2
+    },
+    {
+     "name": "mat",
+     "n": 2,
+     "pkgs": 2,
+     "client": 1,
+     "server": 1
+    },
+    {
+     "name": "K",
+     "n": 1,
+     "pkgs": 1,
+     "client": 1,
+     "server": 0
+    }
+   ],
+   "high_conf_share": 0.89
+  },
+  "model": {
+   "total_args": 84,
+   "distinct_names": 34,
+   "top": [
+    {
+     "name": "fit",
+     "n": 17,
+     "pkgs": 3,
+     "client": 16,
+     "server": 1
+    },
+    {
+     "name": "formula",
+     "n": 8,
+     "pkgs": 4,
+     "client": 2,
+     "server": 6
+    },
+    {
+     "name": "model",
+     "n": 7,
+     "pkgs": 4,
+     "client": 6,
+     "server": 1
+    },
+    {
+     "name": "formal_analysis_id",
+     "n": 4,
+     "pkgs": 1,
+     "client": 4,
+     "server": 0
+    },
+    {
+     "name": "level",
+     "n": 4,
+     "pkgs": 1,
+     "client": 4,
+     "server": 0
+    },
+    {
+     "name": "fresh_formal_analysis_id",
+     "n": 4,
+     "pkgs": 1,
+     "client": 4,
+     "server": 0
+    },
+    {
+     "name": "optimizer",
+     "n": 3,
+     "pkgs": 2,
+     "client": 1,
+     "server": 2
+    },
+    {
+     "name": "glmname.transmit",
+     "n": 2,
+     "pkgs": 1,
+     "client": 0,
+     "server": 2
+    },
+    {
+     "name": "task",
+     "n": 2,
+     "pkgs": 2,
+     "client": 1,
+     "server": 1
+    },
+    {
+     "name": "full",
+     "n": 2,
+     "pkgs": 1,
+     "client": 2,
+     "server": 0
+    },
+    {
+     "name": "model.y",
+     "n": 2,
+     "pkgs": 2,
+     "client": 1,
+     "server": 1
+    },
+    {
+     "name": "reduced",
+     "n": 2,
+     "pkgs": 1,
+     "client": 2,
+     "server": 0
+    },
+    {
+     "name": "x.transmit",
+     "n": 2,
+     "pkgs": 1,
+     "client": 0,
+     "server": 2
+    },
+    {
+     "name": "type",
+     "n": 2,
+     "pkgs": 1,
+     "client": 2,
+     "server": 0
+    },
+    {
+     "name": "parm",
+     "n": 2,
+     "pkgs": 1,
+     "client": 2,
+     "server": 0
+    }
+   ],
+   "high_conf_share": 0.83
+  },
+  "resource": {
+   "total_args": 21,
+   "distinct_names": 8,
+   "top": [
+    {
+     "name": "nc",
+     "n": 6,
+     "pkgs": 2,
+     "client": 3,
+     "server": 3
+    },
+    {
+     "name": "db_connection",
+     "n": 5,
+     "pkgs": 1,
+     "client": 0,
+     "server": 5
+    },
+    {
+     "name": "client",
+     "n": 3,
+     "pkgs": 2,
+     "client": 1,
+     "server": 2
+    },
+    {
+     "name": "lat",
+     "n": 2,
+     "pkgs": 2,
+     "client": 1,
+     "server": 1
+    },
+    {
+     "name": "lon",
+     "n": 2,
+     "pkgs": 2,
+     "client": 1,
+     "server": 1
+    },
+    {
+     "name": "exposure",
+     "n": 1,
+     "pkgs": 1,
+     "client": 1,
+     "server": 0
+    },
+    {
+     "name": "res",
+     "n": 1,
+     "pkgs": 1,
+     "client": 0,
+     "server": 1
+    },
+    {
+     "name": "resource",
+     "n": 1,
+     "pkgs": 1,
+     "client": 1,
+     "server": 0
+    }
+   ],
+   "high_conf_share": 0.95
+  },
+  "tibble": {
+   "total_args": 10,
+   "distinct_names": 7,
+   "top": [
+    {
+     "name": "x",
+     "n": 3,
+     "pkgs": 2,
+     "client": 1,
+     "server": 2
+    },
+    {
+     "name": "ref",
+     "n": 2,
+     "pkgs": 1,
+     "client": 2,
+     "server": 0
+    },
+    {
+     "name": "cat_labs",
+     "n": 1,
+     "pkgs": 1,
+     "client": 1,
+     "server": 0
+    },
+    {
+     "name": "df.name",
+     "n": 1,
+     "pkgs": 1,
+     "client": 1,
+     "server": 0
+    },
+    {
+     "name": "coh_labs",
+     "n": 1,
+     "pkgs": 1,
+     "client": 1,
+     "server": 0
+    },
+    {
+     "name": "pred",
+     "n": 1,
+     "pkgs": 1,
+     "client": 1,
+     "server": 0
+    },
+    {
+     "name": "var_labs",
+     "n": 1,
+     "pkgs": 1,
+     "client": 1,
+     "server": 0
+    }
+   ],
+   "high_conf_share": 0.8
+  },
+  "vector": {
+   "total_args": 590,
+   "distinct_names": 222,
+   "top": [
+    {
+     "name": "x",
+     "n": 128,
+     "pkgs": 15,
+     "client": 84,
+     "server": 44
+    },
+    {
+     "name": "y",
+     "n": 21,
+     "pkgs": 8,
+     "client": 13,
+     "server": 8
+    },
+    {
+     "name": "vars",
+     "n": 11,
+     "pkgs": 3,
+     "client": 8,
+     "server": 3
+    },
+    {
+     "name": "offset",
+     "n": 11,
+     "pkgs": 2,
+     "client": 4,
+     "server": 7
+    },
+    {
+     "name": "event",
+     "n": 10,
+     "pkgs": 1,
+     "client": 10,
+     "server": 0
+    },
+    {
+     "name": "variables",
+     "n": 9,
+     "pkgs": 4,
+     "client": 7,
+     "server": 2
+    },
+    {
+     "name": "group",
+     "n": 7,
+     "pkgs": 6,
+     "client": 3,
+     "server": 4
+    },
+    {
+     "name": "what",
+     "n": 6,
+     "pkgs": 2,
+     "client": 4,
+     "server": 2
+    },
+    {
+     "name": "names",
+     "n": 6,
+     "pkgs": 2,
+     "client": 3,
+     "server": 3
+    },
+    {
+     "name": "var1",
+     "n": 6,
+     "pkgs": 1,
+     "client": 6,
+     "server": 0
+    },
+    {
+     "name": "cols",
+     "n": 6,
+     "pkgs": 4,
+     "client": 3,
+     "server": 3
+    },
+    {
+     "name": "var2",
+     "n": 6,
+     "pkgs": 1,
+     "client": 6,
+     "server": 0
+    },
+    {
+     "name": "columns",
+     "n": 5,
+     "pkgs": 2,
+     "client": 3,
+     "server": 2
+    },
+    {
+     "name": "cluster_col",
+     "n": 5,
+     "pkgs": 1,
+     "client": 5,
+     "server": 0
+    },
+    {
+     "name": "objective_column",
+     "n": 5,
+     "pkgs": 1,
+     "client": 5,
+     "server": 0
+    }
+   ],
+   "high_conf_share": 0.86
+  }
+ },
+ "roles": {
+  "new_object_name": {
+   "total": 230,
+   "distinct_names": 51,
+   "top": [
+    {
+     "name": "newobj",
+     "n": 112,
+     "pkgs": 14
+    },
+    {
+     "name": "newobj.name",
+     "n": 11,
+     "pkgs": 3
+    },
+    {
+     "name": "output_asset",
+     "n": 10,
+     "pkgs": 1
+    },
+    {
+     "name": "new_obj",
+     "n": 8,
+     "pkgs": 1
+    },
+    {
+     "name": "new.obj",
+     "n": 7,
+     "pkgs": 2
+    },
+    {
+     "name": "symbol",
+     "n": 5,
+     "pkgs": 2
+    },
+    {
+     "name": "x",
+     "n": 4,
+     "pkgs": 4
+    },
+    {
+     "name": "name",
+     "n": 4,
+     "pkgs": 2
+    },
+    {
+     "name": "objectname",
+     "n": 4,
+     "pkgs": 1
+    },
+    {
+     "name": "output",
+     "n": 3,
+     "pkgs": 3
+    },
+    {
+     "name": "output_key",
+     "n": 3,
+     "pkgs": 1
+    },
+    {
+     "name": "output.type",
+     "n": 3,
+     "pkgs": 2
+    },
+    {
+     "name": "model",
+     "n": 2,
+     "pkgs": 1
+    },
+    {
+     "name": "model.name",
+     "n": 2,
+     "pkgs": 1
+    },
+    {
+     "name": "extract.summary.output.ranks.df",
+     "n": 2,
+     "pkgs": 1
+    }
+   ]
+  },
+  "connection": {
+   "total": 474,
+   "distinct_names": 3,
+   "top": [
+    {
+     "name": "datasources",
+     "n": 404,
+     "pkgs": 15
+    },
+    {
+     "name": "conns",
+     "n": 68,
+     "pkgs": 2
+    },
+    {
+     "name": "datasourceTest",
+     "n": 2,
+     "pkgs": 1
+    }
+   ]
+  },
+  "output_type": {
+   "total": 49,
+   "distinct_names": 2,
+   "top": [
+    {
+     "name": "type",
+     "n": 48,
+     "pkgs": 9
+    },
+    {
+     "name": "method",
+     "n": 1,
+     "pkgs": 1
+    }
+   ]
+  },
+  "checks_flag": {
+   "total": 54,
+   "distinct_names": 5,
+   "top": [
+    {
+     "name": "classConsistencyCheck",
+     "n": 26,
+     "pkgs": 1
+    },
+    {
+     "name": "checks",
+     "n": 23,
+     "pkgs": 4
+    },
+    {
+     "name": "DataSHIELD.checks",
+     "n": 3,
+     "pkgs": 1
+    },
+    {
+     "name": "check.rows",
+     "n": 1,
+     "pkgs": 1
+    },
+    {
+     "name": "check.names",
+     "n": 1,
+     "pkgs": 1
+    }
+   ]
+  },
+  "method_choice": {
+   "total": 157,
+   "distinct_names": 48,
+   "top": [
+    {
+     "name": "method",
+     "n": 41,
+     "pkgs": 14
+    },
+    {
+     "name": "family",
+     "n": 36,
+     "pkgs": 13
+    },
+    {
+     "name": "type",
+     "n": 12,
+     "pkgs": 4
+    },
+    {
+     "name": "test",
+     "n": 5,
+     "pkgs": 3
+    },
+    {
+     "name": "FUN.name",
+     "n": 4,
+     "pkgs": 2
+    },
+    {
+     "name": "direction",
+     "n": 3,
+     "pkgs": 3
+    },
+    {
+     "name": "defaultMethod",
+     "n": 3,
+     "pkgs": 2
+    },
+    {
+     "name": "precision",
+     "n": 3,
+     "pkgs": 1
+    },
+    {
+     "name": "fitType",
+     "n": 2,
+     "pkgs": 2
+    },
+    {
+     "name": "method.indicator",
+     "n": 2,
+     "pkgs": 2
+    },
+    {
+     "name": "objective_array",
+     "n": 2,
+     "pkgs": 2
+    },
+    {
+     "name": ".name_repair",
+     "n": 2,
+     "pkgs": 2
+    },
+    {
+     "name": "algorithm",
+     "n": 2,
+     "pkgs": 2
+    },
+    {
+     "name": "conf.type",
+     "n": 2,
+     "pkgs": 2
+    },
+    {
+     "name": "sfType",
+     "n": 2,
+     "pkgs": 2
+    }
+   ]
+  },
+  "variable_names": {
+   "total": 138,
+   "distinct_names": 76,
+   "top": [
+    {
+     "name": "weights",
+     "n": 8,
+     "pkgs": 2
+    },
+    {
+     "name": "dimnames",
+     "n": 6,
+     "pkgs": 4
+    },
+    {
+     "name": ".by",
+     "n": 4,
+     "pkgs": 2
+    },
+    {
+     "name": "censor_col",
+     "n": 4,
+     "pkgs": 2
+    },
+    {
+     "name": "treat",
+     "n": 4,
+     "pkgs": 2
+    },
+    {
+     "name": "time_col",
+     "n": 4,
+     "pkgs": 2
+    },
+    {
+     "name": "outcome",
+     "n": 3,
+     "pkgs": 3
+    },
+    {
+     "name": "stvar.transmit",
+     "n": 3,
+     "pkgs": 1
+    },
+    {
+     "name": "identifier_ExposomeSet",
+     "n": 3,
+     "pkgs": 2
+    },
+    {
+     "name": "input.var.name",
+     "n": 3,
+     "pkgs": 1
+    },
+    {
+     "name": "adjust_to",
+     "n": 2,
+     "pkgs": 2
+    },
+    {
+     "name": ".name_repair",
+     "n": 2,
+     "pkgs": 2
+    },
+    {
+     "name": "se_column",
+     "n": 2,
+     "pkgs": 1
+    },
+    {
+     "name": "n_column",
+     "n": 2,
+     "pkgs": 1
+    },
+    {
+     "name": "sep",
+     "n": 2,
+     "pkgs": 2
+    }
+   ]
+  },
+  "seed": {
+   "total": 24,
+   "distinct_names": 7,
+   "top": [
+    {
+     "name": "seed",
+     "n": 11,
+     "pkgs": 9
+    },
+    {
+     "name": "seed.as.integer",
+     "n": 6,
+     "pkgs": 1
+    },
+    {
+     "name": "seedH",
+     "n": 2,
+     "pkgs": 1
+    },
+    {
+     "name": "shared.seedval",
+     "n": 2,
+     "pkgs": 1
+    },
+    {
+     "name": "seedHv",
+     "n": 1,
+     "pkgs": 1
+    },
+    {
+     "name": "seedW",
+     "n": 1,
+     "pkgs": 1
+    },
+    {
+     "name": "seedtext",
+     "n": 1,
+     "pkgs": 1
+    }
+   ]
+  }
+ },
+ "collisions": [
+  {
+   "name": "x",
+   "n": 221,
+   "classes": {
+    "vector": 128,
+    "data.frame": 40,
+    "bioc/omics object": 25,
+    "matrix": 16,
+    "factor": 5,
+    "list": 3,
+    "tibble": 3,
+    "model": 1
+   }
+  },
+  {
+   "name": "formula",
+   "n": 70,
+   "classes": {
+    "formula": 49,
+    "data.frame": 11,
+    "model": 8,
+    "factor": 2
+   }
+  },
+  {
+   "name": "data",
+   "n": 65,
+   "classes": {
+    "data.frame": 51,
+    "formula": 8,
+    "matrix": 4,
+    "model": 1,
+    "factor": 1
+   }
+  },
+  {
+   "name": "X",
+   "n": 29,
+   "classes": {
+    "matrix": 26,
+    "vector": 2,
+    "data.frame": 1
+   }
+  },
+  {
+   "name": "df.name",
+   "n": 28,
+   "classes": {
+    "data.frame": 27,
+    "tibble": 1
+   }
+  },
+  {
+   "name": "y",
+   "n": 26,
+   "classes": {
+    "vector": 21,
+    "matrix": 2,
+    "data.frame": 2,
+    "factor": 1
+   }
+  },
+  {
+   "name": "genoData",
+   "n": 17,
+   "classes": {
+    "bioc/omics object": 15,
+    "vector": 2
+   }
+  },
+  {
+   "name": "object",
+   "n": 17,
+   "classes": {
+    "bioc/omics object": 13,
+    "data.frame": 2,
+    "model": 2
+   }
+  },
+  {
+   "name": "what",
+   "n": 15,
+   "classes": {
+    "data.frame": 9,
+    "vector": 6
+   }
+  },
+  {
+   "name": "model",
+   "n": 14,
+   "classes": {
+    "model": 7,
+    "formula": 6,
+    "list": 1
+   }
+  },
+  {
+   "name": "tidy_expr",
+   "n": 13,
+   "classes": {
+    "list": 9,
+    "vector": 3,
+    "formula": 1
+   }
+  },
+  {
+   "name": "x.name",
+   "n": 13,
+   "classes": {
+    "matrix": 5,
+    "vector": 4,
+    "data.frame": 2,
+    "list": 1,
+    "model": 1
+   }
+  },
+  {
+   "name": "variables",
+   "n": 11,
+   "classes": {
+    "vector": 9,
+    "list": 2
+   }
+  },
+  {
+   "name": "type",
+   "n": 8,
+   "classes": {
+    "data.frame": 3,
+    "model": 2,
+    "matrix": 1,
+    "vector": 1,
+    "bioc/omics object": 1
+   }
+  },
+  {
+   "name": "levels",
+   "n": 6,
+   "classes": {
+    "factor": 3,
+    "formula": 2,
+    "list": 1
+   }
+  },
+  {
+   "name": "sex",
+   "n": 6,
+   "classes": {
+    "vector": 4,
+    "factor": 2
+   }
+  },
+  {
+   "name": "analysis_id",
+   "n": 5,
+   "classes": {
+    "vector": 4,
+    "formula": 1
+   }
+  },
+  {
+   "name": "covars",
+   "n": 5,
+   "classes": {
+    "vector": 3,
+    "data.frame": 2
+   }
+  },
+  {
+   "name": "variable",
+   "n": 5,
+   "classes": {
+    "vector": 4,
+    "factor": 1
+   }
+  },
+  {
+   "name": "weights",
+   "n": 5,
+   "classes": {
+    "vector": 4,
+    "model": 1
+   }
+  }
+ ],
+ "style_overall": {
+  "single lowercase word": 2838,
+  "snake_case": 1016,
+  "dot.case": 530,
+  "camelCase": 213,
+  "Capitalised / UPPER": 121,
+  "other": 34,
+  "camel + separator": 19,
+  "mixed . and _": 18
+ },
+ "style_by_package": {
+  "dsBase": {
+   "Capitalised / UPPER": 0.01,
+   "camel + separator": 0.01,
+   "camelCase": 0.05,
+   "dot.case": 0.44,
+   "mixed . and _": 0.01,
+   "other": 0.0,
+   "single lowercase word": 0.46,
+   "snake_case": 0.02
+  },
+  "dsBaseClient": {
+   "Capitalised / UPPER": 0.02,
+   "camel + separator": 0.01,
+   "camelCase": 0.09,
+   "dot.case": 0.2,
+   "mixed . and _": 0.0,
+   "other": 0.0,
+   "single lowercase word": 0.67,
+   "snake_case": 0.01
+  },
+  "dsDanger": {
+   "Capitalised / UPPER": 0.0,
+   "camel + separator": 0.0,
+   "camelCase": 0.46,
+   "dot.case": 0.42,
+   "mixed . and _": 0.0,
+   "other": 0.0,
+   "single lowercase word": 0.12,
+   "snake_case": 0.0
+  },
+  "dsDangerClient": {
+   "Capitalised / UPPER": 0.0,
+   "camel + separator": 0.0,
+   "camelCase": 0.09,
+   "dot.case": 0.54,
+   "mixed . and _": 0.0,
+   "other": 0.0,
+   "single lowercase word": 0.37,
+   "snake_case": 0.0
+  },
+  "dsExposome": {
+   "Capitalised / UPPER": 0.03,
+   "camel + separator": 0.05,
+   "camelCase": 0.03,
+   "dot.case": 0.07,
+   "mixed . and _": 0.0,
+   "other": 0.0,
+   "single lowercase word": 0.72,
+   "snake_case": 0.09
+  },
+  "dsExposomeClient": {
+   "Capitalised / UPPER": 0.04,
+   "camel + separator": 0.03,
+   "camelCase": 0.0,
+   "dot.case": 0.12,
+   "mixed . and _": 0.0,
+   "other": 0.0,
+   "single lowercase word": 0.74,
+   "snake_case": 0.08
+  },
+  "dsGraphics": {
+   "Capitalised / UPPER": 0.0,
+   "camel + separator": 0.0,
+   "camelCase": 0.0,
+   "dot.case": 0.31,
+   "mixed . and _": 0.0,
+   "other": 0.0,
+   "single lowercase word": 0.69,
+   "snake_case": 0.0
+  },
+  "dsGraphicsClient": {
+   "Capitalised / UPPER": 0.0,
+   "camel + separator": 0.0,
+   "camelCase": 0.0,
+   "dot.case": 0.0,
+   "mixed . and _": 0.0,
+   "other": 0.0,
+   "single lowercase word": 1.0,
+   "snake_case": 0.0
+  },
+  "dsHelper": {
+   "Capitalised / UPPER": 0.0,
+   "camel + separator": 0.0,
+   "camelCase": 0.0,
+   "dot.case": 0.0,
+   "mixed . and _": 0.0,
+   "other": 0.01,
+   "single lowercase word": 0.62,
+   "snake_case": 0.38
+  },
+  "dsImaging": {
+   "Capitalised / UPPER": 0.0,
+   "camel + separator": 0.0,
+   "camelCase": 0.0,
+   "dot.case": 0.0,
+   "mixed . and _": 0.0,
+   "other": 0.0,
+   "single lowercase word": 0.13,
+   "snake_case": 0.87
+  },
+  "dsImagingClient": {
+   "Capitalised / UPPER": 0.0,
+   "camel + separator": 0.0,
+   "camelCase": 0.0,
+   "dot.case": 0.0,
+   "mixed . and _": 0.0,
+   "other": 0.0,
+   "single lowercase word": 0.59,
+   "snake_case": 0.41
+  },
+  "dsML": {
+   "Capitalised / UPPER": 0.0,
+   "camel + separator": 0.0,
+   "camelCase": 0.0,
+   "dot.case": 0.08,
+   "mixed . and _": 0.0,
+   "other": 0.0,
+   "single lowercase word": 0.88,
+   "snake_case": 0.04
+  },
+  "dsMLClient": {
+   "Capitalised / UPPER": 0.0,
+   "camel + separator": 0.0,
+   "camelCase": 0.0,
+   "dot.case": 0.04,
+   "mixed . and _": 0.0,
+   "other": 0.0,
+   "single lowercase word": 0.88,
+   "snake_case": 0.09
+  },
+  "dsMTLBase": {
+   "Capitalised / UPPER": 0.18,
+   "camel + separator": 0.0,
+   "camelCase": 0.13,
+   "dot.case": 0.02,
+   "mixed . and _": 0.0,
+   "other": 0.0,
+   "single lowercase word": 0.67,
+   "snake_case": 0.0
+  },
+  "dsMTLClient": {
+   "Capitalised / UPPER": 0.32,
+   "camel + separator": 0.0,
+   "camelCase": 0.12,
+   "dot.case": 0.0,
+   "mixed . and _": 0.0,
+   "other": 0.0,
+   "single lowercase word": 0.5,
+   "snake_case": 0.06
+  },
+  "dsMediation": {
+   "Capitalised / UPPER": 0.0,
+   "camel + separator": 0.0,
+   "camelCase": 0.08,
+   "dot.case": 0.19,
+   "mixed . and _": 0.0,
+   "other": 0.0,
+   "single lowercase word": 0.67,
+   "snake_case": 0.06
+  },
+  "dsMediationClient": {
+   "Capitalised / UPPER": 0.0,
+   "camel + separator": 0.0,
+   "camelCase": 0.06,
+   "dot.case": 0.14,
+   "mixed . and _": 0.0,
+   "other": 0.0,
+   "single lowercase word": 0.76,
+   "snake_case": 0.04
+  },
+  "dsMeta": {
+   "Capitalised / UPPER": 0.0,
+   "camel + separator": 0.0,
+   "camelCase": 0.0,
+   "dot.case": 0.0,
+   "mixed . and _": 0.0,
+   "other": 0.0,
+   "single lowercase word": 1.0,
+   "snake_case": 0.0
+  },
+  "dsMice": {
+   "Capitalised / UPPER": 0.0,
+   "camel + separator": 0.0,
+   "camelCase": 0.11,
+   "dot.case": 0.05,
+   "mixed . and _": 0.0,
+   "other": 0.0,
+   "single lowercase word": 0.84,
+   "snake_case": 0.0
+  },
+  "dsMiceClient": {
+   "Capitalised / UPPER": 0.0,
+   "camel + separator": 0.0,
+   "camelCase": 0.1,
+   "dot.case": 0.05,
+   "mixed . and _": 0.0,
+   "other": 0.0,
+   "single lowercase word": 0.85,
+   "snake_case": 0.0
+  },
+  "dsOmics": {
+   "Capitalised / UPPER": 0.01,
+   "camel + separator": 0.0,
+   "camelCase": 0.15,
+   "dot.case": 0.05,
+   "mixed . and _": 0.0,
+   "other": 0.0,
+   "single lowercase word": 0.59,
+   "snake_case": 0.2
+  },
+  "dsOmicsClient": {
+   "Capitalised / UPPER": 0.01,
+   "camel + separator": 0.01,
+   "camelCase": 0.1,
+   "dot.case": 0.09,
+   "mixed . and _": 0.0,
+   "other": 0.0,
+   "single lowercase word": 0.61,
+   "snake_case": 0.18
+  },
+  "dsResource": {
+   "Capitalised / UPPER": 0.0,
+   "camel + separator": 0.0,
+   "camelCase": 0.0,
+   "dot.case": 0.0,
+   "mixed . and _": 0.0,
+   "other": 0.0,
+   "single lowercase word": 0.57,
+   "snake_case": 0.43
+  },
+  "dsSurvival": {
+   "Capitalised / UPPER": 0.0,
+   "camel + separator": 0.0,
+   "camelCase": 0.04,
+   "dot.case": 0.11,
+   "mixed . and _": 0.0,
+   "other": 0.0,
+   "single lowercase word": 0.64,
+   "snake_case": 0.21
+  },
+  "dsSurvivalClient": {
+   "Capitalised / UPPER": 0.0,
+   "camel + separator": 0.0,
+   "camelCase": 0.03,
+   "dot.case": 0.07,
+   "mixed . and _": 0.01,
+   "other": 0.02,
+   "single lowercase word": 0.69,
+   "snake_case": 0.18
+  },
+  "dsSwissKnife": {
+   "Capitalised / UPPER": 0.02,
+   "camel + separator": 0.0,
+   "camelCase": 0.01,
+   "dot.case": 0.15,
+   "mixed . and _": 0.0,
+   "other": 0.0,
+   "single lowercase word": 0.81,
+   "snake_case": 0.01
+  },
+  "dsSwissKnifeClient": {
+   "Capitalised / UPPER": 0.01,
+   "camel + separator": 0.0,
+   "camelCase": 0.01,
+   "dot.case": 0.1,
+   "mixed . and _": 0.0,
+   "other": 0.0,
+   "single lowercase word": 0.86,
+   "snake_case": 0.03
+  },
+  "dsSyntheticClient": {
+   "Capitalised / UPPER": 0.0,
+   "camel + separator": 0.0,
+   "camelCase": 0.0,
+   "dot.case": 0.0,
+   "mixed . and _": 0.0,
+   "other": 0.0,
+   "single lowercase word": 0.75,
+   "snake_case": 0.25
+  },
+  "dsTidyverse": {
+   "Capitalised / UPPER": 0.0,
+   "camel + separator": 0.0,
+   "camelCase": 0.0,
+   "dot.case": 0.16,
+   "mixed . and _": 0.08,
+   "other": 0.28,
+   "single lowercase word": 0.2,
+   "snake_case": 0.28
+  },
+  "dsTidyverseClient": {
+   "Capitalised / UPPER": 0.0,
+   "camel + separator": 0.0,
+   "camelCase": 0.0,
+   "dot.case": 0.12,
+   "mixed . and _": 0.05,
+   "other": 0.18,
+   "single lowercase word": 0.5,
+   "snake_case": 0.14
+  },
+  "dsVert": {
+   "Capitalised / UPPER": 0.0,
+   "camel + separator": 0.0,
+   "camelCase": 0.0,
+   "dot.case": 0.0,
+   "mixed . and _": 0.0,
+   "other": 0.0,
+   "single lowercase word": 0.11,
+   "snake_case": 0.89
+  },
+  "dsVertClient": {
+   "Capitalised / UPPER": 0.0,
+   "camel + separator": 0.0,
+   "camelCase": 0.0,
+   "dot.case": 0.0,
+   "mixed . and _": 0.01,
+   "other": 0.0,
+   "single lowercase word": 0.62,
+   "snake_case": 0.36
+  }
+ },
+ "style_multiword": {
+  "snake_case": 1016,
+  "dot.case": 530,
+  "camelCase": 213,
+  "Capitalised / UPPER": 121,
+  "other": 34,
+  "camel + separator": 19,
+  "mixed . and _": 18
+ },
+ "style_multiword_by_package": {
+  "dsBase": {
+   "dot.case": 199,
+   "camelCase": 24,
+   "snake_case": 9,
+   "mixed . and _": 5,
+   "camel + separator": 3,
+   "Capitalised / UPPER": 3,
+   "other": 1
+  },
+  "dsBaseClient": {
+   "dot.case": 128,
+   "camelCase": 57,
+   "Capitalised / UPPER": 12,
+   "snake_case": 8,
+   "camel + separator": 4
+  },
+  "dsDanger": {
+   "camelCase": 11,
+   "dot.case": 10
+  },
+  "dsDangerClient": {
+   "dot.case": 19,
+   "camelCase": 3
+  },
+  "dsExposome": {
+   "snake_case": 9,
+   "dot.case": 7,
+   "camel + separator": 5,
+   "Capitalised / UPPER": 3,
+   "camelCase": 3
+  },
+  "dsExposomeClient": {
+   "dot.case": 18,
+   "snake_case": 13,
+   "Capitalised / UPPER": 6,
+   "camel + separator": 4
+  },
+  "dsGraphics": {
+   "dot.case": 4
+  },
+  "dsHelper": {
+   "snake_case": 67,
+   "other": 1
+  },
+  "dsImaging": {
+   "snake_case": 40
+  },
+  "dsImagingClient": {
+   "snake_case": 109
+  },
+  "dsML": {
+   "dot.case": 2,
+   "snake_case": 1
+  },
+  "dsMLClient": {
+   "snake_case": 7,
+   "dot.case": 3
+  },
+  "dsMTLBase": {
+   "Capitalised / UPPER": 11,
+   "camelCase": 8,
+   "dot.case": 1
+  },
+  "dsMTLClient": {
+   "Capitalised / UPPER": 73,
+   "camelCase": 28,
+   "snake_case": 13
+  },
+  "dsMediation": {
+   "dot.case": 10,
+   "camelCase": 4,
+   "snake_case": 3
+  },
+  "dsMediationClient": {
+   "dot.case": 10,
+   "camelCase": 4,
+   "snake_case": 3
+  },
+  "dsMice": {
+   "camelCase": 5,
+   "dot.case": 2
+  },
+  "dsMiceClient": {
+   "camelCase": 9,
+   "dot.case": 4
+  },
+  "dsOmics": {
+   "snake_case": 31,
+   "camelCase": 23,
+   "dot.case": 8,
+   "Capitalised / UPPER": 2
+  },
+  "dsOmicsClient": {
+   "snake_case": 44,
+   "camelCase": 25,
+   "dot.case": 22,
+   "camel + separator": 3,
+   "Capitalised / UPPER": 3
+  },
+  "dsResource": {
+   "snake_case": 10
+  },
+  "dsSurvival": {
+   "snake_case": 16,
+   "dot.case": 8,
+   "camelCase": 3
+  },
+  "dsSurvivalClient": {
+   "snake_case": 19,
+   "dot.case": 7,
+   "camelCase": 3,
+   "other": 2,
+   "mixed . and _": 1
+  },
+  "dsSwissKnife": {
+   "dot.case": 22,
+   "Capitalised / UPPER": 3,
+   "snake_case": 2,
+   "camelCase": 1
+  },
+  "dsSwissKnifeClient": {
+   "dot.case": 26,
+   "snake_case": 7,
+   "Capitalised / UPPER": 2,
+   "camelCase": 2
+  },
+  "dsSyntheticClient": {
+   "snake_case": 4
+  },
+  "dsTidyverse": {
+   "snake_case": 14,
+   "other": 14,
+   "dot.case": 8,
+   "mixed . and _": 4
+  },
+  "dsTidyverseClient": {
+   "other": 14,
+   "snake_case": 11,
+   "dot.case": 9,
+   "mixed . and _": 4
+  },
+  "dsVert": {
+   "snake_case": 323
+  },
+  "dsVertClient": {
+   "snake_case": 253,
+   "mixed . and _": 4,
+   "dot.case": 3,
+   "Capitalised / UPPER": 3,
+   "other": 2
+  }
+ },
+ "survey_rules": {
+  "data.frame -> df": {
+   "compliant": 38,
+   "total": 325,
+   "share": 0.12
+  },
+  "vector -> x": {
+   "compliant": 133,
+   "total": 630,
+   "share": 0.21
+  },
+  "matrix -> mat": {
+   "compliant": 2,
+   "total": 93,
+   "share": 0.02
+  },
+  "tibble -> tbl": {
+   "compliant": 0,
+   "total": 10,
+   "share": 0.0
+  },
+  "model -> model": {
+   "compliant": 7,
+   "total": 84,
+   "share": 0.08
+  },
+  "new object -> newobj": {
+   "compliant": 112,
+   "total": 230,
+   "share": 0.49
+  },
+  "connection -> datasources": {
+   "compliant": 404,
+   "total": 474,
+   "share": 0.85
+  },
+  "datasources is last argument (client)": {
+   "compliant": 311,
+   "total": 399,
+   "share": 0.78
+  },
+  "checks flag -> checks": {
+   "compliant": 23,
+   "total": 54,
+   "share": 0.43
+  },
+  "method/algorithm -> method": {
+   "compliant": 41,
+   "total": 157,
+   "share": 0.26
+  },
+  "split/combined -> type": {
+   "compliant": 48,
+   "total": 49,
+   "share": 0.98
+  }
+ },
+ "function_naming": {
+  "client ds.camelCase": {
+   "compliant": 285,
+   "total": 581,
+   "share": 0.49
+  },
+  "client other prefixes": {
+   "ds.": 458,
+   "dh.": 33,
+   "dp_": 4,
+   "make.": 3,
+   "mice.": 3,
+   "name.": 2,
+   "check.": 2,
+   "get_": 2
+  },
+  "server *DS (exact pattern)": {
+   "compliant": 353,
+   "total": 496,
+   "share": 0.71
+  },
+  "server *DS.* or *DS* anywhere": {
+   "compliant": 454,
+   "total": 496,
+   "share": 0.92
+  }
+ },
+ "prod_dev_diffs": [
+  {
+   "package": "dsBase",
+   "function": "asListDS",
+   "removed": [
+    "newobj"
+   ],
+   "added": [],
+   "reordered": false
+  },
+  {
+   "package": "dsBase",
+   "function": "boxPlotGGDS",
+   "removed": [
+    "data_table"
+   ],
+   "added": [
+    "data_table.name"
+   ],
+   "reordered": false
+  },
+  {
+   "package": "dsBase",
+   "function": "boxPlotGG_data_TreatmentDS",
+   "removed": [
+    "table"
+   ],
+   "added": [
+    "table.name"
+   ],
+   "reordered": false
+  },
+  {
+   "package": "dsBase",
+   "function": "boxPlotGG_data_Treatment_numericDS",
+   "removed": [
+    "vector"
+   ],
+   "added": [
+    "vector.name"
+   ],
+   "reordered": false
+  },
+  {
+   "package": "dsBase",
+   "function": "cDS",
+   "removed": [
+    "objs"
+   ],
+   "added": [
+    "x.names"
+   ],
+   "reordered": false
+  },
+  {
+   "package": "dsBase",
+   "function": "changeRefGroupDS",
+   "removed": [
+    "xvect"
+   ],
+   "added": [
+    "x"
+   ],
+   "reordered": false
+  },
+  {
+   "package": "dsBase",
+   "function": "densityGridDS",
+   "removed": [
+    "xvect",
+    "yvect"
+   ],
+   "added": [
+    "x",
+    "y"
+   ],
+   "reordered": false
+  },
+  {
+   "package": "dsBase",
+   "function": "heatmapPlotDS",
+   "removed": [
+    "x",
+    "y"
+   ],
+   "added": [
+    "x.name",
+    "y.name"
+   ],
+   "reordered": false
+  },
+  {
+   "package": "dsBase",
+   "function": "histogramDS1",
+   "removed": [
+    "xvect"
+   ],
+   "added": [
+    "x"
+   ],
+   "reordered": false
+  },
+  {
+   "package": "dsBase",
+   "function": "histogramDS2",
+   "removed": [
+    "xvect"
+   ],
+   "added": [
+    "x"
+   ],
+   "reordered": false
+  },
+  {
+   "package": "dsBase",
+   "function": "isNaDS",
+   "removed": [
+    "xvect"
+   ],
+   "added": [
+    "x"
+   ],
+   "reordered": false
+  },
+  {
+   "package": "dsBase",
+   "function": "isValidDS",
+   "removed": [
+    "obj"
+   ],
+   "added": [
+    "x"
+   ],
+   "reordered": false
+  },
+  {
+   "package": "dsBase",
+   "function": "listDS",
+   "removed": [
+    "input"
+   ],
+   "added": [
+    "x.names"
+   ],
+   "reordered": false
+  },
+  {
+   "package": "dsBase",
+   "function": "meanDS",
+   "removed": [
+    "xvect"
+   ],
+   "added": [
+    "x"
+   ],
+   "reordered": false
+  },
+  {
+   "package": "dsBase",
+   "function": "meanSdGpDS",
+   "removed": [
+    "X",
+    "INDEX"
+   ],
+   "added": [
+    "x",
+    "index"
+   ],
+   "reordered": false
+  },
+  {
+   "package": "dsBase",
+   "function": "numNaDS",
+   "removed": [
+    "xvect"
+   ],
+   "added": [
+    "x"
+   ],
+   "reordered": false
+  },
+  {
+   "package": "dsBase",
+   "function": "quantileMeanDS",
+   "removed": [
+    "xvect"
+   ],
+   "added": [
+    "x"
+   ],
+   "reordered": false
+  },
+  {
+   "package": "dsBase",
+   "function": "rangeDS",
+   "removed": [
+    "xvect"
+   ],
+   "added": [
+    "x"
+   ],
+   "reordered": false
+  },
+  {
+   "package": "dsBase",
+   "function": "replaceNaDS",
+   "removed": [
+    "xvect"
+   ],
+   "added": [
+    "x"
+   ],
+   "reordered": false
+  },
+  {
+   "package": "dsBase",
+   "function": "rowColCalcDS",
+   "removed": [
+    "dataset"
+   ],
+   "added": [
+    "dataset.name"
+   ],
+   "reordered": false
+  },
+  {
+   "package": "dsBase",
+   "function": "scatterPlotDS",
+   "removed": [
+    "x",
+    "y"
+   ],
+   "added": [
+    "x.name",
+    "y.name"
+   ],
+   "reordered": false
+  },
+  {
+   "package": "dsBase",
+   "function": "varDS",
+   "removed": [
+    "xvect"
+   ],
+   "added": [
+    "x"
+   ],
+   "reordered": false
+  },
+  {
+   "package": "dsBase",
+   "function": "expDS",
+   "new_function": true
+  },
+  {
+   "package": "dsBase",
+   "function": "fixClassDS",
+   "new_function": true
+  },
+  {
+   "package": "dsBase",
+   "function": "fixColsDS",
+   "new_function": true
+  },
+  {
+   "package": "dsBase",
+   "function": "fixLevelsDS",
+   "new_function": true
+  },
+  {
+   "package": "dsBase",
+   "function": "getAllLevelsDS",
+   "new_function": true
+  },
+  {
+   "package": "dsBase",
+   "function": "getClassAllColsDS",
+   "new_function": true
+  },
+  {
+   "package": "dsBase",
+   "function": "logDS",
+   "new_function": true
+  },
+  {
+   "package": "dsBaseClient",
+   "function": "ds.c",
+   "removed": [],
+   "added": [
+    "classConsistencyCheck"
+   ],
+   "reordered": false
+  },
+  {
+   "package": "dsBaseClient",
+   "function": "ds.cbind",
+   "removed": [],
+   "added": [
+    "classConsistencyCheck"
+   ],
+   "reordered": false
+  },
+  {
+   "package": "dsBaseClient",
+   "function": "ds.contourPlot",
+   "removed": [],
+   "added": [
+    "classConsistencyCheck"
+   ],
+   "reordered": false
+  },
+  {
+   "package": "dsBaseClient",
+   "function": "ds.cor",
+   "removed": [],
+   "added": [
+    "classConsistencyCheck"
+   ],
+   "reordered": false
+  },
+  {
+   "package": "dsBaseClient",
+   "function": "ds.corTest",
+   "removed": [],
+   "added": [
+    "classConsistencyCheck"
+   ],
+   "reordered": false
+  },
+  {
+   "package": "dsBaseClient",
+   "function": "ds.cov",
+   "removed": [],
+   "added": [
+    "classConsistencyCheck"
+   ],
+   "reordered": false
+  },
+  {
+   "package": "dsBaseClient",
+   "function": "ds.dataFrame",
+   "removed": [],
+   "added": [
+    "classConsistencyCheck"
+   ],
+   "reordered": false
+  },
+  {
+   "package": "dsBaseClient",
+   "function": "ds.dataFrameFill",
+   "removed": [],
+   "added": [
+    "classConsistencyCheck"
+   ],
+   "reordered": false
+  },
+  {
+   "package": "dsBaseClient",
+   "function": "ds.densityGrid",
+   "removed": [],
+   "added": [
+    "classConsistencyCheck"
+   ],
+   "reordered": false
+  },
+  {
+   "package": "dsBaseClient",
+   "function": "ds.dim",
+   "removed": [
+    "checks"
+   ],
+   "added": [
+    "classConsistencyCheck"
+   ],
+   "reordered": false
+  },
+  {
+   "package": "dsBaseClient",
+   "function": "ds.heatmapPlot",
+   "removed": [],
+   "added": [
+    "classConsistencyCheck"
+   ],
+   "reordered": false
+  },
+  {
+   "package": "dsBaseClient",
+   "function": "ds.histogram",
+   "removed": [],
+   "added": [
+    "classConsistencyCheck"
+   ],
+   "reordered": false
+  },
+  {
+   "package": "dsBaseClient",
+   "function": "ds.isNA",
+   "removed": [],
+   "added": [
+    "classConsistencyCheck"
+   ],
+   "reordered": false
+  },
+  {
+   "package": "dsBaseClient",
+   "function": "ds.isValid",
+   "removed": [],
+   "added": [
+    "classConsistencyCheck"
+   ],
+   "reordered": false
+  },
+  {
+   "package": "dsBaseClient",
+   "function": "ds.kurtosis",
+   "removed": [],
+   "added": [
+    "classConsistencyCheck"
+   ],
+   "reordered": false
+  },
+  {
+   "package": "dsBaseClient",
+   "function": "ds.length",
+   "removed": [
+    "checks"
+   ],
+   "added": [
+    "classConsistencyCheck"
+   ],
+   "reordered": false
+  },
+  {
+   "package": "dsBaseClient",
+   "function": "ds.list",
+   "removed": [],
+   "added": [
+    "classConsistencyCheck"
+   ],
+   "reordered": false
+  },
+  {
+   "package": "dsBaseClient",
+   "function": "ds.mdPattern",
+   "removed": [],
+   "added": [
+    "classConsistencyCheck"
+   ],
+   "reordered": false
+  },
+  {
+   "package": "dsBaseClient",
+   "function": "ds.mean",
+   "removed": [
+    "checks"
+   ],
+   "added": [
+    "classConsistencyCheck"
+   ],
+   "reordered": false
+  },
+  {
+   "package": "dsBaseClient",
+   "function": "ds.meanSdGp",
+   "removed": [
+    "do.checks"
+   ],
+   "added": [
+    "classConsistencyCheck"
+   ],
+   "reordered": false
+  },
+  {
+   "package": "dsBaseClient",
+   "function": "ds.numNA",
+   "removed": [],
+   "added": [
+    "classConsistencyCheck"
+   ],
+   "reordered": false
+  },
+  {
+   "package": "dsBaseClient",
+   "function": "ds.quantileMean",
+   "removed": [],
+   "added": [
+    "classConsistencyCheck"
+   ],
+   "reordered": false
+  },
+  {
+   "package": "dsBaseClient",
+   "function": "ds.rbind",
+   "removed": [],
+   "added": [
+    "classConsistencyCheck"
+   ],
+   "reordered": false
+  },
+  {
+   "package": "dsBaseClient",
+   "function": "ds.scatterPlot",
+   "removed": [],
+   "added": [
+    "classConsistencyCheck"
+   ],
+   "reordered": false
+  },
+  {
+   "package": "dsBaseClient",
+   "function": "ds.skewness",
+   "removed": [],
+   "added": [
+    "classConsistencyCheck"
+   ],
+   "reordered": false
+  },
+  {
+   "package": "dsBaseClient",
+   "function": "ds.var",
+   "removed": [
+    "checks"
+   ],
+   "added": [
+    "classConsistencyCheck"
+   ],
+   "reordered": false
+  },
+  {
+   "package": "dsBaseClient",
+   "function": "ds.ranksSecure",
+   "dropped_function": true
+  },
+  {
+   "package": "dsBaseClient",
+   "function": "subsetHelper",
+   "dropped_function": true
+  },
+  {
+   "package": "dsMediation",
+   "function": "mediateDS",
+   "removed": [],
+   "added": [],
+   "reordered": true
+  },
+  {
+   "package": "dsMediationClient",
+   "function": "ds.mediate",
+   "removed": [],
+   "added": [
+    "boot.ci.type",
+    "covariates",
+    "outcome",
+    "control",
+    "control.value",
+    "treat.value"
+   ],
+   "reordered": false
+  },
+  {
+   "package": "dsSurvival",
+   "function": "SurvDS",
+   "removed": [
+    "#c('right', 'left', 'interval', 'counting', 'interval2', 'mstate'),\n\t\t origin"
+   ],
+   "added": [
+    "origin"
+   ],
+   "reordered": false
+  },
+  {
+   "package": "dsSurvival",
+   "function": "coxphSLMADS",
+   "removed": [
+    "weights"
+   ],
+   "added": [
+    "weights_obj"
+   ],
+   "reordered": false
+  },
+  {
+   "package": "dsSurvival",
+   "function": "coxphSLMAassignDS",
+   "removed": [
+    "weights"
+   ],
+   "added": [
+    "weights_obj",
+    "use.rms"
+   ],
+   "reordered": false
+  },
+  {
+   "package": "dsSurvival",
+   "function": "acmPlotDS",
+   "new_function": true
+  },
+  {
+   "package": "dsSurvival",
+   "function": "coxphDS1",
+   "new_function": true
+  },
+  {
+   "package": "dsSurvival",
+   "function": "coxphDS2",
+   "new_function": true
+  },
+  {
+   "package": "dsSurvival",
+   "function": "coxphDS3",
+   "new_function": true
+  },
+  {
+   "package": "dsSurvival",
+   "function": "datadistDS",
+   "new_function": true
+  },
+  {
+   "package": "dsSurvival",
+   "function": "finegrayDS",
+   "new_function": true
+  },
+  {
+   "package": "dsSurvival",
+   "function": "predictDS",
+   "new_function": true
+  },
+  {
+   "package": "dsSurvival",
+   "function": "rcsDS",
+   "new_function": true
+  },
+  {
+   "package": "dsSurvival",
+   "function": "rmsTransDS",
+   "new_function": true
+  },
+  {
+   "package": "dsSurvival",
+   "function": "useDatadistDS",
+   "new_function": true
+  },
+  {
+   "package": "dsSurvivalClient",
+   "function": "ds.coxph.SLMA",
+   "removed": [
+    "weights"
+   ],
+   "added": [
+    "weights_obj"
+   ],
+   "reordered": false
+  },
+  {
+   "package": "dsSurvivalClient",
+   "function": "ds.coxphSLMAassign",
+   "removed": [
+    "weights"
+   ],
+   "added": [
+    "weights_obj",
+    "use.rms"
+   ],
+   "reordered": false
+  },
+  {
+   "package": "dsSurvivalClient",
+   "function": "ds.plotsurvfit",
+   "removed": [],
+   "added": [
+    "type",
+    "method_aggregation"
+   ],
+   "reordered": false
+  },
+  {
+   "package": "dsSurvivalClient",
+   "function": "ds.Predict",
+   "new_function": true
+  },
+  {
+   "package": "dsSurvivalClient",
+   "function": "ds.acmPlot",
+   "new_function": true
+  },
+  {
+   "package": "dsSurvivalClient",
+   "function": "ds.coxph",
+   "new_function": true
+  },
+  {
+   "package": "dsSurvivalClient",
+   "function": "ds.datadist",
+   "new_function": true
+  },
+  {
+   "package": "dsSurvivalClient",
+   "function": "ds.finegray",
+   "new_function": true
+  },
+  {
+   "package": "dsSurvivalClient",
+   "function": "ds.rcs",
+   "new_function": true
+  },
+  {
+   "package": "dsSurvivalClient",
+   "function": "ds.rmsTrans",
+   "new_function": true
+  },
+  {
+   "package": "dsSurvivalClient",
+   "function": "ds.useDatadist",
+   "new_function": true
+  }
+ ],
+ "classifier": {
+  "roles": {
+   "input_object": 1474,
+   "unknown": 615,
+   "numeric_param": 513,
+   "connection": 474,
+   "logical_flag": 409,
+   "protocol_plumbing": 312,
+   "new_object_name": 230,
+   "value_param": 182,
+   "method_choice": 157,
+   "variable_names": 138,
+   "string_param": 111,
+   "dots": 79,
+   "checks_flag": 54,
+   "output_type": 49,
+   "other_param": 47,
+   "seed": 24
+  },
+  "confidence": {
+   "high": 2662,
+   "medium": 1353,
+   "low": 853
+  },
+  "doc_coverage": 0.94
+ }
+}

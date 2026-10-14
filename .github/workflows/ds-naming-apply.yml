@@ -1,0 +1,146 @@
+name: DataSHIELD Argument Naming Apply
+
+on:
+  workflow_call:
+    inputs:
+      server-repository:
+        description: 'owner/repo of the paired server package; its approved renames go into a PR there. Same owner as this repository (the App token must reach it).'
+        required: false
+        type: string
+        default: ''
+      server-ref:
+        description: 'Branch of the server package to start from; empty: its default branch.'
+        required: false
+        type: string
+        default: ''
+      server-target-branch:
+        description: 'Branch the server PR goes into; empty: server-ref, else the server''s default branch.'
+        required: false
+        type: string
+        default: ''
+      package-side:
+        description: '"client" (default) or "server": which side this repository is.'
+        required: false
+        type: string
+        default: 'client'
+      target-branch:
+        description: 'Branch the PR in this repository goes into (e.g. a shared integration branch such as "next"); empty: the branch the run started on.'
+        required: false
+        type: string
+        default: ''
+      transformation-file:
+        description: 'The reviewed renames (written by ds-naming-check).'
+        required: false
+        type: string
+        default: '.github/ds-naming/transformations.yml'
+    secrets:
+      app-client-id:
+        description: 'GitHub App Client ID (Iv23li...). Needed for the server PR (the token must reach both repositories) and so the PRs trigger checks.'
+        required: false
+      app-private-key:
+        description: 'Private key of that GitHub App (required with app-client-id).'
+        required: false
+      commit-push-pat:
+        description: 'PAT with contents and pull-request write on both repositories, fallback if no App is set (optional).'
+        required: false
+
+jobs:
+  apply-naming:
+    runs-on: ubuntu-latest
+    concurrency:
+      group: ds-naming-apply-${{ github.repository }}
+      cancel-in-progress: false
+    permissions:
+      contents: write
+      pull-requests: write
+    env:
+      TARGET_BRANCH: ${{ inputs.target-branch || github.ref_name }}
+      WITH_SERVER: ${{ inputs.server-repository != '' && inputs.package-side == 'client' }}
+
+    steps:
+      - name: Server repository name
+        id: server
+        env:
+          SERVER_REPOSITORY: ${{ inputs.server-repository }}
+        run: echo "name=${SERVER_REPOSITORY#*/}" >> "$GITHUB_OUTPUT"
+
+      - name: Resolve push token
+        id: push_token
+        uses: FlorianSchw/package-workflows/.github/actions/resolve-push-token@main
+        with:
+          client-id: ${{ secrets.app-client-id }}
+          app-private-key: ${{ secrets.app-private-key }}
+          repositories: ${{ env.WITH_SERVER == 'true' && steps.server.outputs.name || '' }}
+
+      - uses: actions/checkout@v7
+        with:
+          ref: ${{ env.TARGET_BRANCH }}
+
+      - name: Checkout shared scripts
+        uses: actions/checkout@v7
+        with:
+          repository: FlorianSchw/package-workflows
+          ref: main
+          path: .shared-workflows
+
+      - name: Checkout server package
+        if: env.WITH_SERVER == 'true'
+        uses: actions/checkout@v7
+        with:
+          repository: ${{ inputs.server-repository }}
+          ref: ${{ inputs.server-ref }}
+          path: .ds-naming-server
+          token: ${{ steps.push_token.outputs.token || secrets.commit-push-pat || secrets.GITHUB_TOKEN }}
+
+      - name: Server base branch
+        id: server_base
+        if: env.WITH_SERVER == 'true'
+        env:
+          WANTED: ${{ inputs.server-target-branch || inputs.server-ref }}
+        run: echo "branch=${WANTED:-$(git -C .ds-naming-server rev-parse --abbrev-ref HEAD)}" >> "$GITHUB_OUTPUT"
+
+      - uses: r-lib/actions/setup-r@v2
+        with:
+          use-public-rspm: true
+
+      - uses: r-lib/actions/setup-r-dependencies@v2
+        with:
+          packages: any::yaml, any::purrr
+
+      - name: Rename approved arguments
+        env:
+          PACKAGE_SIDE: ${{ inputs.package-side }}
+          SERVER_DIR: ${{ env.WITH_SERVER == 'true' && '.ds-naming-server' || '' }}
+          TRANSFORMATION_FILE: ${{ inputs.transformation-file }}
+        run: Rscript .shared-workflows/R/apply_ds_naming.R
+
+      - name: Propose renames here
+        uses: FlorianSchw/package-workflows/.github/actions/propose-branch@main
+        with:
+          manifest: updated_files.txt
+          branch: bot-suggest/ds-naming-apply/${{ env.TARGET_BRANCH }}
+          base: ${{ env.TARGET_BRANCH }}
+          title: 'Harmonise DataSHIELD argument names'
+          body-file: naming_apply_report.md
+          commit-message: |
+            refactor!: harmonise DataSHIELD argument names
+
+            BREAKING CHANGE: arguments renamed as approved in the naming review; see the PR description.
+          token: ${{ steps.push_token.outputs.token || secrets.commit-push-pat || secrets.GITHUB_TOKEN }}
+
+      - name: Propose renames in the server package
+        if: env.WITH_SERVER == 'true'
+        uses: FlorianSchw/package-workflows/.github/actions/propose-branch@main
+        with:
+          directory: .ds-naming-server
+          repository: ${{ inputs.server-repository }}
+          manifest: server_updated_files.txt
+          branch: bot-suggest/ds-naming-apply/${{ steps.server_base.outputs.branch }}
+          base: ${{ steps.server_base.outputs.branch }}
+          title: 'Harmonise DataSHIELD argument names'
+          body-file: naming_apply_report_server.md
+          commit-message: |
+            refactor!: harmonise DataSHIELD argument names
+
+            BREAKING CHANGE: arguments renamed as approved in the naming review of the client package; see the PR description.
+          token: ${{ steps.push_token.outputs.token || secrets.commit-push-pat }}

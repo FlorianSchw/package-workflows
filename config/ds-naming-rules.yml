@@ -1,0 +1,313 @@
+# DataSHIELD naming rules — DRAFT v0.1 (2026-10-14)
+#
+# Single source of truth for the consistency check (step 2) and the
+# transformation config it produces (step 3).
+#
+# Conventions in this file:
+#   name: df              -> decided
+#   name: [mat, matrix]   -> still open; first entry = current front-runner.
+#                            The check refuses to run while any `name` is a list.
+#   status: decided | proposed | open
+#   Counts: "survey a/b"  = votes in survey 191723 (n ≈ 8 complete answers)
+#           "inv n"       = arguments in the code inventory (32 packages, latest track)
+
+# Keys used throughout:
+#   name         canonical argument name (list = undecided)
+#   description  what the argument means; read by people and by the Claude step
+#   param_doc    standard roxygen @param text for that argument
+#   aliases      existing names the codemod may map to `name` when the class matches
+#   status       decided | proposed | open
+
+meta:
+  version: 0.1.0
+  status: draft
+  sources:
+    survey: results-survey191723_all.csv
+    inventory: datashield_argument_inventory.csv
+
+# --------------------------------------------------------------------------
+# Scope
+# --------------------------------------------------------------------------
+scope:
+  tracks: [prod, dev]                     # prod = master/main, dev = newest *-dev branch
+  functions: user_facing                  # client: NAMESPACE exports; server: Aggregate/AssignMethods in DESCRIPTION
+  packages:
+    - { client: dsBaseClient,      server: dsBase }
+    - { client: dsDangerClient,    server: dsDanger }
+    - { client: dsExposomeClient,  server: dsExposome }
+    - { client: dsGraphicsClient,  server: dsGraphics }
+    - { client: dsImagingClient,   server: dsImaging }
+    - { client: dsMLClient,        server: dsML }
+    - { client: dsMTLClient,       server: dsMTLBase }
+    - { client: dsMediationClient, server: dsMediation }
+    - { client: dsMiceClient,      server: dsMice }
+    - { client: dsOmicsClient,     server: dsOmics }
+    - { client: dsSurvivalClient,  server: dsSurvival }
+    - { client: dsSwissKnifeClient, server: dsSwissKnife }
+    - { client: dsTidyverseClient, server: dsTidyverse }
+    - { client: dsVertClient,      server: dsVert }
+    - { client: dsHelper,          server: null }
+    - { client: dsSyntheticClient, server: null }
+    - { client: null,              server: dsResource }
+    - { client: null,              server: dsMeta }
+  first_round: [dsBaseClient, dsBase]     # open: dsBase/Client v7.0 only, or all packages at once?
+
+# --------------------------------------------------------------------------
+# General style (applies to every argument name not fixed below)
+# --------------------------------------------------------------------------
+style:
+  separator: [".", "_"]                   # open. inv: dot.case 530, snake_case 1016 (576 of them dsVert)
+  case: lowercase                         # proposed. no camelCase (idCol), no capitals (X, Lam: dsMTLClient)
+  max_words: 3                            # proposed. e.g. newobj, time.col, n.breaks
+  abbreviations:                          # proposed. one spelling per concept
+    number: "n"                           # n.breaks, not nbreaks / num.breaks
+    variable: var                         # var.name? see reference_kinds
+    column: col
+    object: obj
+  forbidden_names:                        # proposed. too generic or shadow base R functions
+    - matrix                              # shadows base::matrix; survey 2/5 wanted it
+    - tibble                              # shadows tibble::tibble
+    - data                                # inv 65 args, 5 classes; shadows utils::data
+    - object
+    - what
+    - input
+  allowed_r_conventions:                  # keep as in base R / stats, no rename
+    - "..."
+    - formula
+    - family
+    - weights
+    - offset
+    - na.rm
+    - subset
+
+# --------------------------------------------------------------------------
+# Function names
+# --------------------------------------------------------------------------
+functions:
+  client:
+    pattern: "^ds\\.[a-z][A-Za-z0-9]*$"   # decided. survey 8/8; inv 49% compliant
+    allowed_prefixes: [dh., dss]          # open. dsHelper dh.*, dsSwissKnifeClient dss*: exception or rename?
+    namespaced: ["ds.vert.", "ds.imaging."] # open. dsVertClient/dsImagingClient use ds.<pkg>.<fn>; allow?
+  server:
+    pattern: "^[a-z][A-Za-z0-9]*DS[0-9]*$" # decided. survey 8/8; inv 71% exact, 92% contain "DS"
+  internal:
+    prefix: [".", "int."]                 # open. survey 4 vs 3
+  one_function_per_file: true             # decided. survey 7/7
+  file_name: "<function>.R"               # proposed. R/ds.mean.R, R/meanDS.R
+
+# --------------------------------------------------------------------------
+# Test files (tests/testthat/)
+# Format: test-[<category>[_<category>]-]<target>[-<variant>].R
+#   test-ds.mean.R                         no category (optional part left out)
+#   test-smk-ds.mean.R                     smoke test of ds.mean
+#   test-smk_expt-ds.mean.R                two categories joined by "_"
+#   test-expt_bug-ds.table.R               "bug" qualifier = regression test for a reported bug
+#   test-smk_dgr-ds.recodeValues-factor_missing.R   variant suffix
+#   test-datachk-CNSIM.R                   target is a test dataset, not a function
+# Checked against dsBase/Client v7.0-dev and dsSurvival/Client v2.3.0-dev:
+# 605 of 608 test files pass the syntax check. The 3 that fail:
+# test-_-vm-test.R (dsBaseClient, dsSurvivalClient) and test-arg-per-study-arguments.R.
+# --------------------------------------------------------------------------
+tests:
+  # stage 1: syntax. Function names contain no "-", so "-" splits the parts unambiguously.
+  # (?<category>...) and (?<target>...) are read by the check (Perl regex, named groups required)
+  pattern: "^test-((?<category>(smk|arg|perf|disc|discctrl|datachk|expt|math|dgr)(_(smk|arg|perf|disc|discctrl|datachk|expt|math|dgr|bug))*)-)?(?<target>[A-Za-z][A-Za-z0-9._]*)(-[a-z0-9_]+)?\\.R$"
+  # stage 2: the <target> part must be one of these
+  target_must_be:
+    - existing_function                   # exact name of a function in the same package, user-facing or internal
+    - dataset                             # datachk tests: name of a test dataset (CNSIM, DNSIM, SURVIVAL_EXPAND_WITH_MISSING)
+    - topic                               # listed in allowed_topics
+  allowed_topics: [conndisconn, void, per_study_arguments, utils]   # proposed. existing non-function tests; rename per-study-arguments -> per_study_arguments
+  separator: "-"                          # between parts
+  category_joiner: "_"                    # existing practice: smk_expt, smk_dgr
+  categories:                             # proposed. taken from dsBaseClient v7.0-dev; counts = files there
+    smk: smoke test, function runs and returns expected structure      # 127
+    arg: argument validation and error messages                        # 97
+    perf: performance against a stored profile                         # 101
+    disc: disclosure checks                                            # 8
+    discctrl: disclosure control settings (nfilter.*)                  # 23
+    datachk: data checks / class consistency                           # 9
+    expt: expected results against known values                        # 7
+    math: mathematical correctness                                     # 2
+    dgr: degraded or unusual input (missing values, edge cases)        # 1, open: keep as category?
+  qualifiers:                             # only after a category, joined with "_"
+    bug: regression test for a reported bug                            # expt_bug, math_bug: 10 files
+  category_required: false                # decided (2026-10-14). existing dsBase files all have one anyway
+  function_part: exact_function_name      # the test file names the function exactly, so a function rename renames the file
+  variant: "[a-z0-9_]+"                   # proposed. free text, snake_case, e.g. factor_missing
+  helpers_allowed: ["setup.R", "teardown.R", "^helper-.*\\.R$"]   # testthat conventions, exempt from pattern
+  coverage:
+    every_exported_function_has: [smk]    # proposed. at least one smoke test per user-facing function
+  rename_with_function: true              # codemod renames test files and their test_that() descriptions together
+
+# --------------------------------------------------------------------------
+# Argument order
+# --------------------------------------------------------------------------
+order:
+  datasources_last: true                  # decided. survey 7/7; inv 78% compliant
+  dots_after_datasources: true            # decided. "..." may follow datasources
+  primary_input_first: true               # proposed. the main input object is argument 1
+  newobj_after_inputs: true               # proposed. inputs -> options -> newobj -> type -> checks -> datasources
+
+# --------------------------------------------------------------------------
+# What an argument refers to. Decides which naming table applies.
+# --------------------------------------------------------------------------
+reference_kinds:
+  object:                                 # string naming an object on the server
+    description: 'The argument holds the name of an object that lives on the server; the client never sees its contents.'
+    naming: by_class                      # decided (2026-10-14): class name, no ".name" suffix -> df, not df.name
+    note: "v7.0-dev x.name / table.name / dataset.name become renames"
+  column:                                 # string naming a column inside a data frame
+    description: 'The argument holds the name of a column inside a data frame given in another argument (e.g. the ID or time column).'
+    naming: suffix                        # proposed. survey did not cover this; inv 138 args, 76 names
+    suffix: [".col", "_col"]              # follows style.separator; e.g. id.col, time.col
+    multiple: [".cols", "_cols"]          # several columns: vars, variables, cols -> x.cols?
+  value:                                  # plain value passed from the client (number, vector of values)
+    description: 'The argument holds an actual value sent from the client, such as a threshold, a number of breaks or a vector of knots.'
+    naming: free                          # styled by `style` only
+
+# --------------------------------------------------------------------------
+# Object classes (reference_kinds.object)
+# aliases = names the codemod may map automatically when the inferred class
+# matches; names used for several classes (x, data, formula) are never aliases.
+# --------------------------------------------------------------------------
+classes:
+  vector:
+    description: 'A one-dimensional server-side object: numeric, integer, character, logical or factor, usually a single variable such as D$age.'
+    param_doc: 'a character string naming a vector on the server, e.g. "D$age".'   # proposed. standard @param text, so docs are harmonised too
+    name: x                               # proposed. survey 4/5 (1 suggests var1, var2); inv 128 of 590
+    includes: [numeric, integer, character, logical, factor]  # open: factor separate? inv 40 factor args
+    aliases: [xvect, var, variable, vec, input.var.name, x.name, objs]
+    status: proposed
+  data.frame:
+    description: 'A server-side data frame: rows are individuals, columns are variables.'
+    param_doc: 'a character string naming a data frame on the server.'   # proposed. standard @param text, so docs are harmonised too
+    name: df                              # decided. survey 5/5; inv 38 of 325 (12%)
+    aliases: [df.name, dataName, data_name, dataframe, data.frame, dataset, dataset.name, table, table.name, data_table]
+    status: decided
+  matrix:
+    description: 'A server-side numeric matrix, e.g. a design matrix or a correlation matrix.'
+    param_doc: 'a character string naming a matrix on the server.'   # proposed. standard @param text, so docs are harmonised too
+    name: [mat, matrix]                   # open. survey 3 vs 2; inv: X 26, M1 6, x 16; "matrix" shadows base R
+    aliases: [X, M1, M1.name, m]
+    status: open
+  tibble:
+    description: 'A server-side tibble (tidyverse data frame). Kept apart from data.frame because dsTidyverse functions require one.'
+    param_doc: 'a character string naming a tibble on the server.'   # proposed. standard @param text, so docs are harmonised too
+    name: tbl                             # proposed. survey 4/5; inv 10 args only
+    aliases: []
+    status: proposed
+  model:
+    description: 'A fitted model object on the server (glm, lmer, coxph, survfit), as created by an earlier assign function.'
+    param_doc: 'a character string naming a fitted model object on the server.'   # proposed. standard @param text, so docs are harmonised too
+    name: model                           # proposed. survey 4/5; inv: fit 17, model 7
+    aliases: [fit, glm.obj, glmname]
+    status: proposed
+  formula:
+    description: 'A model formula, passed as a string or formula object from the client, e.g. "y ~ x1 + x2".'
+    param_doc: 'a formula, or a character string coercible to one, describing the model.'   # proposed. standard @param text, so docs are harmonised too
+    name: formula                         # proposed. not in survey (1 respondent raised it); inv 49 of 101
+    aliases: [form, fml]
+    status: proposed
+  list:
+    description: 'A server-side list of objects.'
+    param_doc: 'a character string naming a list on the server.'   # proposed. standard @param text, so docs are harmonised too
+    name: [lst, x]                        # open. not in survey; inv 60 args, 36 names
+    aliases: []
+    status: open
+  omics:                                  # ExpressionSet, GDS, GenotypeData, ExposomeSet, RangedSummarizedExperiment
+    description: 'A Bioconductor-style container on the server: ExpressionSet, RangedSummarizedExperiment, GDS/GenotypeData, ExposomeSet.'
+    param_doc: 'a character string naming an omics object (e.g. ExpressionSet) on the server.'   # proposed. standard @param text, so docs are harmonised too
+    name: [set, eset, x]                  # open. not in survey; inv: x 25, genoData 15, object 13, Set 10
+    aliases: [Set, eSet, genoData, gds, exposomeSet]
+    status: open
+  resource:
+    description: 'A DataSHIELD resource (resourcer ResourceClient) or an object derived from one, e.g. a database or NetCDF connection.'
+    param_doc: 'a character string naming a resource or resource client on the server.'   # proposed. standard @param text, so docs are harmonised too
+    name: [resource, res]                 # open. not in survey; inv 21 args: nc 6, db_connection 5
+    aliases: [res, nc, client]
+    status: open
+
+# Several inputs of the same class
+multiple_inputs:
+  scheme: [numbered, distinct]            # open. survey 3 vs 2: numbered = x1, x2 / df1, df2; distinct = x, y
+  exceptions:                             # established pairs kept even if numbered wins
+    - { functions: [ds.cor, ds.corTest, ds.cov, ds.scatterPlot, ds.contourPlot, ds.heatmapPlot, ds.densityGrid], names: ["x", "y"] }
+  vector_of_names: [x.names, x_names]     # follows separator; v7.0-dev already uses x.names (ds.c, ds.list)
+
+# --------------------------------------------------------------------------
+# Argument roles (independent of class)
+# --------------------------------------------------------------------------
+roles:
+  connection:
+    description: 'The list of DSConnection objects returned by datashield.login(); decides which servers the call goes to.'
+    param_doc: 'a list of DSConnection-class objects obtained after login. If not specified, the default set of connections is used: see datashield.connections_default.'   # proposed. standard @param text, so docs are harmonised too
+    name: datasources                     # decided. survey 5/7 ("conns" 1, "data connection" 1); inv 404 of 474
+    aliases: [conns, datasourceTest]      # conns: dsImagingClient 46, dsHelper 22
+    status: decided                       # open sub-question: rename for the next major given the "data moves" objection?
+  new_object:
+    description: 'The name under which the function stores its result on the server (assign functions only).'
+    param_doc: 'a character string giving the name of the new object created on the server. Default "<function>.newobj".'   # proposed. standard @param text, so docs are harmonised too
+    name: newobj                          # decided. survey 4 vs 2 (newobj.name); inv 112 of 230, 51 names
+    aliases: [newobj.name, new.obj, new_obj, newobject, new.name, output.name, objectname, new_df_name, symbol, output_asset]
+    default_pattern: "<function>.newobj"  # proposed. inv shows mixed defaults (unlist.newobj, table.newobj)
+    status: decided
+  output_type:
+    description: 'Whether results are returned per server ("split"), pooled across servers ("combine") or both.'
+    param_doc: 'a character string: "split" (results per server), "combine" (pooled across servers) or "both".'   # proposed. standard @param text, so docs are harmonised too
+    name: type                            # decided. survey 6/7 (1 suggests output.type); inv 48 of 49
+    values: [split, combine, both]        # proposed. inv accepts combine/combined/combines/s/b; keep one spelling each
+    reserved: true                        # "type" may not be used for anything else (inv 12 method choices use it)
+    status: decided
+  checks:
+    description: 'Switches on optional pre-checks on the server (object exists, same class on every server) before the main call; slower, so off by default.'
+    param_doc: 'logical. If TRUE, checks that the input exists and has the same class on all servers. Default FALSE.'   # proposed. standard @param text, so docs are harmonised too
+    name: [checks, classConsistencyCheck] # open. survey 3/5 checks; v7.0-dev added classConsistencyCheck to 26 functions
+    aliases: [do.checks, DataSHIELD.checks]
+    status: open                          # coordinate with v7.0-dev maintainers
+  method:
+    description: 'Selects one of several algorithms or variants the function offers, e.g. "pearson"/"spearman" or "deterministic"/"probabilistic".'
+    param_doc: 'a character string selecting the method; one of <options>.'   # proposed. standard @param text, so docs are harmonised too
+    name: method                          # decided. survey 5/7 (option 1, algorithm 1); inv 41 of 157
+    aliases: [algorithm, option, method.indicator, method.type, approach]
+    exceptions: [family, test, alternative, FUN.name]  # proposed. R-conventional or distinct meaning
+    status: decided
+  seed:
+    description: 'Seed for the server-side random number generator, so random results can be reproduced.'
+    param_doc: 'an integer seed for the random number generator on the server.'   # proposed. standard @param text, so docs are harmonised too
+    name: seed                            # proposed. not in survey; inv 11 of 24
+    aliases: [seed.as.integer, seedtext, shared.seedval]
+    status: proposed
+
+# --------------------------------------------------------------------------
+# Exceptions (no renames proposed)
+# --------------------------------------------------------------------------
+exceptions:
+  packages:
+    dsTidyverse:       { reason: "mirrors dplyr argument names (.data, .by, .keep, tidy_expr)" }
+    dsTidyverseClient: { reason: "mirrors dplyr argument names" }
+  argument_patterns:                      # protocol plumbing in dsVert / dsImaging (inv 312 args)
+    - "session_id"
+    - "_json$"
+    - "manifest"
+    - "operation_id$"
+    - "^chunk"
+  server_transmit_suffix: ".transmit"     # open. dsBase server args like exclude.transmit mirror client args; keep or drop?
+
+# --------------------------------------------------------------------------
+# Output of the check (step 2b). Shape of one transformation entry.
+# --------------------------------------------------------------------------
+transformation_entry_template:
+  package: dsBaseClient
+  track: dev
+  function: ds.mean
+  side: client
+  current: x
+  proposed: x
+  rule: classes.vector
+  reason: ""
+  class_inferred: vector
+  confidence: high                        # high | medium | low (from inventory)
+  match: canonical                        # canonical | alias | style | none
+  linked_server: [meanDS]                 # server function(s) whose argument must change in lockstep
+  status: proposed                        # proposed | approved | skip

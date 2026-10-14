@@ -44,6 +44,14 @@ datashield-analysis:
     fallbacks: default
     betas: [server-side-fallback-2026-07-01]
 
+# DataSHIELD argument naming: classifies arguments the code can't place
+# (role, object class). Small, checkable answers; a person approves every
+# rename, so the cheaper model.
+ds-naming-classification:
+  anthropic:
+    tool_name: submit_naming_classification
+    max_tokens: 4096
+
 test-failure-classification:
   anthropic:
     tool_name: submit_failure_classification

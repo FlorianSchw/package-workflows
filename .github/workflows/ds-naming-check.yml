@@ -1,0 +1,174 @@
+name: DataSHIELD Argument Naming Check
+
+on:
+  workflow_call:
+    inputs:
+      server-repository:
+        description: 'owner/repo of the server package paired with this client (e.g. datashield/dsBase); empty: check this package alone.'
+        required: false
+        type: string
+        default: ''
+      server-ref:
+        description: 'Branch or tag of the server package to check; empty: its default branch.'
+        required: false
+        type: string
+        default: ''
+      package-side:
+        description: '"client" (default) or "server": which side this repository is. A server repository is checked alone.'
+        required: false
+        type: string
+        default: 'client'
+      base-branch:
+        description: 'Branch to check and to open the review PR against; empty: the branch the run started on.'
+        required: false
+        type: string
+        default: ''
+      transformation-file:
+        description: 'Where the renames to review are kept in this repository.'
+        required: false
+        type: string
+        default: '.github/ds-naming/transformations.yml'
+      use-claude:
+        description: 'Let Claude classify the arguments the code cannot place; false: they stay unresolved.'
+        required: false
+        type: boolean
+        default: true
+      max-claude-calls:
+        description: 'At most this many functions are sent to Claude per run (one call each); earlier answers are reused.'
+        required: false
+        type: number
+        default: 40
+    secrets:
+      anthropic-organization-id:
+        description: 'Anthropic organization ID (only with use-claude).'
+        required: false
+      anthropic-service-account-id:
+        description: 'Anthropic service account ID, svac_... (only with use-claude).'
+        required: false
+      anthropic-federation-rule-id:
+        description: 'Federation rule ID for this workflow, fdrl_... (only with use-claude).'
+        required: false
+      app-client-id:
+        description: 'GitHub App Client ID (Iv23li...); its token lets the review PR trigger checks (optional).'
+        required: false
+      app-private-key:
+        description: 'Private key of that GitHub App (required with app-client-id).'
+        required: false
+      commit-push-pat:
+        description: 'PAT with contents write, fallback if no App is set (optional).'
+        required: false
+
+jobs:
+  check-naming:
+    runs-on: ubuntu-latest
+    concurrency:
+      group: ds-naming-${{ github.repository }}
+      cancel-in-progress: false
+    permissions:
+      contents: write
+      pull-requests: write
+      id-token: write
+    env:
+      BASE_BRANCH: ${{ inputs.base-branch || github.ref_name }}
+      USE_CLAUDE: ${{ inputs.use-claude && secrets.anthropic-federation-rule-id != '' }}
+
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          ref: ${{ env.BASE_BRANCH }}
+          fetch-depth: 0
+
+      - name: Checkout shared scripts
+        uses: actions/checkout@v7
+        with:
+          repository: FlorianSchw/package-workflows
+          ref: main
+          path: .shared-workflows
+
+      - name: Checkout server package
+        if: inputs.server-repository != '' && inputs.package-side == 'client'
+        uses: actions/checkout@v7
+        with:
+          repository: ${{ inputs.server-repository }}
+          ref: ${{ inputs.server-ref }}
+          path: .ds-naming-server
+
+      # People's decisions in the open review PR are the starting point;
+      # without one, the file on the base branch (if any).
+      - name: Find previous decisions
+        id: previous
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          FILE: ${{ inputs.transformation-file }}
+        run: |
+          BOT_BRANCH="bot-suggest/ds-naming/${BASE_BRANCH//\//-}"
+          echo "bot_branch=$BOT_BRANCH" >> "$GITHUB_OUTPUT"
+          PREVIOUS="$FILE"
+          if [ -n "$(gh pr list --head "$BOT_BRANCH" --state open --json number --jq '.[0].number // empty')" ]; then
+            git fetch origin "$BOT_BRANCH"
+            if git show "FETCH_HEAD:$FILE" > .ds-naming-previous.yml 2>/dev/null; then PREVIOUS=.ds-naming-previous.yml; fi
+          fi
+          echo "file=$PREVIOUS" >> "$GITHUB_OUTPUT"
+          echo "server_sha=$(git -C .ds-naming-server rev-parse HEAD 2>/dev/null || true)" >> "$GITHUB_OUTPUT"
+
+      - uses: r-lib/actions/setup-r@v2
+        with:
+          use-public-rspm: true
+
+      - uses: r-lib/actions/setup-r-dependencies@v2
+        with:
+          packages: any::yaml, any::jsonlite, any::httr2, any::purrr, any::config
+
+      - name: Get Anthropic access token
+        id: anthropic_auth
+        if: env.USE_CLAUDE == 'true'
+        uses: FlorianSchw/package-workflows/.github/actions/anthropic-token@main
+        with:
+          organization-id: ${{ secrets.anthropic-organization-id }}
+          service-account-id: ${{ secrets.anthropic-service-account-id }}
+          federation-rule-id: ${{ secrets.anthropic-federation-rule-id }}
+
+      - name: Check argument names
+        env:
+          R_CONFIG_ACTIVE: ds-naming-classification
+          ANTHROPIC_API_KEY: ${{ steps.anthropic_auth.outputs.access-token }}
+          # For renewing the token in a long run (refresh_anthropic_token()).
+          ANTHROPIC_ORG_ID: ${{ secrets.anthropic-organization-id }}
+          ANTHROPIC_SERVICE_ACCOUNT_ID: ${{ secrets.anthropic-service-account-id }}
+          ANTHROPIC_FEDERATION_RULE_ID: ${{ secrets.anthropic-federation-rule-id }}
+          MAX_CLAUDE_CALLS: ${{ inputs.max-claude-calls }}
+          PACKAGE_SIDE: ${{ inputs.package-side }}
+          SERVER_DIR: ${{ inputs.server-repository != '' && '.ds-naming-server' || '' }}
+          SERVER_REPOSITORY: ${{ inputs.server-repository }}
+          SERVER_SHA: ${{ steps.previous.outputs.server_sha }}
+          TRANSFORMATION_FILE: ${{ inputs.transformation-file }}
+          PREVIOUS_FILE: ${{ steps.previous.outputs.file }}
+        run: Rscript .shared-workflows/R/check_ds_naming.R
+
+      - name: Resolve push token
+        id: push_token
+        uses: FlorianSchw/package-workflows/.github/actions/resolve-push-token@main
+        with:
+          client-id: ${{ secrets.app-client-id }}
+          app-private-key: ${{ secrets.app-private-key }}
+
+      - name: Propose for review
+        uses: FlorianSchw/package-workflows/.github/actions/propose-branch@main
+        with:
+          manifest: updated_files.txt
+          branch: ${{ steps.previous.outputs.bot_branch }}
+          base: ${{ env.BASE_BRANCH }}
+          title: 'Review DataSHIELD argument renames'
+          body-file: suggestion_report.md
+          commit-message: 'chore: update DataSHIELD argument naming review'
+          token: ${{ steps.push_token.outputs.token || secrets.commit-push-pat || secrets.GITHUB_TOKEN }}
+
+      # Counts this run once, anonymously, by workflow, outcome and version
+      # (see docs: usage counting). Nothing about this repository is sent.
+      - name: Count this run
+        if: always()
+        continue-on-error: true
+        uses: FlorianSchw/package-workflows/.github/actions/count-run@main
+        with:
+          workflow: ds-naming-check
+          job-status: ${{ job.status }}
