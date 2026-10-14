@@ -299,6 +299,12 @@ date,workflow,outcome,channel,runs_total
 2026-10-14,datashield-analysis-suggest,nothing,release,0
 2026-10-14,datashield-analysis-suggest,proposed,dev,6
 2026-10-14,datashield-analysis-suggest,proposed,release,0
+2026-10-14,ds-naming-check,failed,dev,0
+2026-10-14,ds-naming-check,failed,release,0
+2026-10-14,ds-naming-check,nothing,dev,0
+2026-10-14,ds-naming-check,nothing,release,0
+2026-10-14,ds-naming-check,proposed,dev,0
+2026-10-14,ds-naming-check,proposed,release,0
 2026-10-14,roxygen-suggest,failed,dev,2
 2026-10-14,roxygen-suggest,failed,release,0
 2026-10-14,roxygen-suggest,nothing,dev,6
