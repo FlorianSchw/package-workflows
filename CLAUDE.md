@@ -295,18 +295,25 @@ and `CONTRIBUTING.md`); no PRs until a branch model and rules exist.
   `dev-notes/test-suggest.md`. Next changes: note them here again as
   "Docs pending".
 
-- **Test bot: generated tests run in the bot's own R process**
-  (`run_test_blocks()`), so they could read `ANTHROPIC_API_KEY` and the
-  token-renewal variables. Consider running them in a child process
-  without credentials, as the analysis bot does (`run_analysis_scripts()`).
+- ~~**Test bot: generated tests run in the bot's own R process**~~ Done
+  (2026-10-14, tested locally, not yet in CI): `run_test_blocks()` runs
+  them via `callr::r()` with the variables of `credential_variables()`
+  (shared, also used by `run_analysis_scripts()`) blanked; the test-data
+  summary's `Rscript` gets them blanked too. The test and analysis
+  workflows check out with `persist-credentials: false`, so no token sits
+  in `.git/config`; `fetch_bot_branch()` passes `GH_TOKEN` for its one
+  fetch when no stored header exists (pushes already use the token in the
+  remote URL). Roxygen/authors/naming still persist credentials — they
+  run no generated code.
 
-- **Test bot: undeclared packages in generated tests** (seen in
-  dsAnalysis, 2026-10-04): tests used `withr::local_tempdir()` although
-  `withr` wasn't in DESCRIPTION, so R CMD check warned ("'::' or ':::'
-  import not declared from: 'withr'"). Either tell Claude to use only
-  packages in DESCRIPTION (Imports/Suggests) and base R/testthat, or check
-  the kept tests for `pkg::` calls and add missing packages to
-  `Suggests`.
+- ~~**Test bot: undeclared packages in generated tests**~~ Done
+  (2026-10-14, tested locally, not yet in CI): both. The prompt prefers
+  base R, testthat and declared packages; `declare_test_packages()` adds
+  packages the proposed test files use (`pkg::`, `library()`,
+  `require()`, `requireNamespace()`) to Suggests, proposed with the tests
+  (finding kind `dependency`, "added to Suggests: …" in the summary line).
+  Docs pending: `test-suggest.qmd` (Suggests additions; tests run without
+  credentials).
 
 - **Docs pending** (changes of 2026-10-02, internals pages already done):
   `test-suggest.qmd` "Test files": test files are named after the R file
@@ -345,6 +352,9 @@ and `CONTRIBUTING.md`); no PRs until a branch model and rules exist.
     `@vX` in the docs.
 - Federation rules for the other two accounts, before rolling out beyond
   dsSupportClient.
+- **CI test round prepared** (2026-10-14): what to trigger on
+  dsSupportClient and what to check, for everything built since late
+  September — [dev-notes/ci-test-round.md](dev-notes/ci-test-round.md).
 - Not yet confirmed in real CI: ~~`all` mode of both suggestion workflows~~
   (both ran when started by hand: roxygen → dsSupportClient PR #25, tests →
   PR #28; a scheduled run is still ahead);
@@ -648,6 +658,13 @@ and `CONTRIBUTING.md`); no PRs until a branch model and rules exist.
     dev-note.
   - **Second idea, not started:** functions taking one vector should
     accept several columns or a selector (all categorical/continuous).
+- **Claude Pro/Max subscription instead of WIF** (asked 2026-10-14, not
+  pursued): the workflows call the Messages API directly, which a
+  subscription doesn't cover. A plain API-key alternative to WIF is not
+  wanted (user); running the Claude step through Claude Code would let a
+  subscription pay but gives up the controlled, schema-forced call.
+  Reasons and trade-offs in
+  [dev-notes/claude-subscription-auth.md](dev-notes/claude-subscription-auth.md).
 - Internal only — keep these off `docs/roadmap.qmd` (user's decision):
   - **Name of a generated DSLite setup file:** `setup.R` if none exists,
     else `setup-dslite.R` (must start with `setup` for testthat to run

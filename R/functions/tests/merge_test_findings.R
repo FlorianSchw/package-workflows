@@ -3,6 +3,7 @@
 # report instead of growing an update per run. Each entry: id, kind ("new",
 # "updated", "deleted", "note" = existing test to look at, "bug" = possible
 # bug in the code, "failed" = generated test that failed, "setup",
+# "dependency" = package added to Suggests (description = its name),
 # "untested"), fn, file, description, reason, explanation, classification,
 # in_report, origin and confidence and issue (bugs: "existing" = a
 # reported existing test, "failure" = a failed generated test, with the
@@ -130,6 +131,12 @@ merge_test_findings <- function(state, fn, run, sha) {
 
   for (path in run$setups) {
     if (!any(vapply(entries, function(e) is_open(e, "setup") && identical(e$file, path), logical(1)))) add("setup", list(file = path))
+  }
+
+  for (pkg in run$dependencies) {
+    if (!any(vapply(entries, function(e) is_open(e, "dependency") && identical(e$description, pkg), logical(1)))) {
+      add("dependency", list(file = "DESCRIPTION", description = pkg))
+    }
   }
 
   if (!is.null(run$untested)) {

@@ -297,6 +297,15 @@ testthat_setup <- if (new_total > 0) ensure_testthat_setup(package_name) else ch
 updated_files <- c(updated_files, testthat_setup)
 if (length(testthat_setup) > 0) merge_run("", list(setups = testthat_setup))
 
+# Packages the proposed tests use but DESCRIPTION doesn't declare go into
+# Suggests, so R CMD check doesn't warn about them.
+added_packages <- declare_test_packages(package_name, grep("^tests/", updated_files, value = TRUE))
+if (length(added_packages) > 0) {
+  updated_files <- unique(c(updated_files, "DESCRIPTION"))
+  merge_run("", list(dependencies = added_packages))
+  message("Added to Suggests (used by the proposed tests): ", paste(added_packages, collapse = ", "))
+}
+
 writeLines(updated_files, "updated_files.txt")
 restore_unproposed_files(bot_tests$materialized, updated_files)
 

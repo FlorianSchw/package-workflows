@@ -97,6 +97,7 @@ jobs:
       - uses: actions/checkout@v7
         if: steps.scope.outputs.skip != 'true'
         with:
+          persist-credentials: false   # no token in .git/config while package or generated code runs
           ref: ${{ steps.scope.outputs.ref }}
           fetch-depth: 0
 
@@ -104,6 +105,7 @@ jobs:
         if: steps.scope.outputs.skip != 'true'
         uses: actions/checkout@v7
         with:
+          persist-credentials: false   # no token in .git/config while package or generated code runs
           repository: FlorianSchw/package-workflows
           ref: main
           path: .shared-workflows
@@ -153,7 +155,7 @@ jobs:
       - uses: r-lib/actions/setup-r-dependencies@v2
         if: steps.files.outputs.count > 0
         with:
-          extra-packages: any::httr2, any::jsonlite, any::purrr, any::config, any::testthat
+          extra-packages: any::httr2, any::jsonlite, any::purrr, any::config, any::testthat, any::callr
           needs: check
 
       - name: Get Anthropic access token

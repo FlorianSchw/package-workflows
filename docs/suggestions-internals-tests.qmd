@@ -68,7 +68,7 @@ With an open suggestion PR to build on (a PR or push run), first:
 
 | Function | What it does |
 |---|---|
-| [`run_test_blocks()`](https://github.com/FlorianSchw/package-workflows/blob/main/R/functions/tests/run_test_blocks.R) | Runs a test file with your package loaded from source and reports each test as passed or failed, with the error. |
+| [`run_test_blocks()`](https://github.com/FlorianSchw/package-workflows/blob/main/R/functions/tests/run_test_blocks.R) | Runs a test file with your package loaded from source and reports each test as passed or failed, with the error. It runs in a separate R process without the Claude and GitHub tokens ([`credential_variables()`](https://github.com/FlorianSchw/package-workflows/blob/main/R/functions/shared/credential_variables.R)): the tests are generated code. |
 | [`format_test_results()`](https://github.com/FlorianSchw/package-workflows/blob/main/R/functions/tests/format_test_results.R) | Turns those results into lines for the prompt, per test file. |
 | [`build_test_evidence()`](https://github.com/FlorianSchw/package-workflows/blob/main/R/functions/tests/build_test_evidence.R) | From git: when the function and each of its test files last changed, and in the changes under review (a PR or push, from the state before them) whether the function changed without its tests, with the diff. Helps Claude tell an outdated test from a bug. |
 
@@ -133,6 +133,7 @@ With an open suggestion PR to build on (a PR or push run), first:
 |---|---|
 | [`choice_line()`](https://github.com/FlorianSchw/package-workflows/blob/main/R/functions/shared/choice_line.R), [`suggestion_choice()`](https://github.com/FlorianSchw/package-workflows/blob/main/R/functions/shared/suggestion_choice.R) | Writes each suggestion that changes a file as a checkbox: ticked if applied, unticked if declined or not applied. Changing a box starts `suggestion-choices.yml`, which makes the bot branch match. |
 | [`ensure_testthat_setup()`](https://github.com/FlorianSchw/package-workflows/blob/main/R/functions/tests/ensure_testthat_setup.R) | If new tests were kept: creates `tests/testthat.R`, adds `testthat` to `Suggests`, and sets edition 3 for a fresh setup — so R CMD check runs the tests. |
+| [`declare_test_packages()`](https://github.com/FlorianSchw/package-workflows/blob/main/R/functions/tests/declare_test_packages.R) | Adds packages the proposed tests use but `DESCRIPTION` doesn't declare (`withr::`, `library()`) to `Suggests`, so R CMD check doesn't warn about them. |
 | [`merge_test_findings()`](https://github.com/FlorianSchw/package-workflows/blob/main/R/functions/tests/merge_test_findings.R) | After each function: merges its findings with the earlier ones — repeats skipped, a reported test that passes now resolved, earlier findings that no longer hold crossed out, never deleted. |
 | [`restore_unproposed_files()`](https://github.com/FlorianSchw/package-workflows/blob/main/R/functions/tests/restore_unproposed_files.R) | Puts back the suggestion branch's test files this run doesn't change, so only this run's files are proposed. |
 | [`format_test_summary()`](https://github.com/FlorianSchw/package-workflows/blob/main/R/functions/tests/format_test_summary.R) | The summary line of the open findings, e.g. "7 new tests · 1 existing test updated". |

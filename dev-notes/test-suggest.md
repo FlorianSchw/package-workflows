@@ -69,7 +69,10 @@ Entry script: `R/suggest_tests.R`. Per function file in `files_to_check.txt`:
    a new file via `new_test_file_content()`, with Claude's top-level
    `file_setup_code` / `file_teardown_code` where the package's files
    connect that way), `write_test_file()` writes it and
-   `run_test_blocks()` runs it with the package loaded from source.
+   `run_test_blocks()` runs it with the package loaded from source — in a
+   separate R process (`callr::r()`) without the Claude and GitHub
+   tokens (`credential_variables()`, 2026-10-14); the checkout keeps no
+   token in `.git/config` either (`persist-credentials: false`).
 8. The file is rewritten from the *original* with only what passed: failed
    new tests are left out, a failed update keeps the original test and is
    reported. A generated DSLite setup is kept only if a new test passed.
@@ -81,6 +84,10 @@ Entry script: `R/suggest_tests.R`. Per function file in `files_to_check.txt`:
     check runs them: creates `tests/testthat.R`, adds testthat to
     `Suggests`, and sets `Config/testthat/edition: 3` (edition only when
     the runner is created fresh — an existing suite's edition stays).
+    `declare_test_packages()` adds packages the proposed test files use
+    but DESCRIPTION doesn't declare (`withr::`, `library(x)`, …) to
+    `Suggests` (finding kind `dependency`; 2026-10-14, after R CMD check
+    warned about `withr` in dsAnalysis).
 11. Written files are listed in `updated_files.txt`; the
     `commit-updated-files` action proposes them. `format_test_summary()`
     gives a one-line statistic (new / updated / deleted tests, DSLite and

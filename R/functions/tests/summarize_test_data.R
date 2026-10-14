@@ -11,7 +11,9 @@ summarize_test_data <- function(files, functions_dir) {
     sprintf("source(%s)", deparse(normalizePath(file.path(functions_dir, "collect_test_data.R")))),
     sprintf("collect_test_data(%s, %s)", paste(deparse(files), collapse = ""), deparse(out))
   ), driver)
-  system2(file.path(R.home("bin"), "Rscript"), shQuote(driver), stdout = FALSE, stderr = FALSE, timeout = 300)
+  # The package's setup code runs there: no Claude or GitHub tokens.
+  system2(file.path(R.home("bin"), "Rscript"), shQuote(driver), stdout = FALSE, stderr = FALSE, timeout = 300,
+          env = paste0(credential_variables(), "="))
 
   if (!file.exists(out)) return("(could not be determined: running the setup files failed)")
   paste(readLines(out, warn = FALSE), collapse = "\n")

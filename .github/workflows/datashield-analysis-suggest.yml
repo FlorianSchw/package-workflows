@@ -56,10 +56,13 @@ jobs:
 
     steps:
       - uses: actions/checkout@v7
+        with:
+          persist-credentials: false   # no token in .git/config while package or generated code runs
 
       - name: Checkout shared scripts
         uses: actions/checkout@v7
         with:
+          persist-credentials: false   # no token in .git/config while package or generated code runs
           repository: FlorianSchw/package-workflows
           ref: main
           path: .shared-workflows
@@ -67,6 +70,7 @@ jobs:
       - name: Checkout dsAnalysis
         uses: actions/checkout@v7
         with:
+          persist-credentials: false   # no token in .git/config while package or generated code runs
           repository: ${{ inputs.dsanalysis-repository }}
           ref: ${{ inputs.dsanalysis-ref }}
           path: .dsanalysis
@@ -102,8 +106,6 @@ jobs:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           PLAN_FILE: ${{ inputs.plan-file }}
           DSANALYSIS_DIR: .dsanalysis
-        # --no-init-file: a dsAnalysis project's .Rprofile activates renv,
-        # which would hide the packages installed for this run.
         run: Rscript .shared-workflows/R/suggest_datashield_analysis.R
 
       - name: Resolve push token

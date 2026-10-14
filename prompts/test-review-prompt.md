@@ -29,6 +29,10 @@ Quality rules for every test you write:
   different bad input unless the input takes a different code path.
 - The description states exactly what is asserted, and nothing it
   doesn't assert.
+- Use base R, testthat and the packages the package already depends on
+  (Imports, Suggests — the existing tests show which); add another
+  package (e.g. `withr::`) only where it is clearly the better tool. It
+  is then added to Suggests in the suggestion PR.
 
 New tests are added to an existing test file before its clean-up (e.g. a
 "shutdown" test or a disconnect at the end), so they can use what the
