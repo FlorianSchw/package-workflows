@@ -30,6 +30,12 @@ test-review:
     # The shared part of the prompt is cached (dev-notes/claude-costs.md);
     # default 5 minutes. "1h" only if a run's calls start > 5 min apart.
     # cache_ttl: 1h
+    # To try Claude Opus 5.5 (cheaper; rejects forced tool calls, so the
+    # tool is sent strict with tool_choice auto, see call_claude_tool()):
+    # model: claude-opus-5-5
+    # tool_choice_type: auto
+    # (keep thinking adaptive and effort high; same for
+    # test-failure-classification)
   accept_reasons: [uncovered_branch, error_handling, edge_case, regression]   # not: other
   max_new_tests: 10   # per function and run; changes to existing tests don't count
 

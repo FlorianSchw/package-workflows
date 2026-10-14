@@ -417,8 +417,11 @@ and `CONTRIBUTING.md`); no PRs until a branch model and rules exist.
   the fields it changes, and every call logs its token usage
   (`log_claude_usage()`). **Not yet verified in CI:** "cache read" > 0
   from the second test function of a run. Proposed, not applied (no
-  eval): Opus 5.5 (cheaper, but forced `tool_choice` is a 400 there),
-  effort `medium` for tests, Sonnet for the failure classification.
+  eval): Opus 5.5 (cheaper, but forced `tool_choice` is a 400 there —
+  code support built 2026-10-14: `tool_choice_type: auto` per profile →
+  strict tool, instruction, one retry; switch after the Opus 5 baseline
+  of the CI round and compare), effort `medium` for tests, Sonnet for the
+  failure classification.
   Details: [dev-notes/claude-costs.md](dev-notes/claude-costs.md).
 - ~~**Rename the workflows before rolling out to more repos**~~ Done
   (2026-09-26): `test-coverage-suggest` → `test-suggest`, `R-CMD-Check` →

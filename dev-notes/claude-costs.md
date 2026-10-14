@@ -75,11 +75,24 @@ were applied; trade-offs stay proposals.
 ## Proposed trade-offs (need a before/after on real cases)
 
 - **Opus 5.5 instead of Opus 5** for tests and analysis: cheaper per token
-  ($4 / $20, cache reads 0.05×) and the pages' recommended starting model.
-  Not a drop-in: forced `tool_choice` returns a 400 on Opus 5.5 (use `auto`
-  + `strict: true` + a prompt instruction), thinking can't be disabled, and
-  its default effort is `medium`. A migration, to be compared on a few real
-  PRs.
+  ($4 / $20, cache reads $0.20 vs $0.50) and the recommended starting
+  model. Not a drop-in: forced `tool_choice` returns a 400 on Opus 5.5,
+  thinking can't be disabled, and its default effort is `medium`.
+  **Code support built 2026-10-14** (tested against a mocked API, not yet
+  real): `tool_choice_type: auto` in a profile makes `call_claude_tool()`
+  send the tool with `strict: true` (`strict_tool_schema()`:
+  `additionalProperties: false` on every object, unsupported keywords such
+  as `maxItems` removed — R caps new tests itself), append an instruction
+  to answer through the tool, and ask once more in the same conversation
+  (appended, thinking blocks replayed unchanged) if the answer comes as
+  text. The request itself is `send_claude_request()`. Forced profiles
+  send the same request as before. **Switching** = `model:
+  claude-opus-5-5` + `tool_choice_type: auto` in `test-review` and
+  `test-failure-classification` (commented example in
+  `config/claude.yml`), keeping `thinking: adaptive` and `effort: high`.
+  **Plan:** first CI round on Opus 5 as the baseline
+  ([ci-test-round.md](ci-test-round.md)), then the same PR on Opus 5.5;
+  compare tokens/cost, report quality and how often the retry is needed.
 - **Effort `medium` for the test review**: on long-horizon coding the pages
   report ~2.5 points lower accuracy for ~70 % of the cost; on knowledge work
   `medium` matched `high`.

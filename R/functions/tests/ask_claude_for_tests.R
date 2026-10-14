@@ -39,5 +39,9 @@ ask_claude_for_tests <- function(parsed, context) {
   # minutes, runs are hours or days apart, and a single call would pay the
   # cache write (1.25x input) without ever reading it.
   sent <- if (isTRUE(context$cache_prompt)) split_cached_prompt(prompt) else sub("<!-- per function -->\n", "", prompt, fixed = TRUE)
-  call_claude_tool(anthropic_config, tool, sent)
+  answer <- call_claude_tool(anthropic_config, tool, sent)
+  # The schema's maxItems isn't sent in strict mode (strict_tool_schema()):
+  # the cap holds here either way.
+  if (length(answer$tests) > context$max_new_tests) answer$tests <- answer$tests[seq_len(context$max_new_tests)]
+  answer
 }
