@@ -59,7 +59,7 @@ are read too:
 
 | Function | What it does |
 |---|---|
-| [`parse_r_file()`](https://github.com/FlorianSchw/package-workflows/blob/main/R/functions/shared/parse_r_file.R) | Finds the first function in the file, its parameters and the roxygen block above it, with every tag and its lines. |
+| [`parse_r_file()`](https://github.com/FlorianSchw/package-workflows/blob/main/R/functions/shared/parse_r_file.R) | Finds the first function in the file (with R's own parser, [`read_r_definitions()`](https://github.com/FlorianSchw/package-workflows/blob/main/R/functions/shared/read_r_definitions.R)), its parameters and the roxygen block above it, with every tag and its lines. A file that does not parse is skipped. |
 | [`review_source_block()`](https://github.com/FlorianSchw/package-workflows/blob/main/R/functions/roxygen/review_source_block.R) | With an open suggestion PR: reviews the block it already proposes instead of yours, so the same fixes aren't suggested again — unless you edited the documentation since the last review; then yours counts. |
 | [`select_profile()`](https://github.com/FlorianSchw/package-workflows/blob/main/R/functions/roxygen/select_profile.R) | Picks the style guidance for an exported or an internal function (by `@export`). |
 | [`fn_source()`](https://github.com/FlorianSchw/package-workflows/blob/main/R/functions/shared/fn_source.R) | Cuts out the function's source code, so Claude can check the documentation against it. |

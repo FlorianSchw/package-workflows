@@ -97,13 +97,20 @@ items, **all of A–J before v1**:
   (today JSON/YAML mixed, most overrides replace the whole file).
 - **D** The policy file `config/suggestion-policy.yml` (reasons,
   thresholds, report routing).
-- **E** `strict: true` for all Claude calls (drops the analysis bot's
-  "array as JSON string" workaround).
-- **F** Failure classification once per function, plus an R pre-check for
-  obvious failures.
-- **G** One `claude` object instead of global variables.
-- **H** Merge the two R-file parsers (`parse_r_file()`,
-  `read_r_definitions()`).
+- ~~**E** `strict: true` for all Claude calls (drops the analysis bot's
+  "array as JSON string" workaround).~~ Done (`f3ef6a7`).
+- ~~**F** Failure classification once per function, plus an R pre-check for
+  obvious failures.~~ Done (`f3ef6a7`).
+- ~~**G** One `claude` object instead of global variables.~~ Done
+  (`407431b`).
+- ~~**H** Merge the two R-file parsers (`parse_r_file()`,
+  `read_r_definitions()`).~~ Done: `read_r_definitions()` and
+  `roxygen_params()` moved to `shared/`; `parse_r_file()` and
+  `package_function_names()` find definitions through it (R's parser
+  instead of a column-0 regex), keeping `parse_r_file()`'s output for the
+  write-back (minus the unused `fn_header`). A file that doesn't parse
+  now counts as having no function (warning). Tests in
+  `test-shared-parse.R`.
 - **I** Test and roxygen main loops as functions; shared skeleton.
 - **J** Review prompts and context; remove hard-coded workarounds — e.g.
   `ds.glmSLMA` / forest plots are both prose in
