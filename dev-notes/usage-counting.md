@@ -109,3 +109,38 @@ Tested locally: `count-run.sh` for every outcome, both channels (the old
 `v1` commit as a stand-in release, real `ls-remote`), no sha, and a
 missing release (exit 0); the collector's recording step against a bare
 repo (columns, same-day replace, next day).
+
+## Plan for v1 and the move (decided 2026-10-16, nothing built)
+
+- **Counter stays in the public workflow repo** (renamed
+  `datashield-workflows`, in nfdi4health): downloads must work without a
+  token, also from private analyst repos. Only `count-run`'s URL changes
+  with the move.
+- **New dimension `datashield` / `other`**, from an explicit input
+  (analysis and naming always DataSHIELD); the user's non-DataSHIELD
+  runs drop out of the KPIs on their own. Test runs in the workflow repo
+  itself are not counted.
+- **Fresh counting at v1:** the new file names (with the dimension)
+  start at 0; one last snapshot of the old 24 files goes into the KPI
+  repo as pre-v1 history; then the old files are removed.
+- **Central private repo `datashield-kpi-reporting`** (nfdi4health):
+  the collector moves there (daily raw counts, ensures every counter file
+  exists; needs a token with write access to the workflow repo — App or
+  PAT — as a secret there). Data as CSV on its `main`, protected by a
+  ruleset (no force push, no deletion, changes via PR; the collector's
+  App bypasses), whatever the number of people with write access.
+  Supersedes options A/B above; the `usage-data` branch goes once the
+  history is copied.
+- **Not losing raw counts:** a missed collector day loses nothing
+  (download counts are cumulative); the risk is a deleted or re-created
+  counter file (count back to 0) — ruleset on the `usage-counter` tag,
+  only admins delete releases, the collector never deletes a file with
+  downloads; the daily snapshot in the KPI repo is the backup.
+- **Priority:** complete, safe raw counts first; monthly/quarterly
+  reports later.
+- **Plugin KPI** (if a plugin comes, in its own repo): daily clones and
+  unique cloners from the traffic API (admin token), see
+  [issue-agents.md](issue-agents.md).
+- **Idea for later, not built:** Claude costs per workspace from the
+  Admin API's cost reports (needs the Admin API key of the Anthropic
+  setup automation).
