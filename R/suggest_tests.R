@@ -37,19 +37,16 @@ functions_dir <- if (dir.exists("R/functions")) "R/functions" else ".shared-work
 walk(list.files(file.path(functions_dir, c("shared", "tests")), pattern = "\\.R$", full.names = TRUE), source)
 
 # R_CONFIG_ACTIVE (an env var set by the calling workflow step) selects
-# "test-review" as the active profile; the failure classifier has its own
-# profile, fetched explicitly by name.
+# "test-review" for the run's settings (accepted reasons, max new tests);
+# the Claude clients name their profiles explicitly (claude_client()).
 config_path <- resolve_shared_path("config/claude.yml")
 test_review_settings <- config::get(file = config_path)
-anthropic_config <- test_review_settings$anthropic
 accept_reasons <- accepted_reasons(Sys.getenv("ACCEPT_REASONS"), test_review_settings$accept_reasons, "tests")
 max_new_tests <- if (is.null(test_review_settings$max_new_tests)) 10L else as.integer(test_review_settings$max_new_tests)
-failure_classification_config <- config::get(config = "test-failure-classification", file = config_path)$anthropic
 # Possible bugs in the code to report, by Claude's confidence (input
 # code-issue-confidence, else config); an issue is opened only for "high".
 code_issue_confidence <- code_issue_confidence_levels(Sys.getenv("CODE_ISSUE_CONFIDENCE"), test_review_settings$code_issue_confidence)
 
-api_key    <- Sys.getenv("ANTHROPIC_API_KEY")
 gh_token   <- Sys.getenv("GH_TOKEN")
 repo       <- Sys.getenv("GITHUB_REPOSITORY")
 pr_number  <- Sys.getenv("PR_NUMBER")
@@ -71,8 +68,11 @@ may_use_dslite <- isTRUE(datashield) && ds_type %in% c("client", "utility")
 dslite_setup_mode <- Sys.getenv("DSLITE_SETUP", "auto")
 check_dslite_setup_mode(dslite_setup_mode)
 
-test_review_prompt_template           <- read_text_file("prompts/test-review-prompt.md")
-failure_classification_prompt_template <- read_text_file("prompts/test-failure-classification-prompt.md")
+# The Claude clients (profile settings, prompt template), sharing one
+# access token.
+claude_access <- claude_auth()
+review_claude <- claude_client("test-review", "prompts/test-review-prompt.md", claude_access)
+classification_claude <- claude_client("test-failure-classification", "prompts/test-failure-classification-prompt.md", claude_access)
 test_role_guidance                    <- read_json_config("config/test-role-guidance.json", required = TRUE)
 category_meanings                     <- read_json_config("config/test-categories.json")$categories
 package_name                          <- read_package_name()
@@ -189,7 +189,7 @@ for (f in files) {
     earlier = earlier
   )
 
-  result <- tryCatch(ask_claude_for_tests(parsed, context), error = function(e) {
+  result <- tryCatch(ask_claude_for_tests(review_claude, parsed, context), error = function(e) {
     message(sprintf("Claude call failed for %s: %s", function_name, conditionMessage(e)))
     warn_failed_call(paste0(function_name, "()"), f, e)
     note_retry_file(f)
@@ -282,7 +282,7 @@ for (f in files) {
   # message decides, else one Claude call); real bugs reported, others
   # commented or listed (handle_failed_new_test()).
   if (length(failures) > 0) {
-    verdicts <- classify_failures(failures, fn_source(parsed), function_name)
+    verdicts <- classify_failures(classification_claude, failures, fn_source(parsed), function_name)
     for (k in seq_along(failures)) {
       outcome <- handle_failed_new_test(failures[[k]]$fail, failures[[k]]$block, failures[[k]]$path, verdicts[[k]],
                                         function_name, code_issue_confidence, is_sweep)

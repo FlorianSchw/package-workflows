@@ -27,13 +27,13 @@ library(purrr)
 functions_dir <- if (dir.exists("R/functions/analysis")) "R/functions" else ".shared-workflows/R/functions"
 walk(list.files(file.path(functions_dir, c("shared", "analysis")), pattern = "\\.R$", full.names = TRUE), source)
 
-# R_CONFIG_ACTIVE ("datashield-analysis") picks the profile in config/claude.yml.
-anthropic_config <- config::get(file = resolve_shared_path("config/claude.yml"))$anthropic
+# The Claude client (profile "datashield-analysis" of config/claude.yml);
+# the prompt templates are in the context below.
+analysis_claude <- claude_client("datashield-analysis")
 # Project files at the same paths are merged over the shared defaults.
 settings <- check_analysis_settings(read_config_yaml("config/analysis-suggest.yml"))
 texts <- read_config_yaml("config/analysis-texts.yml")
 
-api_key        <- Sys.getenv("ANTHROPIC_API_KEY")
 gh_token       <- Sys.getenv("GH_TOKEN")  # read-only here: open gap issues of the collection repo
 plan_file      <- Sys.getenv("PLAN_FILE", "config/analysis-plan.yml")
 dsanalysis_dir <- Sys.getenv("DSANALYSIS_DIR", ".dsanalysis")
@@ -117,6 +117,7 @@ context <- list(
   max_lines = settings$max_script_lines,
   numbers = assign_step_numbers(to_write, existing, paths$scripts, settings$numbering),
   header_values = list(PLAN_FILE = plan_file, TESTED_WITH = installed$tested_with),
+  claude = analysis_claude,
   prompt_template = read_text_file("prompts/analysis-script-prompt.md"),
   repair_template = read_text_file("prompts/analysis-repair-prompt.md")
 )

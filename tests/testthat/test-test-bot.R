@@ -67,11 +67,11 @@ test_that("obvious_failure_classification() decides parse errors, missing functi
 })
 
 test_that("classify_failures() sends only the open failures, in one call, and maps the answers back", {
-  api_key <<- "test"
-  failure_classification_config <<- list(model = "claude-opus-5", max_tokens = 1000, api_version = "2023-06-01",
-                                         thinking = list(type = "adaptive"), tool_name = "submit_failure_classification",
-                                         tool_choice_type = "tool")
-  failure_classification_prompt_template <<- paste(readLines(file.path(repo_root, "prompts", "test-failure-classification-prompt.md")), collapse = "\n")
+  claude <- list(config = list(model = "claude-opus-5", max_tokens = 1000, api_version = "2023-06-01",
+                               thinking = list(type = "adaptive"), tool_name = "submit_failure_classification",
+                               tool_choice_type = "tool"),
+                 prompt = paste(readLines(file.path(repo_root, "prompts", "test-failure-classification-prompt.md")), collapse = "\n"),
+                 auth = claude_auth("test"))
   items <- list(list(block = "t1", message = "Expected 2, got 3"),
                 list(block = "t2", message = "<text>:1:3: unexpected symbol"),
                 list(block = "t3", message = "Expected TRUE"))
@@ -84,7 +84,7 @@ test_that("classify_failures() sends only the open failures, in one call, and ma
     calls <<- calls + 1
     prompt_text <<- request_body(req)$messages[[1]]$content[[1]]$text
     claude_response(answer)
-  }, suppressMessages(classify_failures(items, "f <- function() 1", "f")))
+  }, suppressMessages(classify_failures(claude, items, "f <- function() 1", "f")))
   expect_equal(calls, 1)
   expect_match(prompt_text, "### F2")
   expect_false(grepl("t2", prompt_text))                # the obvious one isn't sent

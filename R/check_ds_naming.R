@@ -64,16 +64,14 @@ for (i in which(rows$id %in% names(classifications))) {
 ask <- which(needs_naming_classification(rows, rules))
 fn_keys <- unique(paste(rows$package[ask], rows$`function`[ask], sep = "::"))
 if (length(fn_keys) > 0 && use_claude) {
-  anthropic_config <- config::get(file = resolve_shared_path("config/claude.yml"))$anthropic
-  naming_prompt_template <- paste(readLines(resolve_shared_path("prompts/ds-naming-classification-prompt.md"), warn = FALSE), collapse = "\n")
-  api_key <- Sys.getenv("ANTHROPIC_API_KEY")
+  naming_claude <- claude_client("ds-naming-classification", "prompts/ds-naming-classification-prompt.md")
   if (length(fn_keys) > max_calls) message(sprintf("%d functions have unclear arguments; asking Claude about the first %d (MAX_CLAUDE_CALLS).", length(fn_keys), max_calls))
   defs <- unlist(lapply(pkgs, function(p) lapply(p$defs, function(d) c(d, package = p$name))), recursive = FALSE)
   for (key in head(fn_keys, max_calls)) {
     idx <- ask[paste(rows$package[ask], rows$`function`[ask], sep = "::") == key]
     def <- Find(function(d) paste(d$package, d$name, sep = "::") == key, defs)
     linked <- with(links, if (rows$side[idx[1]] == "client") unique(server_fn[client_fn == rows$`function`[idx[1]]]) else unique(client_fn[server_fn == rows$`function`[idx[1]]]))
-    answer <- tryCatch(ask_claude_for_naming(def, rows[idx, ], rules, linked, cache = length(fn_keys) > 1), error = function(e) {
+    answer <- tryCatch(ask_claude_for_naming(naming_claude, def, rows[idx, ], rules, linked, cache = length(fn_keys) > 1), error = function(e) {
       warn_failed_call(key, def$file, e)
       NULL
     })

@@ -1,7 +1,8 @@
 # Shared low-level Claude tool-call mechanics: builds the request, has
 # Claude answer through the given tool, and returns its parsed input. Every
-# Claude-calling function shares this; only the config profile, tool
-# schema, and prompt differ per caller. The tool's name is set here from
+# Claude-calling function shares this; only the client (claude_client():
+# profile settings and access token), tool schema, and prompt differ per
+# caller. The tool's name is set here from
 # config$tool_name — the same value tool_choice names — so the two can
 # never disagree; tool schema builders deliberately leave `name` out.
 #
@@ -26,7 +27,8 @@
 # shared part (and the same tool definition, which comes before it) reads
 # it from the prompt cache. Every call logs its token usage — the
 # measurement channel for what a run costs (dev-notes/claude-costs.md).
-call_claude_tool <- function(config, tool, prompt) {
+call_claude_tool <- function(claude, tool, prompt) {
+  config <- claude$config
   tool$name <- config$tool_name
   forced <- !identical(config$tool_choice_type, "auto")
   if (!isFALSE(config$strict)) {
@@ -55,7 +57,7 @@ call_claude_tool <- function(config, tool, prompt) {
   }
   messages <- list(list(role = "user", content = content))
 
-  body <- send_claude_request(config, tool, messages, forced)
+  body <- send_claude_request(claude, tool, messages, forced)
   tool_block <- Filter(function(block) identical(block$type, "tool_use"), body$content)
 
   # Without a forced call Claude may answer in text: ask once more, in the
@@ -67,7 +69,7 @@ call_claude_tool <- function(config, tool, prompt) {
       list(role = "user", content = list(list(type = "text", text = sprintf(
         "Call the %s tool now with your answer.", config$tool_name))))
     ))
-    body <- send_claude_request(config, tool, messages, forced)
+    body <- send_claude_request(claude, tool, messages, forced)
     tool_block <- Filter(function(block) identical(block$type, "tool_use"), body$content)
   }
 

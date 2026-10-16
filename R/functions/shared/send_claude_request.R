@@ -1,11 +1,13 @@
-# Sends one Messages API request for call_claude_tool() and returns the
+# Sends one Messages API request for call_claude_tool() (`claude`: the
+# client, claude_client()) and returns the
 # parsed response body. Temporary failures are retried (req_retry()), an
 # expired access token is renewed once (refresh_anthropic_token()), and
 # every response's token usage is logged (log_claude_usage()). Stops with
 # a clear error on a rejected request (logging the tool definition, never
 # the prompt), on a response cut off at max_tokens, and on a refusal.
 # `forced`: tool_choice names the tool; otherwise "auto".
-send_claude_request <- function(config, tool, messages, forced, renewed = FALSE) {
+send_claude_request <- function(claude, tool, messages, forced, renewed = FALSE) {
+  config <- claude$config
   body <- list(
     model = config$model,
     max_tokens = config$max_tokens,
@@ -19,7 +21,7 @@ send_claude_request <- function(config, tool, messages, forced, renewed = FALSE)
 
   req <- request("https://api.anthropic.com/v1/messages") |>
     req_headers(
-      "Authorization" = paste("Bearer", api_key),
+      "Authorization" = paste("Bearer", claude$auth$api_key),
       "anthropic-version" = config$api_version,
       "content-type" = "application/json"
     ) |>
@@ -41,8 +43,8 @@ send_claude_request <- function(config, tool, messages, forced, renewed = FALSE)
   if (resp_status(resp) == 401 && !renewed && grepl("expired", resp_body_string(resp), ignore.case = TRUE)) {
     token <- refresh_anthropic_token()
     if (!is.null(token)) {
-      assign("api_key", token, envir = globalenv())
-      return(send_claude_request(config, tool, messages, forced, renewed = TRUE))
+      claude$auth$api_key <- token  # shared: every client of the run uses it
+      return(send_claude_request(claude, tool, messages, forced, renewed = TRUE))
     }
   }
 

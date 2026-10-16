@@ -28,11 +28,9 @@ walk(list.files(file.path(functions_dir, c("shared", "roxygen")), pattern = "\\.
 # R_CONFIG_ACTIVE picks the active profile in config/claude.yml ("roxygen-review")
 # — set as an env var on the calling workflow step.
 roxygen_review_settings <- config::get(file = resolve_shared_path("config/claude.yml"))
-anthropic_config <- roxygen_review_settings$anthropic
 accept_reasons <- accepted_reasons(Sys.getenv("ACCEPT_REASONS"), roxygen_review_settings$accept_reasons, "roxygen")
 code_issue_confidence <- code_issue_confidence_levels(Sys.getenv("CODE_ISSUE_CONFIDENCE"), roxygen_review_settings$code_issue_confidence)
 
-api_key    <- Sys.getenv("ANTHROPIC_API_KEY")
 gh_token   <- Sys.getenv("GH_TOKEN")
 repo       <- Sys.getenv("GITHUB_REPOSITORY")
 pr_number  <- Sys.getenv("PR_NUMBER")  # empty in a sweep
@@ -48,7 +46,8 @@ builds_on_open_pr <- nzchar(sub_branch) && identical(Sys.getenv("OPEN_SUGGESTION
 check_datashield_type(datashield, ds_type)
 
 style           <- read_json_config("config/roxygen-style.json", required = TRUE)
-roxygen_review_prompt_template <- read_text_file("prompts/roxygen-review-prompt.md")
+# The Claude client: profile settings, prompt template, access token.
+review_claude <- claude_client("roxygen-review", "prompts/roxygen-review-prompt.md")
 package_name    <- read_package_name()
 
 # Role guidance depends only on the package — built once. A utility package
@@ -115,7 +114,7 @@ for (f in files) {
   earlier <-Filter(function(e) identical(e$file, f) && identical(e$status, "active") && e$kind %in% c("dropped", "bug"), state$entries)
 
   file_role_text <- if (identical(ds_type, "utility") && !uses_ds_connections(parsed)) role_text_local else role_text
-  result <- tryCatch(ask_claude_for_review(parsed, select_profile(parsed), file_role_text, earlier, with_code_issues), error = function(e) {
+  result <- tryCatch(ask_claude_for_review(review_claude, parsed, select_profile(parsed), file_role_text, earlier, with_code_issues), error = function(e) {
     message(sprintf("Claude call failed for %s: %s", f, conditionMessage(e)))
     warn_failed_call(f, f, e)
     note_retry_file(f)

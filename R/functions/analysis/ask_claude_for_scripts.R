@@ -27,7 +27,7 @@ ask_claude_for_scripts <- function(context, step_ids, previous_attempt = "") {
     PREVIOUS_ATTEMPT   = previous_attempt
   ))
   tool <- build_analysis_tool(context$all_step_ids %||% step_ids, context$catalogue_names, context$catalogue_functions, context$gap_issues$number)
-  result <- call_claude_tool(anthropic_config, tool, split_cached_prompt(prompt, "<!-- per request -->"))
+  result <- call_claude_tool(context$claude, tool, split_cached_prompt(prompt, "<!-- per request -->"))
   # The tool is strict (call_claude_tool()), so `steps` is an array of
   # step objects; the check stays for profiles with `strict: false`.
   steps <- result$steps

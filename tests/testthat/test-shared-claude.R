@@ -28,9 +28,11 @@ test_that("strict_tool_schema() closes every object and drops unsupported keywor
   expect_false(strict_tool_schema(list(type = "object"))$ok)  # a free-form map can't be strict
 })
 
-claude_config <- function(choice = "tool", model = "claude-opus-5") {
-  list(model = model, max_tokens = 1000, api_version = "2023-06-01", thinking = list(type = "adaptive"),
-       tool_name = "submit_x", tool_choice_type = choice)
+# A client as claude_client() builds it, without reading config files.
+claude_config <- function(choice = "tool", model = "claude-opus-5", strict = NULL) {
+  config <- list(model = model, max_tokens = 1000, api_version = "2023-06-01", thinking = list(type = "adaptive"),
+                 tool_name = "submit_x", tool_choice_type = choice, strict = strict)
+  list(config = config, auth = claude_auth("test"))
 }
 x_tool <- list(description = "d", input_schema = list(type = "object", properties = list(
   items = list(type = "array", maxItems = 2, items = list(type = "string"))
@@ -49,7 +51,6 @@ mock_api <- function(answers, sent) {
 }
 
 test_that("a forced call names the tool and sends it strict", {
-  api_key <<- "test"
   sent <- new.env()
   res <- httr2::with_mocked_responses(mock_api(list(list(content = tool_use, stop_reason = "tool_use")), sent),
                                       call_claude_tool(claude_config("tool"), x_tool, "the prompt"))
@@ -62,16 +63,14 @@ test_that("a forced call names the tool and sends it strict", {
 })
 
 test_that("strict: false in a profile sends the schema unchanged", {
-  api_key <<- "test"
   sent <- new.env()
   httr2::with_mocked_responses(mock_api(list(list(content = tool_use, stop_reason = "tool_use")), sent),
-                               call_claude_tool(c(claude_config("tool"), strict = FALSE), x_tool, "p"))
+                               call_claude_tool(claude_config("tool", strict = FALSE), x_tool, "p"))
   expect_null(sent$bodies[[1]]$tools[[1]]$strict)
   expect_equal(sent$bodies[[1]]$tools[[1]]$input_schema$properties$items$maxItems, 2)
 })
 
 test_that("auto mode sends a strict tool, an instruction, and keeps the cache marker", {
-  api_key <<- "test"
   sent <- new.env()
   httr2::with_mocked_responses(mock_api(list(list(content = tool_use, stop_reason = "tool_use")), sent),
                                call_claude_tool(claude_config("auto", "claude-opus-5-5"), x_tool, list(cached = "shared", rest = "mine")))
@@ -87,7 +86,6 @@ test_that("auto mode sends a strict tool, an instruction, and keeps the cache ma
 })
 
 test_that("auto mode asks once more after a text answer, appending to the conversation", {
-  api_key <<- "test"
   sent <- new.env()
   res <- httr2::with_mocked_responses(
     mock_api(list(list(content = text_only, stop_reason = "end_turn"), list(content = tool_use, stop_reason = "tool_use")), sent),
@@ -101,7 +99,6 @@ test_that("auto mode asks once more after a text answer, appending to the conver
 })
 
 test_that("two text answers in auto mode, max_tokens and a refusal stop with clear errors", {
-  api_key <<- "test"
   expect_error(httr2::with_mocked_responses(
     mock_api(list(list(content = text_only, stop_reason = "end_turn"), list(content = text_only, stop_reason = "end_turn")), new.env()),
     suppressMessages(call_claude_tool(claude_config("auto"), x_tool, "p"))), "No tool_use")
@@ -109,4 +106,16 @@ test_that("two text answers in auto mode, max_tokens and a refusal stop with cle
                                             suppressMessages(call_claude_tool(claude_config(), x_tool, "p"))), "max_tokens")
   expect_error(httr2::with_mocked_responses(mock_api(list(list(content = list(), stop_reason = "refusal")), new.env()),
                                             suppressMessages(call_claude_tool(claude_config(), x_tool, "p"))), "declined")
+})
+
+test_that("claude_client() reads a profile and its prompt; clients share a renewed token", {
+  withr::local_dir(repo_root)
+  auth <- claude_auth("old")
+  a <- claude_client("test-review", "prompts/test-review-prompt.md", auth)
+  b <- claude_client("test-failure-classification", NULL, auth)
+  expect_equal(a$config$tool_name, "submit_tests")
+  expect_equal(b$config$tool_name, "submit_failure_classification")
+  expect_match(a$prompt, "testthat tests")
+  a$auth$api_key <- "renewed"
+  expect_equal(b$auth$api_key, "renewed")
 })
