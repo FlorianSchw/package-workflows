@@ -75,6 +75,13 @@ refactor agent (applies the naming transformation config).
   template), usable locally and by claude-code-action (`plugins` input).
   If it comes: **its own repo**, so its clone count isn't drowned by the
   CI checkouts of the workflow repo.
+- **Being told when an agent finished something substantial** (user's
+  wish, 2026-10-16): its results are issues/PRs, so GitHub's own
+  notifications (e-mail or GitHub mobile push) cover it — the agent
+  assigns or @-mentions the user. Optional, separate from GitHub's
+  notification flood: a push service such as ntfy (one `curl` to a
+  private topic at the end of the job) or a Slack/Matrix webhook; no
+  SMTP setup needed as for e-mail.
 - **KPIs:** workflow runs counted with `count-run` as now (also the agent
   workflows); plugin: daily clones / unique cloners from the traffic API
   (14 days back, admin token) stored by the KPI collector — an

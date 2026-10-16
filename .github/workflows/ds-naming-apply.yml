@@ -64,24 +64,28 @@ jobs:
           SERVER_REPOSITORY: ${{ inputs.server-repository }}
         run: echo "name=${SERVER_REPOSITORY#*/}" >> "$GITHUB_OUTPUT"
 
-      - name: Resolve push token
-        id: push_token
-        uses: FlorianSchw/package-workflows/.github/actions/resolve-push-token@main
-        with:
-          client-id: ${{ secrets.app-client-id }}
-          app-private-key: ${{ secrets.app-private-key }}
-          repositories: ${{ env.WITH_SERVER == 'true' && steps.server.outputs.name || '' }}
-
+      # The calling repository first — actions/checkout empties the folder
+      # it checks out into, so the shared scripts can only come after it.
       - uses: actions/checkout@v7
         with:
           ref: ${{ env.TARGET_BRANCH }}
 
+      # Actions and scripts at the commit of this workflow, so a caller
+      # pinned to a version (or testing a branch) gets that version.
       - name: Checkout shared scripts
         uses: actions/checkout@v7
         with:
           repository: FlorianSchw/package-workflows
-          ref: main
+          ref: ${{ github.job_workflow_sha }}
           path: .shared-workflows
+
+      - name: Resolve push token
+        id: push_token
+        uses: ./.shared-workflows/.github/actions/resolve-push-token
+        with:
+          client-id: ${{ secrets.app-client-id }}
+          app-private-key: ${{ secrets.app-private-key }}
+          repositories: ${{ env.WITH_SERVER == 'true' && steps.server.outputs.name || '' }}
 
       - name: Checkout server package
         if: env.WITH_SERVER == 'true'
@@ -115,7 +119,7 @@ jobs:
         run: Rscript .shared-workflows/R/apply_ds_naming.R
 
       - name: Propose renames here
-        uses: FlorianSchw/package-workflows/.github/actions/propose-branch@main
+        uses: ./.shared-workflows/.github/actions/propose-branch
         with:
           manifest: updated_files.txt
           branch: bot-suggest/ds-naming-apply/${{ env.TARGET_BRANCH }}
@@ -130,7 +134,7 @@ jobs:
 
       - name: Propose renames in the server package
         if: env.WITH_SERVER == 'true'
-        uses: FlorianSchw/package-workflows/.github/actions/propose-branch@main
+        uses: ./.shared-workflows/.github/actions/propose-branch
         with:
           directory: .ds-naming-server
           repository: ${{ inputs.server-repository }}

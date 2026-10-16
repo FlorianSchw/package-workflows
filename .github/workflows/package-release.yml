@@ -9,10 +9,10 @@ on:
         type: string
         default: 'FlorianSchw/package-workflows'
       config-ref:
-        description: 'Ref of config-repo to read .releaserc.json from'
+        description: 'Ref of config-repo to read .releaserc.json from; empty: the commit of this workflow (the version the caller uses)'
         required: false
         type: string
-        default: 'main'
+        default: ''
       dry-run:
         description: 'Only report the next version and release notes; release nothing'
         required: false
@@ -48,8 +48,18 @@ jobs:
         uses: actions/checkout@v7
         with:
           repository: ${{ inputs.config-repo }}
-          ref: ${{ inputs.config-ref }}
+          ref: ${{ inputs.config-ref || github.job_workflow_sha }}
           path: .shared-config
+
+      # This workflow's own actions, at its commit (config-repo may be
+      # another repository).
+      - name: Checkout shared actions
+        uses: actions/checkout@v7
+        with:
+          repository: FlorianSchw/package-workflows
+          ref: ${{ github.job_workflow_sha }}
+          path: .shared-workflows
+          sparse-checkout: .github/actions
 
       - uses: r-lib/actions/setup-r@v2
 
@@ -69,7 +79,7 @@ jobs:
 
       - name: Resolve push token
         id: push_token
-        uses: FlorianSchw/package-workflows/.github/actions/resolve-push-token@main
+        uses: ./.shared-workflows/.github/actions/resolve-push-token
         with:
           client-id: ${{ secrets.app-client-id }}
           app-private-key: ${{ secrets.app-private-key }}
@@ -77,8 +87,9 @@ jobs:
       - name: Release
         env:
           GITHUB_TOKEN: ${{ steps.push_token.outputs.token || secrets.commit-push-pat || secrets.GITHUB_TOKEN }}
+          DRY_RUN: ${{ inputs.dry-run }}
         run: |
           ARGS=()
-          if [ "${{ inputs.dry-run }}" = "true" ]; then ARGS+=(--dry-run); fi
+          if [ "$DRY_RUN" = "true" ]; then ARGS+=(--dry-run); fi
           if [ ! -f .releaserc.json ]; then ARGS+=(--extends ./.shared-config/.releaserc.json); fi
           npx semantic-release "${ARGS[@]}"

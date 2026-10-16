@@ -32,12 +32,17 @@ jobs:
       - uses: actions/checkout@v7
         with:
           repository: FlorianSchw/package-workflows
-          ref: main
+          ref: ${{ github.job_workflow_sha }}
 
       - name: Build assignee list
         id: all_assignees
+        # Inputs through the environment, never written into the script
+        # itself (a crafted value could otherwise run as shell code).
+        env:
+          PR_AUTHOR: ${{ inputs.pr_author }}
+          EXTRA_ASSIGNEES: ${{ inputs.extra_assignees }}
         run: |
-          combined="${{ inputs.pr_author }},${{ inputs.extra_assignees }}"
+          combined="$PR_AUTHOR,$EXTRA_ASSIGNEES"
           deduped=$(echo "$combined" | tr ',' '\n' | sed '/^\s*$/d' | sed 's/^ *//;s/ *$//' | sort -u | paste -sd ',' -)
           echo "list=$deduped" >> "$GITHUB_OUTPUT"
 

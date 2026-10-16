@@ -60,13 +60,18 @@ jobs:
 
       - name: Install extra apt packages
         if: ${{ inputs.extra-apt-packages != '' }}
-        run: sudo apt-get update && sudo apt-get install -y ${{ inputs.extra-apt-packages }}
+        env:
+          EXTRA_APT_PACKAGES: ${{ inputs.extra-apt-packages }}
+        # Word splitting is intended: a space-separated package list.
+        run: sudo apt-get update && sudo apt-get install -y $EXTRA_APT_PACKAGES
 
       - name: Format extra R package list
         id: extra_r_packages
         if: ${{ inputs.extra-r-packages != '' }}
+        env:
+          EXTRA_R_PACKAGES: ${{ inputs.extra-r-packages }}
         run: |
-          formatted=$(echo "${{ inputs.extra-r-packages }}" \
+          formatted=$(echo "$EXTRA_R_PACKAGES" \
             | tr ',' '\n' \
             | sed 's/^[[:space:]]*//;s/[[:space:]]*$//' \
             | sed '/^$/d' \

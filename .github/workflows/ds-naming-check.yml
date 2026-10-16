@@ -82,7 +82,7 @@ jobs:
         uses: actions/checkout@v7
         with:
           repository: FlorianSchw/package-workflows
-          ref: main
+          ref: ${{ github.job_workflow_sha }}
           path: .shared-workflows
 
       - name: Checkout server package
@@ -122,7 +122,7 @@ jobs:
       - name: Get Anthropic access token
         id: anthropic_auth
         if: env.USE_CLAUDE == 'true'
-        uses: FlorianSchw/package-workflows/.github/actions/anthropic-token@main
+        uses: ./.shared-workflows/.github/actions/anthropic-token
         with:
           organization-id: ${{ secrets.anthropic-organization-id }}
           service-account-id: ${{ secrets.anthropic-service-account-id }}
@@ -147,13 +147,13 @@ jobs:
 
       - name: Resolve push token
         id: push_token
-        uses: FlorianSchw/package-workflows/.github/actions/resolve-push-token@main
+        uses: ./.shared-workflows/.github/actions/resolve-push-token
         with:
           client-id: ${{ secrets.app-client-id }}
           app-private-key: ${{ secrets.app-private-key }}
 
       - name: Propose for review
-        uses: FlorianSchw/package-workflows/.github/actions/propose-branch@main
+        uses: ./.shared-workflows/.github/actions/propose-branch
         with:
           manifest: updated_files.txt
           branch: ${{ steps.previous.outputs.bot_branch }}
@@ -168,7 +168,7 @@ jobs:
       - name: Count this run
         if: always()
         continue-on-error: true
-        uses: FlorianSchw/package-workflows/.github/actions/count-run@main
+        uses: ./.shared-workflows/.github/actions/count-run
         with:
           workflow: ds-naming-check
           job-status: ${{ job.status }}

@@ -40,37 +40,42 @@ jobs:
       STATUS_CONTEXT: suggestion choices
 
     steps:
-      - name: Resolve push token
-        id: push_token
-        uses: FlorianSchw/package-workflows/.github/actions/resolve-push-token@main
-        with:
-          client-id: ${{ secrets.app-client-id }}
-          app-private-key: ${{ secrets.app-private-key }}
-
       # Visible on the bot PR: merging right after a change of the boxes
       # shows that the branch isn't updated yet.
       - name: Status — applying
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
-          gh api "repos/${{ github.repository }}/statuses/$HEAD_SHA" \
+          gh api "repos/$GITHUB_REPOSITORY/statuses/$HEAD_SHA" \
             -f state=pending -f context="$STATUS_CONTEXT" -f description="Applying your choices…" > /dev/null
 
+      # The bot branch first — actions/checkout empties the folder it checks
+      # out into, so the shared scripts can only come after it.
       - uses: actions/checkout@v7
         with:
           ref: ${{ github.head_ref }}
           fetch-depth: 0
-          token: ${{ steps.push_token.outputs.token || secrets.commit-push-pat || github.token }}
 
-      - name: Fetch the base branch
-        run: git fetch --quiet origin "${{ github.base_ref }}"
-
+      # Actions and scripts at the commit of this workflow, so a caller
+      # pinned to a version (or testing a branch) gets that version.
       - name: Checkout shared scripts
         uses: actions/checkout@v7
         with:
           repository: FlorianSchw/package-workflows
-          ref: main
+          ref: ${{ github.job_workflow_sha }}
           path: .shared-workflows
+
+      - name: Resolve push token
+        id: push_token
+        uses: ./.shared-workflows/.github/actions/resolve-push-token
+        with:
+          client-id: ${{ secrets.app-client-id }}
+          app-private-key: ${{ secrets.app-private-key }}
+
+      - name: Fetch the base branch
+        env:
+          BASE: ${{ github.base_ref }}
+        run: git fetch --quiet origin "$BASE"
 
       - uses: r-lib/actions/setup-r@v2
         with:
@@ -88,7 +93,13 @@ jobs:
           jq -r '.pull_request.body // ""' "$GITHUB_EVENT_PATH" > pr_body.md
           Rscript .shared-workflows/R/apply_suggestion_choices.R
 
+      # Pushed with the App token (or PAT), so the PR's checks run on the
+      # new commit; the header actions/checkout stored for GITHUB_TOKEN is
+      # reset for this push, else it would win over the token in the URL.
       - name: Commit and push
+        env:
+          PUSH_TOKEN: ${{ steps.push_token.outputs.token || secrets.commit-push-pat || github.token }}
+          HEAD_REF: ${{ github.head_ref }}
         run: |
           if [ ! -s updated_files.txt ]; then
             echo "The files already match the choices."
@@ -100,14 +111,16 @@ jobs:
             [ -n "$f" ] && git add -A -- "$f"
           done < updated_files.txt
           git commit -m "chore: apply suggestion choices"
-          git push origin "HEAD:${{ github.head_ref }}"
+          git -c "http.https://github.com/.extraheader=" push \
+            "https://x-access-token:${PUSH_TOKEN}@github.com/${GITHUB_REPOSITORY}.git" "HEAD:refs/heads/$HEAD_REF"
 
       - name: Update the description
         env:
           GH_TOKEN: ${{ steps.push_token.outputs.token || secrets.commit-push-pat || github.token }}
+          PR_NUMBER: ${{ github.event.pull_request.number }}
         run: |
           if [ -f new_body.md ]; then
-            gh pr edit "${{ github.event.pull_request.number }}" --body-file new_body.md > /dev/null
+            gh pr edit "$PR_NUMBER" --body-file new_body.md > /dev/null
           fi
 
       - name: Status — applied
@@ -115,7 +128,7 @@ jobs:
           GH_TOKEN: ${{ github.token }}
         run: |
           for sha in "$HEAD_SHA" "$(git rev-parse HEAD)"; do
-            gh api "repos/${{ github.repository }}/statuses/$sha" \
+            gh api "repos/$GITHUB_REPOSITORY/statuses/$sha" \
               -f state=success -f context="$STATUS_CONTEXT" -f description="Your choices are applied." > /dev/null
           done
 
@@ -124,5 +137,5 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
-          gh api "repos/${{ github.repository }}/statuses/$HEAD_SHA" \
+          gh api "repos/$GITHUB_REPOSITORY/statuses/$HEAD_SHA" \
             -f state=failure -f context="$STATUS_CONTEXT" -f description="Applying the choices failed — see the run." > /dev/null

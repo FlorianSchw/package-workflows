@@ -64,7 +64,7 @@ jobs:
         with:
           persist-credentials: false   # no token in .git/config while package or generated code runs
           repository: FlorianSchw/package-workflows
-          ref: main
+          ref: ${{ github.job_workflow_sha }}
           path: .shared-workflows
 
       - name: Checkout dsAnalysis
@@ -87,7 +87,7 @@ jobs:
 
       - name: Get Anthropic access token
         id: anthropic_auth
-        uses: FlorianSchw/package-workflows/.github/actions/anthropic-token@main
+        uses: ./.shared-workflows/.github/actions/anthropic-token
         with:
           organization-id: ${{ secrets.anthropic-organization-id }}
           service-account-id: ${{ secrets.anthropic-service-account-id }}
@@ -110,13 +110,13 @@ jobs:
 
       - name: Resolve push token
         id: push_token
-        uses: FlorianSchw/package-workflows/.github/actions/resolve-push-token@main
+        uses: ./.shared-workflows/.github/actions/resolve-push-token
         with:
           client-id: ${{ secrets.app-client-id }}
           app-private-key: ${{ secrets.app-private-key }}
 
       - name: Propose the scripts
-        uses: FlorianSchw/package-workflows/.github/actions/commit-updated-files@main
+        uses: ./.shared-workflows/.github/actions/commit-updated-files
         with:
           scan-mode: changed
           token: ${{ steps.push_token.outputs.token || secrets.commit-push-pat || secrets.GITHUB_TOKEN }}
@@ -134,7 +134,7 @@ jobs:
       - name: Count this run
         if: always()
         continue-on-error: true
-        uses: FlorianSchw/package-workflows/.github/actions/count-run@main
+        uses: ./.shared-workflows/.github/actions/count-run
         with:
           workflow: datashield-analysis-suggest
           job-status: ${{ job.status }}

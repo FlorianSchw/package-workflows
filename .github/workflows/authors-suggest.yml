@@ -31,26 +31,36 @@ jobs:
       pull-requests: write
 
     steps:
+      # The calling repository first — actions/checkout empties the folder
+      # it checks out into, so the shared scripts can only come after it —
+      # at its default branch; "Switch to the branch" below picks the one
+      # the scope decides on.
+      - uses: actions/checkout@v7
+        with:
+          ref: ${{ github.event.repository.default_branch }}
+          fetch-depth: 0
+
+      # Actions, scripts and config at the commit of this workflow, so a
+      # caller pinned to a version (or testing a branch) gets that version.
+      - name: Checkout shared scripts
+        uses: actions/checkout@v7
+        with:
+          repository: FlorianSchw/package-workflows
+          ref: ${{ github.job_workflow_sha }}
+          path: .shared-workflows
+
       - name: Resolve scope
         id: scope
-        uses: FlorianSchw/package-workflows/.github/actions/resolve-suggestion-scope@main
+        uses: ./.shared-workflows/.github/actions/resolve-suggestion-scope
         with:
           scan-mode: changed
           allow-sweep: 'false'
 
-      - uses: actions/checkout@v7
+      - name: Switch to the branch
         if: steps.scope.outputs.skip != 'true'
-        with:
-          ref: ${{ steps.scope.outputs.ref }}
-          fetch-depth: 0
-
-      - name: Checkout shared scripts
-        if: steps.scope.outputs.skip != 'true'
-        uses: actions/checkout@v7
-        with:
-          repository: FlorianSchw/package-workflows
-          ref: main
-          path: .shared-workflows
+        env:
+          REF: ${{ steps.scope.outputs.ref }}
+        run: git checkout --quiet --force -B "$REF" "refs/remotes/origin/$REF"
 
       - name: Determine new commits
         id: commits
@@ -84,14 +94,14 @@ jobs:
       - name: Resolve push token
         id: push_token
         if: steps.commits.outputs.count > 0
-        uses: FlorianSchw/package-workflows/.github/actions/resolve-push-token@main
+        uses: ./.shared-workflows/.github/actions/resolve-push-token
         with:
           client-id: ${{ secrets.app-client-id }}
           app-private-key: ${{ secrets.app-private-key }}
 
       - name: Commit DESCRIPTION update
         if: steps.commits.outputs.count > 0
-        uses: FlorianSchw/package-workflows/.github/actions/commit-updated-files@main
+        uses: ./.shared-workflows/.github/actions/commit-updated-files
         with:
           scan-mode: 'changed'
           token: ${{ steps.push_token.outputs.token || secrets.commit-push-pat || secrets.GITHUB_TOKEN }}
@@ -110,7 +120,7 @@ jobs:
       - name: Count this run
         if: always() && steps.scope.outputs.skip != 'true'   # not when the run was skipped (bot branch, fork, …)
         continue-on-error: true
-        uses: FlorianSchw/package-workflows/.github/actions/count-run@main
+        uses: ./.shared-workflows/.github/actions/count-run
         with:
           workflow: authors-suggest
           job-status: ${{ job.status }}

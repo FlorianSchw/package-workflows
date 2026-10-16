@@ -339,12 +339,19 @@ and `CONTRIBUTING.md`); no PRs until a branch model and rules exist.
   - **Releases:** semantic-release tags `vX.Y.Z` and moves the major tag
     `vX`; callers pin `@v1`; breaking changes (`feat!:`) become `v2`.
   - **Testing:** dsSupportClient points a caller at `@<feature-branch>`.
-  - **Prerequisite:** all internal references are hard-coded to `main`
-    (`uses: …/actions/…@main`, `.shared-workflows` checkout `ref: main`),
-    so a caller on `@v1` or a branch still gets `main`'s actions, scripts
-    and prompts. Check out the shared repo at `github.job_workflow_sha`
-    and use the composite actions via local path
-    (`uses: ./.shared-workflows/.github/actions/…`).
+  - ~~**Prerequisite:** all internal references are hard-coded to `main`~~
+    Done on branch `v1/foundation` (2026-10-16, not yet in CI): every
+    workflow checks out `.shared-workflows` at `github.job_workflow_sha`
+    and uses its composite actions by local path
+    (`uses: ./.shared-workflows/.github/actions/…`). Since
+    `actions/checkout` empties its target folder, the caller is checked
+    out first; roxygen, tests and authors check it out at the default
+    branch, run the scope locally, then `git checkout -B <ref>` the
+    branch it picks. `package-release.yml`'s `config-ref` defaults to
+    empty = the workflow's own commit. Inline `${{ }}` in `run:` scripts
+    moved into `env:` (head branch names, inputs) — zizmor's
+    template-injection check. The repo name `FlorianSchw/package-workflows`
+    is still hard-coded in the checkouts (change at the move).
   - **Federation rules** match `job_workflow_ref` exactly (incl.
     `@refs/heads/main`); tags need a prefix/condition match.
   - **Usage counting** relies on it: runs on a `vX` tag count as
