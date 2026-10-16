@@ -117,10 +117,13 @@ items, **all of A–J before v1**:
   commit) — prerequisite for `@v1` and the self-tests.
 - **B** Review all inputs once (names such as `sweep-base` that no longer
   fit, descriptions, defaults); `datashield` input for authors.
+  Proposal (8 changes, for the user): [v1-input-review.md](v1-input-review.md).
 - **C** Config files: all YAML, all merged key by key over the defaults
   (today JSON/YAML mixed, most overrides replace the whole file).
 - **D** The policy file `config/suggestion-policy.yml` (reasons,
   thresholds, report routing).
+  C and D proposal (for the user): [v1-config-proposal.md](v1-config-proposal.md),
+  draft file [v1-drafts/suggestion-policy.yml](v1-drafts/suggestion-policy.yml).
 - ~~**E** `strict: true` for all Claude calls (drops the analysis bot's
   "array as JSON string" workaround).~~ Done (`f3ef6a7`).
 - ~~**F** Failure classification once per function, plus an R pre-check for

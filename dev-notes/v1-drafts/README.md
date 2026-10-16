@@ -12,6 +12,7 @@ away — **nothing here is wired in or applied.** Plan:
 | `self-pr-checks.yml` | `.github/workflows/pr-checks.yml` | at the branch-model switch |
 | `self-release.yml` + `self.releaserc.json` | `.github/workflows/release.yml` + release config | at v1 |
 | `governance.yml` | governance repo (structure only) | user |
+| `suggestion-policy.yml` | `config/suggestion-policy.yml` | with C and D |
 
 ## Rulesets
 
@@ -59,3 +60,15 @@ per owner × workflow (plus this repository's smoke test on PR refs),
 and per repository the secrets with where each value comes from. The
 script and the Admin API calls aren't drafted — they live in the private
 repo and need the `org:admin` token setup first.
+
+## Policy file
+
+`suggestion-policy.yml`: draft of `config/suggestion-policy.yml` (plan
+§6 D) — reasons with their meaning and whether they are accepted, the
+possible-bug thresholds, author roles and name particles, and the
+routing of each kind of finding. The routing rows are meant to describe
+today's behaviour, so that adopting the file changes nothing by itself —
+check each against `publish_test_report()` and `suggest_roxygen.R` when
+adopting it (e.g. a full review without file changes has no bot PR, so
+"report" there falls back to the issue). Why and
+what stays in code: [../v1-config-proposal.md](../v1-config-proposal.md).
