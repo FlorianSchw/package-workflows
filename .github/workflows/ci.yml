@@ -1,0 +1,65 @@
+name: CI
+
+# This repository's own checks (not reusable): unit tests of the R
+# functions, tests of the shell scripts, and static checks of the
+# workflows and scripts. Runs on every push and pull request; none of it
+# calls Claude or costs anything but runner minutes.
+on:
+  push:
+  pull_request:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  r-tests:
+    name: R unit tests
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+      - uses: r-lib/actions/setup-r@v2
+        with:
+          use-public-rspm: true
+      - uses: r-lib/actions/setup-r-dependencies@v2
+        with:
+          packages: >-
+            any::testthat, any::withr, any::httr2, any::jsonlite, any::yaml,
+            any::purrr, any::desc, any::callr, any::config
+      - name: Run the tests
+        run: Rscript tests/testthat.R
+
+  shell-tests:
+    name: Shell script tests
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+      - name: Run the tests
+        run: bash tests/shell/test-scope.sh
+
+  lint:
+    name: Static checks
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+      # Workflow syntax, expressions, inputs/outputs; shellcheck on the
+      # run: scripts (the image includes shellcheck).
+      - name: actionlint
+        run: docker run --rm -v "$PWD:/repo" --workdir /repo rhysd/actionlint:1.7.7 -color
+      - name: shellcheck
+        run: shellcheck .github/actions/*/*.sh tests/shell/*.sh
+      # Security checks of workflows and actions (template injection,
+      # credentials, triggers).
+      - name: zizmor
+        run: |
+          pip install --quiet 'zizmor>=1,<2'
+          zizmor .github/workflows .github/actions
