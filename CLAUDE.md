@@ -694,6 +694,16 @@ and `CONTRIBUTING.md`); no PRs until a branch model and rules exist.
     dev-note.
   - **Second idea, not started:** functions taking one vector should
     accept several columns or a selector (all categorical/continuous).
+- **Issue agents** (brainstorm from another chat, 2026-10-16, no
+  decisions): triage and spec review on the API, an implementer on the
+  Pro subscription (claude-code-action) after a maintainer's
+  `bot-proceed`, label integrity, a DataSHIELD function index for
+  overlap checks. Plus new processes: learning from what users keep
+  (signals → thresholds → a reviewed per-repo "house style" file), a
+  refactor agent (performance, new functions, this repo's workflows) and
+  a researcher agent (gap catalogue → design with disclosure analysis →
+  client/server pair). Fit with this repo and open points in
+  [dev-notes/issue-agents.md](dev-notes/issue-agents.md).
 - **Claude Pro/Max subscription instead of WIF** (asked 2026-10-14, not
   pursued): the workflows call the Messages API directly, which a
   subscription doesn't cover. A plain API-key alternative to WIF is not
