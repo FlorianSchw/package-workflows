@@ -240,6 +240,7 @@ for (f in files) {
   # Per test file: run all candidates, keep only what passed
   # (apply_test_file_changes()).
   kept_new_total <- 0
+  failures <- list()
   for (path in changed_paths) {
     test_file <- if (path %in% paths) test_files[[path]] else read_test_file(path, if (scheme$categorised) new_tests[targets %in% path][[1]]$category else NA_character_)
     review <- if (path %in% paths) reviews[[path]] else list(updates = character(0), deletes = character(0), explanations = character(0))
@@ -265,13 +266,27 @@ for (f in files) {
       message(sprintf("%s: %d new test(s), %d update(s), %d deletion(s) in %s.", function_name, length(applied$passing_new), length(applied$kept_updates), length(review$deletes), path))
     }
 
-    # Failed new tests: repeats skipped, real bugs reported, others
-    # commented or listed (handle_failed_new_test()).
+    # Failed new tests: repeats of earlier failures skipped, the rest
+    # collected for one classification per function (below).
     for (fail in applied$failing_new) {
-      outcome <- handle_failed_new_test(fail, new_test_of(fail$description), test_blocks[[fail$description]], path, earlier,
-                                        fn_source(parsed), function_name, code_issue_confidence, is_sweep)
+      if (repeated_failure(fail, new_test_of(fail$description), earlier)) {
+        message(sprintf("%s: '%s' failed again — reported before.", function_name, fail$description))
+        run$repeats <- run$repeats + 1L
+        next
+      }
+      failures[[length(failures) + 1]] <- list(fail = fail, path = path, block = test_blocks[[fail$description]], message = fail$message)
+    }
+  }
+
+  # All of the function's failed new tests classified at once (R where the
+  # message decides, else one Claude call); real bugs reported, others
+  # commented or listed (handle_failed_new_test()).
+  if (length(failures) > 0) {
+    verdicts <- classify_failures(failures, fn_source(parsed), function_name)
+    for (k in seq_along(failures)) {
+      outcome <- handle_failed_new_test(failures[[k]]$fail, failures[[k]]$block, failures[[k]]$path, verdicts[[k]],
+                                        function_name, code_issue_confidence, is_sweep)
       if (is.null(outcome)) next
-      if (outcome$kind == "repeat") run$repeats <- run$repeats + 1L
       if (outcome$kind == "bug") run$bugs[[length(run$bugs) + 1]] <- outcome$entry
       if (outcome$kind == "failed") run$failed[[length(run$failed) + 1]] <- outcome$entry
     }

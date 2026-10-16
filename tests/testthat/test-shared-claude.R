@@ -48,7 +48,7 @@ mock_api <- function(answers, sent) {
   }
 }
 
-test_that("a forced call names the tool and sends the schema unchanged", {
+test_that("a forced call names the tool and sends it strict", {
   api_key <<- "test"
   sent <- new.env()
   res <- httr2::with_mocked_responses(mock_api(list(list(content = tool_use, stop_reason = "tool_use")), sent),
@@ -56,8 +56,18 @@ test_that("a forced call names the tool and sends the schema unchanged", {
   b <- sent$bodies[[1]]
   expect_true(res$ok)
   expect_equal(b$tool_choice, list(type = "tool", name = "submit_x"))
-  expect_null(b$tools[[1]]$strict)
-  expect_equal(b$tools[[1]]$input_schema$properties$items$maxItems, 2)
+  expect_true(b$tools[[1]]$strict)
+  expect_null(b$tools[[1]]$input_schema$properties$items$maxItems)
+  expect_length(b$messages[[1]]$content, 1)   # no extra instruction when the call is forced
+})
+
+test_that("strict: false in a profile sends the schema unchanged", {
+  api_key <<- "test"
+  sent <- new.env()
+  httr2::with_mocked_responses(mock_api(list(list(content = tool_use, stop_reason = "tool_use")), sent),
+                               call_claude_tool(c(claude_config("tool"), strict = FALSE), x_tool, "p"))
+  expect_null(sent$bodies[[1]]$tools[[1]]$strict)
+  expect_equal(sent$bodies[[1]]$tools[[1]]$input_schema$properties$items$maxItems, 2)
 })
 
 test_that("auto mode sends a strict tool, an instruction, and keeps the cache marker", {

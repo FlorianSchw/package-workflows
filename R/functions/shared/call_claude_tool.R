@@ -10,14 +10,16 @@
 # another model when the request is refused), and `cache_ttl` ("5m" or
 # "1h", for prompts split by split_cached_prompt()).
 #
+# Every tool is sent with `strict: true` (strict_tool_schema(): the
+# arguments always match the schema; unsupported limits such as maxItems
+# are checked in R instead), unless a profile sets `strict: false`.
 # `tool_choice_type`: "tool" forces the call (Claude Opus 5, Sonnet 5).
 # Newer models (Claude Opus 5.5, Sonnet 5.5, Fable 5.1) reject forced
-# calls with a 400; for them set "auto": the tool is then sent with
-# `strict: true` (strict_tool_schema(): arguments always match the
-# schema), the prompt ends with an instruction to answer through the tool,
-# and if Claude still answers in text it is asked once more in the same
-# conversation (appended, never edited). Those models also can't run with
-# thinking disabled — their profiles need `thinking: {type: adaptive}`.
+# calls with a 400; for them set "auto": the prompt then ends with an
+# instruction to answer through the tool, and if Claude still answers in
+# text it is asked once more in the same conversation (appended, never
+# edited). Those models also can't run with thinking disabled — their
+# profiles need `thinking: {type: adaptive}`.
 #
 # `prompt` is a string, or list(cached, rest): the shared part then goes
 # first with a cache marker, so the next call of the run with the same
@@ -27,7 +29,7 @@
 call_claude_tool <- function(config, tool, prompt) {
   tool$name <- config$tool_name
   forced <- !identical(config$tool_choice_type, "auto")
-  if (!forced) {
+  if (!isFALSE(config$strict)) {
     strict <- strict_tool_schema(tool$input_schema)
     if (strict$ok) {
       tool$input_schema <- strict$schema

@@ -58,3 +58,37 @@ test_that("fetch_bot_branch() fetches without a token, and builds a one-line hea
   withr::local_envvar(GH_TOKEN = strrep("a", 93))  # a local remote ignores the header
   expect_equal(fetch_bot_branch("bot-suggest/tests/dev"), "refs/remotes/origin/bot-suggest/tests/dev")
 })
+
+test_that("obvious_failure_classification() decides parse errors, missing functions and packages", {
+  expect_equal(obvious_failure_classification("<text>:2:5: unexpected symbol")$category, "bad_test")
+  expect_match(obvious_failure_classification('could not find function "ds.nothing"')$explanation, "ds.nothing")
+  expect_equal(obvious_failure_classification("there is no package called 'dsX'")$category, "env_misconfiguration")
+  expect_null(obvious_failure_classification("Expected `x` to equal 3."))
+})
+
+test_that("classify_failures() sends only the open failures, in one call, and maps the answers back", {
+  api_key <<- "test"
+  failure_classification_config <<- list(model = "claude-opus-5", max_tokens = 1000, api_version = "2023-06-01",
+                                         thinking = list(type = "adaptive"), tool_name = "submit_failure_classification",
+                                         tool_choice_type = "tool")
+  failure_classification_prompt_template <<- paste(readLines(file.path(repo_root, "prompts", "test-failure-classification-prompt.md")), collapse = "\n")
+  items <- list(list(block = "t1", message = "Expected 2, got 3"),
+                list(block = "t2", message = "<text>:1:3: unexpected symbol"),
+                list(block = "t3", message = "Expected TRUE"))
+  calls <- 0
+  prompt_text <- ""
+  answer <- list(list(type = "tool_use", id = "x", name = "submit_failure_classification", input = list(failures = list(
+    list(failure = "F2", explanation = "e3", category = "real_bug", confidence = "high"),
+    list(failure = "F1", explanation = "e1", category = "bad_test", confidence = "medium")))))
+  res <- httr2::with_mocked_responses(function(req) {
+    calls <<- calls + 1
+    prompt_text <<- request_body(req)$messages[[1]]$content[[1]]$text
+    claude_response(answer)
+  }, suppressMessages(classify_failures(items, "f <- function() 1", "f")))
+  expect_equal(calls, 1)
+  expect_match(prompt_text, "### F2")
+  expect_false(grepl("t2", prompt_text))                # the obvious one isn't sent
+  expect_equal(res[[1]]$category, "bad_test")
+  expect_equal(res[[2]]$category, "bad_test")           # from R
+  expect_equal(res[[3]][c("category", "confidence")], list(category = "real_bug", confidence = "high"))
+})

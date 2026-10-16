@@ -28,12 +28,9 @@ ask_claude_for_scripts <- function(context, step_ids, previous_attempt = "") {
   ))
   tool <- build_analysis_tool(context$all_step_ids %||% step_ids, context$catalogue_names, context$catalogue_functions, context$gap_issues$number)
   result <- call_claude_tool(anthropic_config, tool, split_cached_prompt(prompt, "<!-- per request -->"))
+  # The tool is strict (call_claude_tool()), so `steps` is an array of
+  # step objects; the check stays for profiles with `strict: false`.
   steps <- result$steps
-  # Claude sometimes sends the array as a JSON string, or one step as a bare object
-  if (is.character(steps) && length(steps) == 1) {
-    steps <- tryCatch(jsonlite::fromJSON(steps, simplifyVector = FALSE), error = function(e) steps)
-  }
-  if (is.list(steps) && !is.null(steps$step_id)) steps <- list(steps)
   if (!is.list(steps) || !all(vapply(steps, is.list, logical(1)))) {
     stop(sprintf("Claude's answer has an unexpected shape for 'steps': %s",
                  paste(utils::capture.output(utils::str(steps, max.level = 1)), collapse = " ")), call. = FALSE)
