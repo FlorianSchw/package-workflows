@@ -152,6 +152,18 @@ the live caller used to validate changes before wider rollout.
   Claude call settings for the suggestion workflows.
 - `dev-notes/` — internal design notes and status per suggestion workflow
   (not published).
+- `tests/` (branch `v1/foundation` until merged) — `testthat/` (R
+  functions sourced into the global environment by `helper-load.R`;
+  Claude and GitHub answered by stand-ins: `local_global_mock()`,
+  `run_entry_script_mocked()` with recorded answers from
+  `fixtures/claude-answers/`), `shell/test-scope.sh` (stand-ins for
+  `gh`/`jq`), `fixtures/` (made-up packages only: `r-package`,
+  `ds-client` + `ds-server`). Run by `ci.yml` with the static checks;
+  locally `Rscript tests/testthat.R` and `bash tests/shell/test-scope.sh`.
+  A change to an entry script or a bot's output should keep
+  `test-entry-scripts.R` passing (or update its recorded answers).
+  External actions are pinned to commit SHAs with the version as a
+  comment; Dependabot updates them — pin new ones the same way.
 - **Usage counting:** the Claude-assisted workflows (roxygen, tests,
   analysis scripts, naming check) and `authors-suggest.yml` end with a "Count this run"
   step — the composite action `count-run` — that downloads one file from
@@ -331,11 +343,14 @@ and `CONTRIBUTING.md`); no PRs until a branch model and rules exist.
 
 - Versioning: all workflows are referenced `@main`, and `package-release.yml`
   reads its release config from `main` too. The old `v1` tag is unused.
-  Decide after the internal feedback round (inputs may still change) and
-  once it's clear how to test versioned refs. Proposed shape (not decided):
-  - **Branches:** trunk-based — `main` + short-lived feature branches via
+  **Decided in the v1 planning round (2026-10-16)** — details, and the
+  state of the work on branch `v1/foundation`, in
+  [dev-notes/v1-planning.md](dev-notes/v1-planning.md):
+  - ~~**Branches:** trunk-based — `main` + short-lived feature branches via
     PR, `main` protected (commitlint, `actionlint`). No `dev`: here a
-    release is a tag, not a merge into `main`.
+    release is a tag, not a merge into `main`.~~ Replaced: main / dev /
+    feature, only `dev` merges into `main`, release on every merge into
+    `main` (rulesets drafted in `dev-notes/v1-drafts/`).
   - **Releases:** semantic-release tags `vX.Y.Z` and moves the major tag
     `vX`; callers pin `@v1`; breaking changes (`feat!:`) become `v2`.
   - **Testing:** dsSupportClient points a caller at `@<feature-branch>`.
@@ -353,14 +368,27 @@ and `CONTRIBUTING.md`); no PRs until a branch model and rules exist.
     fetches pass their token; only `collect-usage.yml` keeps it); App
     tokens request only contents + pull-requests. The repo name
     `FlorianSchw/package-workflows` is still hard-coded in the checkouts
-    (change at the move). actionlint (1.7.12) predates `$/` — may need an
-    ignore rule.
+    (change at the move). actionlint (1.7.12) predates `$/` and
+    `job_workflow_sha`: `ci.yml` ignores those two messages.
   - **Federation rules** match `job_workflow_ref` exactly (incl.
     `@refs/heads/main`); tags need a prefix/condition match.
   - **Usage counting** relies on it: runs on a `vX` tag count as
     `release`, everything else as `dev`. Delete the old unused `v1` tag
     (`8d11341`) before the first real release, and recommend pinning
     `@vX` in the docs.
+- **v1 work on branch `v1/foundation`** (2026-10-16, pushed, not merged —
+  `main` only with the user): this repository's own CI (`ci.yml`:
+  testthat incl. end-to-end runs of the roxygen, test and authors bots on
+  `tests/fixtures/r-package` with recorded Claude/GitHub answers, shell
+  tests, actionlint, shellcheck, zizmor; green); external actions pinned
+  to commits (Dependabot updates them); refactoring A, E–I done (one
+  R-file parser, main loops as `review_files()` +
+  `review_roxygen_file()` / `review_test_file()`). Reports and drafts
+  waiting for the user: prompt audit (`dev-notes/prompt-audit.md`, hunks
+  A–F), input renames B (`dev-notes/v1-input-review.md`), config/policy
+  C+D (`dev-notes/v1-config-proposal.md`), rulesets, own release,
+  governance YAML (`dev-notes/v1-drafts/`). Docs pending: none of this
+  is user-facing until v1.
 - Federation rules for the other two accounts, before rolling out beyond
   dsSupportClient.
 - **Review of the Claude-assisted workflows** (2026-10-14): token levers
