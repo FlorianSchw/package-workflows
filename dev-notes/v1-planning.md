@@ -34,9 +34,11 @@ round of caller changes) → refactoring → new workflows.
     Claude gets the recorded answer, GitHub a 404) —
     `test-entry-scripts.R`. Naming check/apply run end to end on the
     `ds-client`/`ds-server` pair.
+  - Authors bot end to end too (git commits in the fixture, recorded
+    GitHub API answers).
   - **Still to build:** the analysis bot end to end (needs DSLite +
     dsBase in CI — heavier; the stepwise logic is unit-tested), the
-    authors bot (GitHub API answers recorded too), and the workflow-level
+    workflow-level
     self-test (the reusable workflows themselves on a fixture: needs a
     way to point them at a fixture instead of the caller checkout and to
     skip the token step and the push — a test-only input or a

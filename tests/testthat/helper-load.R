@@ -38,17 +38,24 @@ run_entry_script <- function(script, dir, env = character(0)) {
 # repository copied into .shared-workflows as in CI), with every HTTP
 # request answered by a stand-in: a Claude request gets the next recorded
 # answer for its tool (`answers`: tool name -> list of tool inputs, in
-# call order, e.g. from tests/fixtures/claude-answers/), anything else
-# (GitHub) a 404. In-process, because httr2's mocking doesn't reach a
-# separate Rscript. Objects the script leaves in the global environment
-# are removed afterwards. Returns the Claude request bodies, in order.
-run_entry_script_mocked <- function(script, dir, env = character(0), answers = list()) {
+# call order, e.g. from tests/fixtures/claude-answers/), a GitHub API
+# request the body `github` gives for its path (e.g. "/users/bea"; a
+# named list), anything else a 404. In-process, because httr2's mocking
+# doesn't reach a separate Rscript. Objects the script leaves in the
+# global environment are removed afterwards. Returns the Claude request
+# bodies, in order.
+run_entry_script_mocked <- function(script, dir, env = character(0), answers = list(), github = list()) {
   shared <- file.path(dir, ".shared-workflows")
   dir.create(shared, showWarnings = FALSE)
   for (part in c("R", "config", "prompts")) file.copy(file.path(repo_root, part), shared, recursive = TRUE)
   queue <- answers
   requests <- list()
   mock <- function(req) {
+    path <- sub("^https://api.github.com", "", req$url)
+    if (!is.null(github[[path]])) {
+      return(httr2::response(status_code = 200, headers = list("content-type" = "application/json"),
+                             body = charToRaw(jsonlite::toJSON(github[[path]], auto_unbox = TRUE, null = "null"))))
+    }
     if (!grepl("api.anthropic.com", req$url, fixed = TRUE)) return(httr2::response(status_code = 404))
     body <- request_body(req)
     tool <- body$tools[[1]]$name
