@@ -84,6 +84,39 @@ raw counts first; fresh counting at v1. See
   independently: a key used only for signing, registered on GitHub as a
   signing key; set up when the governance repo is built).
 
-## 6. Refactoring — next
+## 6. Refactoring — all before v1 (user's decision)
 
-## 7. New workflows — open
+From [claude-workflow-review.md](claude-workflow-review.md) and the open
+items, **all of A–J before v1**:
+
+- **A** Self-contained workflows (actions and scripts from their own
+  commit) — prerequisite for `@v1` and the self-tests.
+- **B** Review all inputs once (names such as `sweep-base` that no longer
+  fit, descriptions, defaults); `datashield` input for authors.
+- **C** Config files: all YAML, all merged key by key over the defaults
+  (today JSON/YAML mixed, most overrides replace the whole file).
+- **D** The policy file `config/suggestion-policy.yml` (reasons,
+  thresholds, report routing).
+- **E** `strict: true` for all Claude calls (drops the analysis bot's
+  "array as JSON string" workaround).
+- **F** Failure classification once per function, plus an R pre-check for
+  obvious failures.
+- **G** One `claude` object instead of global variables.
+- **H** Merge the two R-file parsers (`parse_r_file()`,
+  `read_r_definitions()`).
+- **I** Test and roxygen main loops as functions; shared skeleton.
+- **J** Review prompts and context; remove hard-coded workarounds — e.g.
+  `ds.glmSLMA` / forest plots are both prose in
+  `analysis-script-prompt.md` and `excluded_functions` in
+  `analysis-suggest.yml`: exclusions only in config, each with a reason,
+  written into the prompt by R. Start with a systematic prompt audit
+  (outdated rules, instructions the schema or R already enforce,
+  duplicates, context sent but unused).
+
+## 7. New workflows — after v1 (user's decision)
+
+None before v1: they build on the refactored foundation, and they are
+the first real use of the new branch model (feature → dev → main,
+release). Order: label integrity → learning loop (collecting only) →
+issue triage → spec review → central agent repo with implementer,
+researcher, refactor agent. Design in [issue-agents.md](issue-agents.md).
