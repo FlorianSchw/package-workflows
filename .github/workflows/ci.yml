@@ -51,15 +51,25 @@ jobs:
       - uses: actions/checkout@v7
         with:
           persist-credentials: false
+      # Each check reports its findings as annotations (visible on the run
+      # page and in PRs without opening the log) and runs even if an
+      # earlier one failed.
       # Workflow syntax, expressions, inputs/outputs; shellcheck on the
       # run: scripts (the image includes shellcheck).
       - name: actionlint
-        run: docker run --rm -v "$PWD:/repo" --workdir /repo rhysd/actionlint:1.7.7 -color
+        run: >-
+          docker run --rm -v "$PWD:/repo" --workdir /repo rhysd/actionlint:1.7.7
+          -format '{{range $err := .}}::error file={{$err.Filepath}},line={{$err.Line}},col={{$err.Column}}::{{$err.Message}}{{"\n"}}{{end}}'
       - name: shellcheck
-        run: shellcheck .github/actions/*/*.sh tests/shell/*.sh
+        if: always()
+        run: |
+          shellcheck --format=gcc .github/actions/*/*.sh tests/shell/*.sh \
+            | sed -E 's/^([^:]+):([0-9]+):([0-9]+): ([a-z]+): (.*)$/::\4 file=\1,line=\2,col=\3::\5/; s/^::note /::notice /'
+          exit "${PIPESTATUS[0]}"
       # Security checks of workflows and actions (template injection,
       # credentials, triggers).
       - name: zizmor
+        if: always()
         run: |
           pip install --quiet 'zizmor>=1,<2'
-          zizmor .github/workflows .github/actions
+          zizmor --format=github .github/workflows .github/actions
