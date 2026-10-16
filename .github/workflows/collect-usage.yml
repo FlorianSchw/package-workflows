@@ -77,7 +77,7 @@ jobs:
 
       - name: Record today's counts on the usage-data branch
         run: |
-          # shellcheck disable=SC2016  # $ and backticks in single quotes are jq and Markdown, not shell
+          # shellcheck disable=SC2016  # $p is jq, not shell
           # Asset name <workflow>-<outcome>-<channel> → separate columns.
           gh api "repos/$GITHUB_REPOSITORY/releases/tags/$TAG" \
             --jq '.assets[] | (.name | split("-")) as $p | "\($p[:-2] | join("-")),\($p[-2]),\($p[-1]),\(.download_count)"' \
@@ -90,6 +90,7 @@ jobs:
             git checkout --quiet --orphan usage-data
             git rm -rfq .
             printf 'date,workflow,outcome,channel,runs_total\n' > usage.csv
+            # shellcheck disable=SC2016  # the backticks are Markdown
             printf '%s\n' \
               '# Usage counts' '' \
               'Written daily by `.github/workflows/collect-usage.yml` on `main`.' \
