@@ -150,6 +150,9 @@ items, **all of A–J before v1**:
   written into the prompt by R. Start with a systematic prompt audit
   (outdated rules, instructions the schema or R already enforce,
   duplicates, context sent but unused).
+  Step 1 done: [prompt-audit.md](prompt-audit.md) — 9 findings, 6 with
+  proposed hunks (A–F), nothing applied. Step 2 (choose hunks, test
+  before/after in the CI round) needs the user; hunk B depends on C.
 
 ## 7. New workflows — after v1 (user's decision)
 
