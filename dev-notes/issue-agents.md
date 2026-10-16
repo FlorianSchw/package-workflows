@@ -46,9 +46,41 @@ refactor agent (applies the naming transformation config).
   with `CLAUDE_CODE_OAUTH_TOKEN` from the subscription). That is the
   supported use of a subscription in CI, unlike our direct API calls
   ([claude-subscription-auth.md](claude-subscription-auth.md)); an
-  open-ended "build this" task suits an agent. Check the current terms for
-  using a personal subscription on organisation repositories, and its
-  usage limits.
+  open-ended "build this" task suits an agent. **Decided 2026-10-16**
+  (details in [claude-subscription-auth.md](claude-subscription-auth.md)):
+  agents only the user triggers run on the user's subscription from a
+  central private repo (token, work list, one queue); everything others
+  trigger runs on the API with WIF.
+
+## Decisions on the agent setup (2026-10-16)
+
+| Agent | Triggered by | Runs on |
+|---|---|---|
+| Triage | others (new issues) | API, owner pays |
+| Spec review | others / automatic | API, owner pays |
+| Implementer | the user (`bot-proceed`) | subscription, central private repo |
+| Researcher (DataSHIELD-wide gap catalogue; per themed repo: methods, design note) | the user | subscription, central private repo |
+| Refactor agent | the user | subscription, central private repo |
+
+- **Researcher only researches:** its result is a design note (gap,
+  method, sources, what the server returns, disclosure analysis) as an
+  issue in the themed repo; the implementer writes code only after the
+  user's `bot-proceed` on it.
+- **Public vs. private:** the agents as reusable workflows in the public
+  workflow repo (credentials as inputs: subscription token, API key or
+  WIF), versioned with `@v1`; the private repo holds only the token, the
+  target repo list, the work list and thin callers.
+- **Skills/subagents for others:** a Claude Code plugin (skills such as
+  "a client/server pair the DataSHIELD way", DSLite tests, design-note
+  template), usable locally and by claude-code-action (`plugins` input).
+  If it comes: **its own repo**, so its clone count isn't drowned by the
+  CI checkouts of the workflow repo.
+- **KPIs:** workflow runs counted with `count-run` as now (also the agent
+  workflows); plugin: daily clones / unique cloners from the traffic API
+  (14 days back, admin token) stored by the KPI collector — an
+  approximation (updates may count, one person on two machines twice),
+  reported separately. No telemetry inside skills (would phone home from
+  people's machines).
 - **Already there, reusable:**
   - function index: `read_ds_package()` / `read_r_definitions()`
     (naming), `client_function_reference()` and the function catalogue

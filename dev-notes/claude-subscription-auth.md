@@ -4,7 +4,7 @@ Question (2026-10-14, user): can users run the Claude-assisted workflows on
 their own Claude Pro/Max subscription instead of setting up Workload
 Identity Federation?
 
-**State: not pursued; nothing built.** Revisit only if users ask for it.
+**State: nothing built.** Terms checked 2026-10-16 (below): API with WIF for everything others trigger; the user's own subscription, from a central private repo, for the agents only the user triggers.
 
 ## Why it doesn't work as built
 
@@ -15,6 +15,59 @@ used by `anthropics/claude-code-action`) is meant for Claude Code, not for
 direct API calls, and as far as known Anthropic's terms don't allow using
 subscription credentials that way. Check the current terms before building
 anything on it.
+
+## Terms check (2026-10-16, Anthropic's own pages)
+
+Sources: [Claude Code legal and compliance](https://code.claude.com/docs/en/legal-and-compliance),
+[Claude Code GitHub Actions](https://code.claude.com/docs/en/github-actions),
+[pricing](https://claude.com/pricing).
+
+- **Which terms:** Free, Pro and Max run under the Consumer Terms; Team,
+  Enterprise and the API under the Commercial Terms.
+- **OAuth (subscription) login** is meant for "ordinary use of Claude
+  Code and other native Anthropic applications"; Pro/Max limits assume
+  "ordinary, individual usage". Developers building products or services
+  (incl. the Agent SDK) must use API keys; routing requests through
+  Free/Pro/Max credentials on behalf of others is not permitted.
+- **claude-code-action** accepts a subscription token
+  (`CLAUDE_CODE_OAUTH_TOKEN`, Pro/Max/Team/Enterprise), but for a secret
+  shared across repositories the docs recommend an API key, "since an
+  OAuth token is tied to the subscription of the person who ran
+  `claude setup-token`". It also supports **workload identity federation
+  natively** (`anthropic_federation_rule_id`,
+  `anthropic_organization_id`, …) — the same setup as our bots.
+- **Prices (2026-10-16):** Pro $17–20/month; Max from $100; Team standard
+  seat $20–25, premium seat $100–125 (2–150 seats); Enterprise
+  $20/seat plus usage at API rates (20 seats minimum). All plans have
+  five-hour and weekly limits; usage beyond them is billed at API rates.
+
+**Conclusion (corrected after the user's context, 2026-10-16):**
+- **Triggered by others** (triage, spec review, the existing bots): API
+  with WIF; every owner pays through its own Anthropic organization.
+- **Triggered only by the user** (implementer, researcher, refactor
+  agent): the user's own subscription via claude-code-action is fine.
+  The legal page explicitly allows "an end user … signing in to the
+  unmodified Claude Code binary with their own Claude subscription";
+  non-commercial, no product or service, nobody else's requests on the
+  token, the user decides every run — like pasting an issue into Claude
+  Code by hand, only on a runner.
+- **Model training (consumer terms):** the target repositories are
+  public GPL-3 code and public issues, so the "Help improve Claude"
+  setting matters little; checked by the user.
+- **Where the token lives:** a **central private repository** of the
+  user's (not yet created), the only place with the token. A
+  `bot-proceed` in a target repo only sends a `repository_dispatch`;
+  the central repo verifies through the API that the label was set by
+  the user, checks out the target repo, runs the agent, and opens the PR
+  there (App or PAT). A changed workflow in a target repo can't reach
+  the token, so no environment approval click is needed.
+- **One queue across repositories:** GitHub `concurrency` only works
+  within one repo; the central repo has one group, so one agent runs at
+  a time (shared five-hour/weekly limits). A group keeps only one
+  pending run, so each run works through all approved, not yet done
+  items (a work list), and a replaced trigger loses nothing.
+- **Token upkeep:** one token in one place; renewal comes up when the
+  implementer is built (remind the user then).
 
 ## Options considered
 
