@@ -34,6 +34,16 @@ run_entry_script <- function(script, dir, env = character(0)) {
   list(status = attr(out, "status") %||% 0L, output = out)
 }
 
+# Replaces functions of R/functions/ (which live in the global
+# environment, not a package, so testthat's local_mocked_bindings() can't
+# reach them) for the rest of the calling test: local_global_mock(f = fn).
+local_global_mock <- function(..., env = parent.frame()) {
+  mocks <- list(...)
+  originals <- mget(names(mocks), envir = globalenv())
+  for (n in names(mocks)) assign(n, mocks[[n]], envir = globalenv())
+  withr::defer(for (n in names(originals)) assign(n, originals[[n]], envir = globalenv()), envir = env)
+}
+
 # A response of the Messages API for httr2::with_mocked_responses().
 claude_response <- function(content, stop_reason = "tool_use") {
   httr2::response(

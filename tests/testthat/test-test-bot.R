@@ -92,3 +92,40 @@ test_that("classify_failures() sends only the open failures, in one call, and ma
   expect_equal(res[[2]]$category, "bad_test")           # from R
   expect_equal(res[[3]][c("category", "confidence")], list(category = "real_bug", confidence = "high"))
 })
+
+test_that("review_test_file() keeps passing new tests, classifies failing ones once, and records both", {
+  dir <- local_mini_package()
+  withr::local_dir(dir)
+  calls <- 0
+  local_global_mock(
+    ask_claude_for_tests = function(...) list(
+      needs_tests = TRUE, existing_tests = list(), earlier_findings = list(),
+      tests = list(
+        list(description = "adds one to a number", reason = "edge_case", setup_code = "", assertions_code = "expect_equal(add1(1), 2)"),
+        list(description = "adds one to zero", reason = "edge_case", setup_code = "", assertions_code = "expect_equal(add1(0), 5)")
+      )
+    ),
+    classify_failures = function(claude, items, ...) {
+      calls <<- calls + 1
+      lapply(items, function(i) list(category = "bad_test", confidence = "high", explanation = "wrong expectation"))
+    }
+  )
+  ctx <- list(
+    review_claude = NULL, classification_claude = NULL, bot_tests = list(materialized = character(0), user_edited = character(0)),
+    reviewed_sha = "abc1234", base_rev = "", datashield = FALSE, ds_type = "", may_use_dslite = FALSE,
+    dslite_setup_mode = "auto", dslite_datasets = NULL,
+    test_role_guidance = jsonlite::fromJSON(file.path(repo_root, "config", "test-role-guidance.json"), simplifyVector = FALSE),
+    scheme = detect_test_scheme("add1"), category_meanings = NULL, test_data = "", cache_prompt = FALSE,
+    max_new_tests = 10L, accept_reasons = suggestion_reasons("tests"), code_issue_confidence = c("high", "medium"),
+    package_name = "minipkg", is_sweep = TRUE
+  )
+  out <- review_files("R/add1.R", decode_suggestion_state(NULL), function(f, parsed, state) review_test_file(f, parsed, state, ctx))
+  expect_equal(out$updated, "tests/testthat/test-add1.R")
+  expect_equal(out$results[[1]]$new_kept, 1)
+  expect_equal(calls, 1)
+  written <- readLines("tests/testthat/test-add1.R")
+  expect_true(any(grepl("adds one to a number", written, fixed = TRUE)))
+  expect_false(any(grepl("adds one to zero", written, fixed = TRUE)))
+  kinds <- vapply(out$state$entries, `[[`, "", "kind")
+  expect_setequal(kinds, c("new", "failed"))
+})

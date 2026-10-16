@@ -111,7 +111,18 @@ items, **all of A–J before v1**:
   write-back (minus the unused `fn_header`). A file that doesn't parse
   now counts as having no function (warning). Tests in
   `test-shared-parse.R`.
-- **I** Test and roxygen main loops as functions; shared skeleton.
+- ~~**I** Test and roxygen main loops as functions; shared skeleton.~~
+  Done: `review_files()` (shared loop: parse, review, sum stats and
+  changed files) with `review_roxygen_file()` / `review_test_file()` as
+  the per-file step, each taking a `ctx` list instead of the entry
+  script's variables; `try_claude_call()` (failed call → warning +
+  retry note, shared); the test bot's per-test-file loop is
+  `apply_function_test_changes()`, `run_quietly` is
+  `run_tests_quietly()`. The entry scripts keep setup and reporting.
+  Tests with made-up Claude answers in `test-roxygen-bot.R` and
+  `test-test-bot.R` (`local_global_mock()` in the helper). Behaviour
+  unchanged except the failed-call log line of the test bot, which now
+  names `fn()` like its warning.
 - **J** Review prompts and context; remove hard-coded workarounds — e.g.
   `ds.glmSLMA` / forest plots are both prose in
   `analysis-script-prompt.md` and `excluded_functions` in

@@ -90,74 +90,18 @@ state <- record_suggestion_choices(state, read_suggestion_choices(pr_body))
 with_code_issues <- length(code_issue_confidence) > 0
 if (!with_code_issues) state$entries <- Filter(function(e) !identical(e$kind, "bug"), state$entries)
 bot_ref <- if (!is.null(pr_body)) fetch_bot_branch(sub_branch) else NULL
-stats <- c(new = 0L, crossed = 0L, repeats = 0L)
 
-# --- Main loop ---------------------------------------------------------------
+# --- Main loop: one review per file (review_roxygen_file()) -----------------
 
-updated_files <- character(0)
-
-for (f in files) {
-  parsed <- tryCatch(parse_r_file(f), error = function(e) {
-    message(sprintf("Skipping %s: %s", f, conditionMessage(e)))
-    NULL
-  })
-  if (is.null(parsed)) next
-  source_block <- review_source_block(f, parsed, bot_ref, base_rev)
-  parsed <- source_block$parsed
-  if (source_block$from_bot) message(sprintf("%s: reviewing the block the open bot PR proposes.", f))
-  # Fields the user declined stay as they are, unless the function's code
-  # changed since (declined_suggestions()).
-  fingerprint <- code_fingerprint(fn_source(parsed))
-  declined <- declined_suggestions(state, function(e) identical(e$file, f), fingerprint, reviewed_sha)
-  state <- declined$state
-  declined_fields <- vapply(Filter(function(e) identical(e$kind, "applied"), declined$declined), function(e) e$field, character(1))
-  earlier <-Filter(function(e) identical(e$file, f) && identical(e$status, "active") && e$kind %in% c("dropped", "bug"), state$entries)
-
-  file_role_text <- if (identical(ds_type, "utility") && !uses_ds_connections(parsed)) role_text_local else role_text
-  result <- tryCatch(ask_claude_for_review(review_claude, parsed, select_profile(parsed), file_role_text, earlier, with_code_issues), error = function(e) {
-    message(sprintf("Claude call failed for %s: %s", f, conditionMessage(e)))
-    warn_failed_call(f, f, e)
-    note_retry_file(f)
-    NULL
-  })
-  if (is.null(result)) next
-
-  # Code defects are reported whether or not the documentation changes.
-  run <- list(applied = list(), dropped = list(), decisions = result$earlier_findings,
-              bugs = kept_code_issues(result$code_issues, code_issue_confidence, f), code = fingerprint)
-  if (length(run$bugs) > 0) message(sprintf("%s: %d possible code issue(s) noted.", f, length(run$bugs)))
-
-  if (!isTRUE(result$needs_changes)) {
-    message(sprintf("%s: documentation already adequate, skipping.", f))
-  } else {
-    review <- accepted_roxygen_fields(result, parsed, accept_reasons, f)
-    for (key in intersect(review$accepted, declined_fields)) {
-      message(sprintf("%s: not changing '%s' again — declined.", f, key))
-    }
-    review$accepted <- setdiff(review$accepted, declined_fields)
-    review$applied <- Filter(function(ch) !ch$field %in% declined_fields, review$applied)
-    run$dropped <- review$dropped
-    new_block <- if (length(review$accepted) == 0) {
-      message(sprintf("%s: no change above the threshold, skipping.", f))
-      NULL
-    } else {
-      tryCatch(build_roxygen_block(result, parsed, f, review$accepted), error = function(e) {
-        message(sprintf("Failed to assemble roxygen block for %s: %s", f, conditionMessage(e)))
-        NULL
-      })
-    }
-    if (!is.null(new_block)) {
-      message(sprintf("%s: updating %s.", f, paste(review$accepted, collapse = ", ")))
-      write_in_place(f, parsed, new_block)
-      updated_files <- c(updated_files, f)
-      run$applied <- review$applied
-    }
-  }
-
-  merged <- merge_roxygen_findings(state, f, run, reviewed_sha, source_block$user_edited)
-  state <- merged$state
-  stats <- stats + merged$stats
-}
+ctx <- list(
+  claude = review_claude, bot_ref = bot_ref, base_rev = base_rev, reviewed_sha = reviewed_sha,
+  ds_type = ds_type, role_text = role_text, role_text_local = role_text_local,
+  accept_reasons = accept_reasons, code_issue_confidence = code_issue_confidence
+)
+reviewed <- review_files(files, state, function(f, parsed, state) review_roxygen_file(f, parsed, state, ctx))
+state <- reviewed$state
+stats <- reviewed$stats
+updated_files <- reviewed$updated
 
 writeLines(updated_files, "updated_files.txt")
 
