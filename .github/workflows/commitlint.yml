@@ -9,11 +9,13 @@ jobs:
     steps:
       - uses: actions/checkout@v7
         with:
+          persist-credentials: false
           fetch-depth: 0
 
       - name: Checkout shared commitlint config
         uses: actions/checkout@v7
         with:
+          persist-credentials: false
           repository: FlorianSchw/package-workflows
           ref: ${{ github.job_workflow_sha }}
           path: .shared-workflows

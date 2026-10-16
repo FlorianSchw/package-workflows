@@ -31,6 +31,7 @@ jobs:
     steps:
       - uses: actions/checkout@v7
         with:
+          persist-credentials: false
           repository: FlorianSchw/package-workflows
           ref: ${{ github.job_workflow_sha }}
 

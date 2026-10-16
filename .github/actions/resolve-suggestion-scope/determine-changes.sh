@@ -62,11 +62,13 @@ fi
 
 # Earlier reviews of this workflow (run history): every run but a pull
 # request's, for 4. and for leaving out what PR runs already reviewed.
+history_start=""   # set by review-history.sh
+history_run=""
 : > history_failed.txt
 : > history_pr.txt
 if [ "$event" != "pull_request" ]; then
   KIND="${SUB_BRANCH#bot-suggest/}"; KIND="${KIND%%/*}"
-  # shellcheck source=review-history.sh
+  # shellcheck source=.github/actions/resolve-suggestion-scope/review-history.sh
   source "$(dirname "$0")/review-history.sh"
 fi
 

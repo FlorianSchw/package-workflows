@@ -43,7 +43,7 @@ out="$(scope pull_request x auto true "" bot-suggest/tests/dev)"; grep -qx "skip
 # --- determine-changes.sh with review-history.sh ------------------------------------
 
 repo="$WORK/repo"
-mkdir -p "$repo/R" && cd "$repo"
+mkdir -p "$repo/R" && cd "$repo" || exit 1
 git init -q -b dev .
 echo a > R/a.R; echo b > R/b.R; g add -A; g commit -qm c1
 echo a2 > R/a.R; g commit -qam c2; c2=$(git rev-parse HEAD)

@@ -34,7 +34,9 @@ jobs:
       GH_TOKEN: ${{ github.token }}
       TAG: usage-counter
     steps:
-      - uses: actions/checkout@v7
+      # The token stays stored: the job pushes the usage-data branch with it.
+      # This repository's own job, no outside code runs here.
+      - uses: actions/checkout@v7  # zizmor: ignore[artipacked]
         with:
           fetch-depth: 0
 

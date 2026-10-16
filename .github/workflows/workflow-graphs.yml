@@ -27,11 +27,13 @@ jobs:
     steps:
       - uses: actions/checkout@v7
         with:
+          persist-credentials: false
           fetch-depth: 0
 
       - name: Checkout shared scripts
         uses: actions/checkout@v7
         with:
+          persist-credentials: false
           repository: FlorianSchw/package-workflows
           ref: ${{ github.job_workflow_sha }}
           path: .shared-workflows
@@ -53,14 +55,14 @@ jobs:
       - name: Resolve push token
         id: push_token
         if: github.event_name != 'pull_request'
-        uses: ./.shared-workflows/.github/actions/resolve-push-token
+        uses: $/.github/actions/resolve-push-token
         with:
           client-id: ${{ secrets.app-client-id }}
           app-private-key: ${{ secrets.app-private-key }}
 
       - name: Commit the README
         if: github.event_name != 'pull_request'
-        uses: ./.shared-workflows/.github/actions/commit-and-push
+        uses: $/.github/actions/commit-and-push
         with:
           files: .github/workflow-graphs/README.md
           commit-message: 'docs: update workflow diagrams'

@@ -68,6 +68,7 @@ jobs:
       # it checks out into, so the shared scripts can only come after it.
       - uses: actions/checkout@v7
         with:
+          persist-credentials: false
           ref: ${{ env.TARGET_BRANCH }}
 
       # Actions and scripts at the commit of this workflow, so a caller
@@ -75,13 +76,14 @@ jobs:
       - name: Checkout shared scripts
         uses: actions/checkout@v7
         with:
+          persist-credentials: false
           repository: FlorianSchw/package-workflows
           ref: ${{ github.job_workflow_sha }}
           path: .shared-workflows
 
       - name: Resolve push token
         id: push_token
-        uses: ./.shared-workflows/.github/actions/resolve-push-token
+        uses: $/.github/actions/resolve-push-token
         with:
           client-id: ${{ secrets.app-client-id }}
           app-private-key: ${{ secrets.app-private-key }}
@@ -91,6 +93,7 @@ jobs:
         if: env.WITH_SERVER == 'true'
         uses: actions/checkout@v7
         with:
+          persist-credentials: false
           repository: ${{ inputs.server-repository }}
           ref: ${{ inputs.server-ref }}
           path: .ds-naming-server
@@ -119,7 +122,7 @@ jobs:
         run: Rscript .shared-workflows/R/apply_ds_naming.R
 
       - name: Propose renames here
-        uses: ./.shared-workflows/.github/actions/propose-branch
+        uses: $/.github/actions/propose-branch
         with:
           manifest: updated_files.txt
           branch: bot-suggest/ds-naming-apply/${{ env.TARGET_BRANCH }}
@@ -134,7 +137,7 @@ jobs:
 
       - name: Propose renames in the server package
         if: env.WITH_SERVER == 'true'
-        uses: ./.shared-workflows/.github/actions/propose-branch
+        uses: $/.github/actions/propose-branch
         with:
           directory: .ds-naming-server
           repository: ${{ inputs.server-repository }}

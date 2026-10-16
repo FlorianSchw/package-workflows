@@ -87,7 +87,7 @@ jobs:
 
       - name: Get Anthropic access token
         id: anthropic_auth
-        uses: ./.shared-workflows/.github/actions/anthropic-token
+        uses: $/.github/actions/anthropic-token
         with:
           organization-id: ${{ secrets.anthropic-organization-id }}
           service-account-id: ${{ secrets.anthropic-service-account-id }}
@@ -110,13 +110,13 @@ jobs:
 
       - name: Resolve push token
         id: push_token
-        uses: ./.shared-workflows/.github/actions/resolve-push-token
+        uses: $/.github/actions/resolve-push-token
         with:
           client-id: ${{ secrets.app-client-id }}
           app-private-key: ${{ secrets.app-private-key }}
 
       - name: Propose the scripts
-        uses: ./.shared-workflows/.github/actions/commit-updated-files
+        uses: $/.github/actions/commit-updated-files
         with:
           scan-mode: changed
           token: ${{ steps.push_token.outputs.token || secrets.commit-push-pat || secrets.GITHUB_TOKEN }}
@@ -134,7 +134,7 @@ jobs:
       - name: Count this run
         if: always()
         continue-on-error: true
-        uses: ./.shared-workflows/.github/actions/count-run
+        uses: $/.github/actions/count-run
         with:
           workflow: datashield-analysis-suggest
           job-status: ${{ job.status }}
