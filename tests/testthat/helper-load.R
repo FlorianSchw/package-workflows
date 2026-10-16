@@ -34,6 +34,38 @@ run_entry_script <- function(script, dir, env = character(0)) {
   list(status = attr(out, "status") %||% 0L, output = out)
 }
 
+# Runs an entry script in this R process, in `dir` (with the shared
+# repository copied into .shared-workflows as in CI), with every HTTP
+# request answered by a stand-in: a Claude request gets the next recorded
+# answer for its tool (`answers`: tool name -> list of tool inputs, in
+# call order, e.g. from tests/fixtures/claude-answers/), anything else
+# (GitHub) a 404. In-process, because httr2's mocking doesn't reach a
+# separate Rscript. Objects the script leaves in the global environment
+# are removed afterwards. Returns the Claude request bodies, in order.
+run_entry_script_mocked <- function(script, dir, env = character(0), answers = list()) {
+  shared <- file.path(dir, ".shared-workflows")
+  dir.create(shared, showWarnings = FALSE)
+  for (part in c("R", "config", "prompts")) file.copy(file.path(repo_root, part), shared, recursive = TRUE)
+  queue <- answers
+  requests <- list()
+  mock <- function(req) {
+    if (!grepl("api.anthropic.com", req$url, fixed = TRUE)) return(httr2::response(status_code = 404))
+    body <- request_body(req)
+    tool <- body$tools[[1]]$name
+    requests[[length(requests) + 1]] <<- body
+    if (length(queue[[tool]]) == 0) stop("No recorded answer left for ", tool)
+    input <- queue[[tool]][[1]]
+    queue[[tool]] <<- queue[[tool]][-1]
+    claude_response(list(list(type = "tool_use", id = "toolu_1", name = tool, input = input)))
+  }
+  before <- ls(globalenv(), all.names = TRUE)
+  on.exit(rm(list = setdiff(ls(globalenv(), all.names = TRUE), before), envir = globalenv()), add = TRUE)
+  withr::with_dir(dir, withr::with_envvar(env, httr2::with_mocked_responses(mock, {
+    source(file.path(".shared-workflows", "R", script), local = globalenv())
+  })))
+  requests
+}
+
 # Replaces functions of R/functions/ (which live in the global
 # environment, not a package, so testthat's local_mocked_bindings() can't
 # reach them) for the rest of the calling test: local_global_mock(f = fn).

@@ -25,6 +25,24 @@ round of caller changes) → refactoring → new workflows.
   (required by the `main` ruleset) and monthly. Federation rules for
   the repo's own tests match by prefix (`@refs/pull/<n>/merge`); its own
   test runs are not counted.
+  - **Built (branch `v1/foundation`):** `ci.yml` (testthat, shell tests,
+    actionlint, shellcheck, zizmor; green since `e3db7a6`). End-to-end
+    runs of `suggest_roxygen.R` and `suggest_tests.R` on the made-up
+    `tests/fixtures/r-package` with recorded answers
+    (`tests/fixtures/claude-answers/r-package.json`, by tool name, in call
+    order), in-process via `run_entry_script_mocked()` (httr2's mocking:
+    Claude gets the recorded answer, GitHub a 404) —
+    `test-entry-scripts.R`. Naming check/apply run end to end on the
+    `ds-client`/`ds-server` pair.
+  - **Still to build:** the analysis bot end to end (needs DSLite +
+    dsBase in CI — heavier; the stepwise logic is unit-tested), the
+    authors bot (GitHub API answers recorded too), and the workflow-level
+    self-test (the reusable workflows themselves on a fixture: needs a
+    way to point them at a fixture instead of the caller checkout and to
+    skip the token step and the push — a test-only input or a
+    `CLAUDE_REPLAY` env; to decide with the user, as it touches the
+    workflows' interface). The smoke test with real calls needs a
+    federation rule for this repository.
 
 ## 2. Secrets
 
