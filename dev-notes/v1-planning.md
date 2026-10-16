@@ -104,6 +104,10 @@ raw counts first; fresh counting at v1. See
   independently: a key used only for signing, registered on GitHub as a
   signing key; set up when the governance repo is built).
 
+**Drafts** (not applied): rulesets for `main`, `dev` and `v*` tags, this
+repository's own PR-check caller and release (`v` tags, moving `v1`),
+and the governance YAML structure — [v1-drafts/](v1-drafts/README.md).
+
 ## 6. Refactoring — all before v1 (user's decision)
 
 From [claude-workflow-review.md](claude-workflow-review.md) and the open

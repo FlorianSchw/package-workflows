@@ -1,0 +1,57 @@
+# Draft — releases this repository on every push to main (a merged dev →
+# main PR): semantic-release tags vX.Y.Z from the conventional commits,
+# publishes the GitHub release and moves the major tag vX (successCmd in
+# self.releaserc.json). No commit is made: nothing in the repository
+# carries the version. Goes to .github/workflows/release.yml.
+#
+# Not package-release.yml: that one is for R packages (DESCRIPTION
+# version, drafts). Its default config, the root .releaserc.json, would
+# have to move (e.g. to config/releaserc.json, read by package-release.yml
+# from there) so that this repository's own .releaserc.json can be this
+# file's — or semantic-release gets `--extends` with this file's path.
+#
+# Pushing tags: the App token (its App is the bypass actor of the
+# "release tags" ruleset), so GITHUB_TOKEN can't move vX by itself.
+name: Release
+
+on:
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: release
+  cancel-in-progress: false
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write   # tags and the GitHub release
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+
+      - name: Resolve push token
+        id: token
+        uses: $/.github/actions/resolve-push-token
+        with:
+          client-id: ${{ secrets.APP_CLIENT_ID }}
+          app-private-key: ${{ secrets.APP_PRIVATE_KEY }}
+
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: "lts/*"
+
+      - name: Release
+        env:
+          GITHUB_TOKEN: ${{ steps.token.outputs.token }}
+          TOKEN: ${{ steps.token.outputs.token }}
+        run: |
+          # The moving-tag push in successCmd goes through this remote.
+          git remote set-url origin "https://x-access-token:${TOKEN}@github.com/${GITHUB_REPOSITORY}.git"
+          npx --yes semantic-release@24 --extends ./dev-notes/v1-drafts/self.releaserc.json  # zizmor: ignore[adhoc-packages]

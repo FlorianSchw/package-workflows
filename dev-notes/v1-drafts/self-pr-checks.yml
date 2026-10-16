@@ -1,0 +1,24 @@
+# Draft — this repository's own pull request checks, calling its reusable
+# workflows by local path (they run from the PR's own commit). Goes to
+# .github/workflows/pr-checks.yml once the branch model is in place.
+# The job ids give the check names the rulesets require:
+# "commit-messages / lint" (dev and main) and
+# "head-branch / verify-source-branch" (main only).
+name: PR checks
+
+on:
+  pull_request:
+    branches: [dev, main]
+
+permissions:
+  contents: read
+
+jobs:
+  commit-messages:
+    uses: ./.github/workflows/commitlint.yml  # zizmor: ignore[self-repository] (not reusable: always this repository)
+
+  head-branch:
+    if: github.base_ref == 'main'
+    uses: ./.github/workflows/require-head-branch.yml  # zizmor: ignore[self-repository] (not reusable: always this repository)
+    with:
+      allowed-head: dev
