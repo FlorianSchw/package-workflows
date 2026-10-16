@@ -66,7 +66,7 @@ jobs:
 
       # The calling repository first — actions/checkout empties the folder
       # it checks out into, so the shared scripts can only come after it.
-      - uses: actions/checkout@v7
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           persist-credentials: false
           ref: ${{ env.TARGET_BRANCH }}
@@ -74,7 +74,7 @@ jobs:
       # Actions and scripts at the commit of this workflow, so a caller
       # pinned to a version (or testing a branch) gets that version.
       - name: Checkout shared scripts
-        uses: actions/checkout@v7
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           persist-credentials: false
           repository: FlorianSchw/package-workflows
@@ -91,7 +91,7 @@ jobs:
 
       - name: Checkout server package
         if: env.WITH_SERVER == 'true'
-        uses: actions/checkout@v7
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           persist-credentials: false
           repository: ${{ inputs.server-repository }}
@@ -106,11 +106,11 @@ jobs:
           WANTED: ${{ inputs.server-target-branch || inputs.server-ref }}
         run: echo "branch=${WANTED:-$(git -C .ds-naming-server rev-parse --abbrev-ref HEAD)}" >> "$GITHUB_OUTPUT"
 
-      - uses: r-lib/actions/setup-r@v2
+      - uses: r-lib/actions/setup-r@f9a764fea8d5c63df6ef9a5c7795bf7deb5d7e05 # v2.14.0
         with:
           use-public-rspm: true
 
-      - uses: r-lib/actions/setup-r-dependencies@v2
+      - uses: r-lib/actions/setup-r-dependencies@f9a764fea8d5c63df6ef9a5c7795bf7deb5d7e05 # v2.14.0
         with:
           packages: any::yaml, any::purrr
 

@@ -20,13 +20,13 @@ jobs:
     name: R unit tests
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v7
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           persist-credentials: false
-      - uses: r-lib/actions/setup-r@v2
+      - uses: r-lib/actions/setup-r@f9a764fea8d5c63df6ef9a5c7795bf7deb5d7e05 # v2.14.0
         with:
           use-public-rspm: true
-      - uses: r-lib/actions/setup-r-dependencies@v2
+      - uses: r-lib/actions/setup-r-dependencies@f9a764fea8d5c63df6ef9a5c7795bf7deb5d7e05 # v2.14.0
         with:
           packages: >-
             any::testthat, any::withr, any::httr2, any::jsonlite, any::yaml,
@@ -38,7 +38,7 @@ jobs:
     name: Shell script tests
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v7
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           persist-credentials: false
       - name: Run the tests
@@ -48,7 +48,7 @@ jobs:
     name: Static checks
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v7
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           persist-credentials: false
       # Each check reports its findings as annotations (visible on the run
@@ -58,10 +58,16 @@ jobs:
       # run: scripts (the image includes shellcheck).
       # (GitHub shows at most 10 annotations per step; the full output of
       # each check also goes into the job summary.)
+      # actionlint 1.7.12 predates two GitHub features used here, so their
+      # messages are ignored: the self-repository syntax `uses: $/…` and the
+      # `github.job_workflow_sha` context property. Remove the -ignore
+      # options once a release knows them.
       - name: actionlint
         run: |
           set +e   # collect the output even when the check fails
-          docker run --rm -v "$PWD:/repo" --workdir /repo rhysd/actionlint:1.7.12 -oneline > actionlint.txt
+          docker run --rm -v "$PWD:/repo" --workdir /repo rhysd/actionlint:1.7.12 -oneline \
+            -ignore 'specifying action "\$/' \
+            -ignore 'property "job_workflow_sha" is not defined' > actionlint.txt
           status=$?
           sed -E 's/^([^:]+):([0-9]+):([0-9]+): (.*)$/::error file=\1,line=\2,col=\3::\4/' actionlint.txt
           { echo "### actionlint"; echo '```'; cat actionlint.txt; echo '```'; } >> "$GITHUB_STEP_SUMMARY"

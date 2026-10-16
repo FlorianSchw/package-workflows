@@ -340,18 +340,21 @@ and `CONTRIBUTING.md`); no PRs until a branch model and rules exist.
     `vX`; callers pin `@v1`; breaking changes (`feat!:`) become `v2`.
   - **Testing:** dsSupportClient points a caller at `@<feature-branch>`.
   - ~~**Prerequisite:** all internal references are hard-coded to `main`~~
-    Done on branch `v1/foundation` (2026-10-16, not yet in CI): every
-    workflow checks out `.shared-workflows` at `github.job_workflow_sha`
-    and uses its composite actions by local path
-    (`uses: ./.shared-workflows/.github/actions/…`). Since
-    `actions/checkout` empties its target folder, the caller is checked
-    out first; roxygen, tests and authors check it out at the default
-    branch, run the scope locally, then `git checkout -B <ref>` the
-    branch it picks. `package-release.yml`'s `config-ref` defaults to
+    Done on branch `v1/foundation` (2026-10-16, not yet run from a
+    caller): composite actions are referenced with GitHub's
+    **self-repository syntax** `uses: $/.github/actions/…` — resolves to
+    the file's own repository at the running commit, no checkout
+    (changelog 2026-07-30; runner ≥ 2.336.0, not on GHES; no `@ref`).
+    `.shared-workflows` (R scripts, config, prompts) is checked out at
+    `github.job_workflow_sha`, after the caller (actions/checkout empties
+    its target folder). `package-release.yml`'s `config-ref` defaults to
     empty = the workflow's own commit. Inline `${{ }}` in `run:` scripts
-    moved into `env:` (head branch names, inputs) — zizmor's
-    template-injection check. The repo name `FlorianSchw/package-workflows`
-    is still hard-coded in the checkouts (change at the move).
+    moved into `env:`; checkouts `persist-credentials: false` (pushes and
+    fetches pass their token; only `collect-usage.yml` keeps it); App
+    tokens request only contents + pull-requests. The repo name
+    `FlorianSchw/package-workflows` is still hard-coded in the checkouts
+    (change at the move). actionlint (1.7.12) predates `$/` — may need an
+    ignore rule.
   - **Federation rules** match `job_workflow_ref` exactly (incl.
     `@refs/heads/main`); tags need a prefix/condition match.
   - **Usage counting** relies on it: runs on a `vX` tag count as

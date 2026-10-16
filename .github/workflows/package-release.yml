@@ -39,32 +39,35 @@ jobs:
       pull-requests: write
     steps:
       - name: Checkout
-        uses: actions/checkout@v7
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           persist-credentials: false
           ref: main
           fetch-depth: 0
 
       - name: Checkout shared release config
-        uses: actions/checkout@v7
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           persist-credentials: false
           repository: ${{ inputs.config-repo }}
           ref: ${{ inputs.config-ref || github.job_workflow_sha }}
           path: .shared-config
 
-      - uses: r-lib/actions/setup-r@v2
+      - uses: r-lib/actions/setup-r@f9a764fea8d5c63df6ef9a5c7795bf7deb5d7e05 # v2.14.0
 
-      - uses: r-lib/actions/setup-r-dependencies@v2
+      - uses: r-lib/actions/setup-r-dependencies@f9a764fea8d5c63df6ef9a5c7795bf7deb5d7e05 # v2.14.0
         with:
           packages: any::desc
 
-      - uses: actions/setup-node@v7
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
         with:
           node-version: "lts/*"
 
       - name: Install semantic-release and plugins
-        run: npm install semantic-release @semantic-release/git @semantic-release/changelog @semantic-release/exec
+        # No lockfile: the caller has no package.json, and this repository ships
+        # none yet (open: pin versions or commit a lockfile with the v1 release
+        # setup). Signatures are checked in the next step.
+        run: npm install semantic-release @semantic-release/git @semantic-release/changelog @semantic-release/exec  # zizmor: ignore[adhoc-packages]
 
       - name: Verify npm registry signatures
         run: npm audit signatures

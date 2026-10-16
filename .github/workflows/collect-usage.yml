@@ -36,7 +36,7 @@ jobs:
     steps:
       # The token stays stored: the job pushes the usage-data branch with it.
       # This repository's own job, no outside code runs here.
-      - uses: actions/checkout@v7  # zizmor: ignore[artipacked]
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7.0.1  # zizmor: ignore[artipacked]
         with:
           fetch-depth: 0
 
@@ -67,18 +67,19 @@ jobs:
           done
           # A file no counted workflow uses any more is removed — only if it
           # was never downloaded, so no count is ever lost.
-          gh api "repos/${{ github.repository }}/releases/tags/$TAG" --jq '.assets[] | "\(.id) \(.name) \(.download_count)"' |
+          gh api "repos/$GITHUB_REPOSITORY/releases/tags/$TAG" --jq '.assets[] | "\(.id) \(.name) \(.download_count)"' |
             while read -r id name count; do
               if ! grep -qx "$name" <<< "$wanted" && [ "$count" = "0" ]; then
-                gh api -X DELETE "repos/${{ github.repository }}/releases/assets/$id"
+                gh api -X DELETE "repos/$GITHUB_REPOSITORY/releases/assets/$id"
                 echo "Removed the unused counter file $name."
               fi
             done
 
       - name: Record today's counts on the usage-data branch
         run: |
+          # shellcheck disable=SC2016  # $ and backticks in single quotes are jq and Markdown, not shell
           # Asset name <workflow>-<outcome>-<channel> → separate columns.
-          gh api "repos/${{ github.repository }}/releases/tags/$TAG" \
+          gh api "repos/$GITHUB_REPOSITORY/releases/tags/$TAG" \
             --jq '.assets[] | (.name | split("-")) as $p | "\($p[:-2] | join("-")),\($p[-2]),\($p[-1]),\(.download_count)"' \
             | sort > "$RUNNER_TEMP/counts.csv"
           git config user.name "github-actions[bot]"
@@ -117,4 +118,4 @@ jobs:
     if: github.event_name == 'schedule'
     permissions:
       actions: write
-    uses: ./.github/workflows/workflow-keepalive.yml
+    uses: ./.github/workflows/workflow-keepalive.yml  # zizmor: ignore[self-repository] (not reusable: always this repository)

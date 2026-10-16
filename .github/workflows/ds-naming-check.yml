@@ -73,14 +73,14 @@ jobs:
       USE_CLAUDE: ${{ inputs.use-claude && secrets.anthropic-federation-rule-id != '' }}
 
     steps:
-      - uses: actions/checkout@v7
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           persist-credentials: false
           ref: ${{ env.BASE_BRANCH }}
           fetch-depth: 0
 
       - name: Checkout shared scripts
-        uses: actions/checkout@v7
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           persist-credentials: false
           repository: FlorianSchw/package-workflows
@@ -89,7 +89,7 @@ jobs:
 
       - name: Checkout server package
         if: inputs.server-repository != '' && inputs.package-side == 'client'
-        uses: actions/checkout@v7
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           persist-credentials: false
           repository: ${{ inputs.server-repository }}
@@ -116,11 +116,11 @@ jobs:
           echo "file=$PREVIOUS" >> "$GITHUB_OUTPUT"
           echo "server_sha=$(git -C .ds-naming-server rev-parse HEAD 2>/dev/null || true)" >> "$GITHUB_OUTPUT"
 
-      - uses: r-lib/actions/setup-r@v2
+      - uses: r-lib/actions/setup-r@f9a764fea8d5c63df6ef9a5c7795bf7deb5d7e05 # v2.14.0
         with:
           use-public-rspm: true
 
-      - uses: r-lib/actions/setup-r-dependencies@v2
+      - uses: r-lib/actions/setup-r-dependencies@f9a764fea8d5c63df6ef9a5c7795bf7deb5d7e05 # v2.14.0
         with:
           packages: any::yaml, any::jsonlite, any::httr2, any::purrr, any::config
 
