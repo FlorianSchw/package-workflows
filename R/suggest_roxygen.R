@@ -22,6 +22,7 @@ library(purrr)
 
 functions_dir <- if (dir.exists("R/functions")) "R/functions" else ".shared-workflows/R/functions"
 walk(list.files(file.path(functions_dir, c("shared", "roxygen")), pattern = "\\.R$", full.names = TRUE), source)
+use_recorded_answers()  # self-test mode only (input self-test-fixture)
 
 # The run's rules (config/suggestion-policy.yml; the inputs override them).
 policy <- suggestion_policy()

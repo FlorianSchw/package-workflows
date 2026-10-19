@@ -91,3 +91,15 @@ test_that("suggest_authors.R credits an R-code author as aut and a tests-only on
   expect_length(authors, 3)
   expect_match(paste(readLines(file.path(dir, "suggestion_report.md")), collapse = "\n"), "Beatrice van Muster", fixed = TRUE)
 })
+
+test_that("self-test mode: the script itself serves the recorded answers (separate Rscript, as in the workflow)", {
+  dir <- local_fixture("r-package")
+  writeLines(c("R/add1.R", "R/clamp.R"), file.path(dir, "files_to_check.txt"))
+  env <- c(bot_env("roxygen-review"), ANTHROPIC_API_KEY = "",
+           CLAUDE_RECORDED_ANSWERS = file.path(repo_root, "tests", "fixtures", "claude-answers", "r-package.json"))
+  run <- run_entry_script("suggest_roxygen.R", dir, env)
+  expect_equal(run$status, 0L, info = paste(run$output, collapse = "\n"))
+  expect_true(any(grepl("Self-test: Claude answers from", run$output, fixed = TRUE)))
+  expect_equal(readLines(file.path(dir, "updated_files.txt")), "R/add1.R")
+  expect_match(paste(readLines(file.path(dir, "suggestion_report.md")), collapse = "\n"), "returns hi everywhere when lo > hi", fixed = TRUE)
+})

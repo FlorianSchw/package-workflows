@@ -33,6 +33,7 @@ library(purrr)
 
 functions_dir <- if (dir.exists("R/functions")) "R/functions" else ".shared-workflows/R/functions"
 walk(list.files(file.path(functions_dir, c("shared", "tests")), pattern = "\\.R$", full.names = TRUE), source)
+use_recorded_answers()  # self-test mode only (input self-test-fixture)
 
 # The run's rules (config/suggestion-policy.yml; the inputs override them):
 # accepted reasons, max new tests, which possible bugs in the code are
