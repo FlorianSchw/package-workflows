@@ -10,44 +10,42 @@ away — **nothing here is wired in or applied.** Plan:
 | `ruleset-dev.json` | governance repo (ruleset on `dev`) | user |
 | `ruleset-release-tags.json` | governance repo (`v*` tags) | user |
 | `self-pr-checks.yml` | `.github/workflows/pr-checks.yml` | at the branch-model switch |
-| `self-release.yml` + `self.releaserc.json` | `.github/workflows/release.yml` + release config | at v1 |
+| `self-release.yml` + `self.releaserc.json` | `.github/workflows/release.yml` + `.github/release/releaserc.json` | at v1 |
 | `governance.yml` | governance repo (structure only) | user |
 | `suggestion-policy.yml` | `config/suggestion-policy.yml` | with C and D |
 
 ## Rulesets
 
 GitHub's ruleset export format, importable in the repository settings
-(Rules → Rulesets → Import) or through the API.
+(Rules → Rulesets → Import) or through the API. Decided 2026-10-19.
 
-- **main:** no deletion, no force push, linear history, signed commits
-  (the user wants signing), PR required with 0 approvals (one
-  maintainer; the PR itself is the gate), merge commits only (keeps the
-  dev commits for semantic-release). Required checks: the three CI jobs,
-  the head-branch check (only `dev` may merge) and the smoke test.
-- **dev:** the same without linear history and without the head-branch
-  and smoke checks; squash allowed; plus the commit-message check.
-  `do_not_enforce_on_create` so the branch can be created.
+- **main:** no deletion, no force push, PR required with 0 approvals
+  (one maintainer; the PR itself is the gate), merge commits only
+  (keeps the dev commits for semantic-release; hence no "linear
+  history"). Required checks: the three CI jobs and the head-branch check
+  (only `dev` may merge). The release App may bypass, for its
+  CHANGELOG commit (`actor_id` 0 is a placeholder for the App's ID).
+- **dev:** the same without the head-branch check; squash allowed; plus
+  the commit-message check. `do_not_enforce_on_create` so the branch can
+  be created.
 - **release tags:** only the release App may create, move or delete
-  `v*` tags. `actor_id` 0 is a placeholder for the App's ID.
+  `v*` tags.
 
-Open for the user:
-- signed commits on `main` also need the merge commit signed — GitHub
-  signs merges made in its UI; a merge by an App or a local merge needs
-  a signing key there;
-- whether the smoke test is required from the start (it needs its
-  federation rule first);
-- check names are those of `ci.yml` and of the reusable workflows
-  called from `self-pr-checks.yml` (`<job id> / <job>`); they change if
-  those jobs are renamed.
+Decided: **no signing rule yet** (add once the signing key is set up);
+the **smoke test** becomes a required check on `main` once its
+federation rule exists and it has run green once. Check names are those
+of `ci.yml` and of the reusable workflows called from
+`self-pr-checks.yml` (`<job id> / <job>`); they change if those jobs are
+renamed.
 
 ## Release of this repository
 
 semantic-release on `main` with `v`-prefixed tags (`v1.0.0`), the GitHub
-release published directly (not a draft — nothing to look over for a
-workflow repository), and the major tag `v1` moved by `successCmd`.
-No commit, no CHANGELOG file (the release notes are on GitHub).
-`package-release.yml` stays the R-package release; see the comment in
-`self-release.yml` for the config file clash at the repository root.
+release published directly, the major tag `v1` moved by `successCmd`,
+and a **CHANGELOG.md** committed to `main` by the release App
+(user's decision). The R-package default config stays the root
+`.releaserc.json`; this repository's own config goes to
+`.github/release/releaserc.json`, passed with `--extends`.
 
 Before the first real release: delete the old unused `v1` tag
 (`8d11341`, CLAUDE.md "Versioning").

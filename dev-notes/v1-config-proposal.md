@@ -1,5 +1,13 @@
 # Config files and the policy file for v1 (C, D) — proposal, 2026-10-16
 
+**Decided 2026-10-19 (user):** C1 all YAML, all merged; C2 own reader
+for `claude.yml` (no `config` package, no `R_CONFIG_ACTIVE`); C3 **clean
+break** — no project has overrides (checked the local clones of
+dsSupportClient, dsSurvivalClient, dsAnalysis, mepr), so old JSON
+overrides are simply no longer read, no fallback (point 4 below is
+dropped); D the policy file as drafted, routing included. Not built
+yet — together with B.
+
 **Proposal only, nothing changed.** Plan: [v1-planning.md](v1-planning.md)
 §6 C and D. Decided earlier (CLAUDE.md, policy file item): one policy
 file for roxygen, tests and authors, merged key by key like the
