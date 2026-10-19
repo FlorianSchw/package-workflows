@@ -12,7 +12,7 @@
 # GitHub handle not matching an existing "Real Name" entry. Falls back to
 # the git author name when a commit isn't linked to any GitHub account, or
 # when that account's profile name is blank. Accounts and names listed in
-# config/bot-authors.json are skipped.
+# config/bot-authors.yml are skipped.
 
 library(httr2)
 library(jsonlite)
@@ -25,7 +25,7 @@ gh_token  <- Sys.getenv("GH_TOKEN")
 repo      <- Sys.getenv("GITHUB_REPOSITORY")
 pr_number <- Sys.getenv("PR_NUMBER")
 
-bot_names <- unlist(read_json_config("config/bot-authors.json", required = TRUE)$bot_names)
+bot_names <- unlist(read_config_yaml("config/bot-authors.yml")$bot_names)
 
 # The commits new since the last run (determine-changes.sh: the whole PR
 # when it is opened, then each push's own commits; merges, the bot's own

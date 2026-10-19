@@ -1,5 +1,5 @@
 # Reassembles a role-guidance config entry (intro/documentation/closing,
-# each an array of lines in datashield-role-guidance.json; documentation
+# each an array of lines in datashield-role-guidance.yml; documentation
 # has param/return/details and optionally examples) into one prose
 # paragraph.
 build_role_guidance_text <- function(cfg) {

@@ -19,15 +19,12 @@
 library(httr2)
 library(jsonlite)
 library(purrr)
-# config package is used namespaced (config::get()) only — its own docs warn
-# against library(config), since it masks base::get()/base::merge().
 
 functions_dir <- if (dir.exists("R/functions")) "R/functions" else ".shared-workflows/R/functions"
 walk(list.files(file.path(functions_dir, c("shared", "roxygen")), pattern = "\\.R$", full.names = TRUE), source)
 
-# R_CONFIG_ACTIVE picks the active profile in config/claude.yml ("roxygen-review")
-# — set as an env var on the calling workflow step.
-roxygen_review_settings <- config::get(file = resolve_shared_path("config/claude.yml"))
+# The run's settings: the "roxygen-review" profile of config/claude.yml.
+roxygen_review_settings <- claude_settings("roxygen-review")
 accept_reasons <- accepted_reasons(Sys.getenv("ACCEPT_REASONS"), roxygen_review_settings$accept_reasons, "roxygen")
 code_issue_confidence <- code_issue_confidence_levels(Sys.getenv("CODE_ISSUE_CONFIDENCE"), roxygen_review_settings$code_issue_confidence)
 
@@ -45,7 +42,7 @@ builds_on_open_pr <- nzchar(sub_branch) && identical(Sys.getenv("OPEN_SUGGESTION
 
 check_datashield_type(datashield, ds_type)
 
-style           <- read_json_config("config/roxygen-style.json", required = TRUE)
+style           <- read_config_yaml("config/roxygen-style.yml")
 # The Claude client: profile settings, prompt template, access token.
 review_claude <- claude_client("roxygen-review", "prompts/roxygen-review-prompt.md")
 package_name    <- read_package_name()
@@ -59,7 +56,7 @@ role_text_local <- ""
 if (isTRUE(datashield)) {
   demo_snippet <- NULL
   if (ds_type %in% c("client", "utility")) {
-    example_env <- read_json_config("config/datashield-example-env.json")
+    example_env <- read_config_yaml("config/datashield-example-env.yml", required = FALSE)
     candidates <- if (identical(ds_type, "utility")) c(package_name, read_package_dependencies()) else package_name
     group <- find_study_group(example_env, candidates)
     if (is.null(group)) {
@@ -68,7 +65,7 @@ if (isTRUE(datashield)) {
       demo_snippet <- build_demo_login_snippet(package_name, group, example_env$server)
     }
   }
-  role_config <- read_json_config("config/datashield-role-guidance.json")
+  role_config <- read_config_yaml("config/datashield-role-guidance.yml", required = FALSE)
   role_text <- role_guidance(datashield, ds_type, role_config, demo_snippet)
   role_text_local <- role_guidance(datashield, ds_type, role_config, NULL)
 }

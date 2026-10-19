@@ -2,7 +2,7 @@
 # repositories: new tests go into test-<name>.R, `name` being the R file's
 # name without .R (test_file_name()). Categorised ones
 # (detect_test_scheme()): Claude picks a category per new test, explained
-# with the meanings from config/test-categories.json (`meanings`, a named
+# with the meanings from config/test-categories.yml (`meanings`, a named
 # list); categories without a meaning are named with a pointer to their
 # existing files. Marks which categories this R file already has a test
 # file for (`existing_files`, from find_test_files()).

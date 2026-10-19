@@ -69,7 +69,7 @@ jobs:
           FILE_PATTERN: ''
         run: |
           SUB_BRANCH="bot-suggest/authors/${BRANCH//\//-}"
-          BOT_CONFIG="config/bot-authors.json"; [ -f "$BOT_CONFIG" ] || BOT_CONFIG=".shared-workflows/$BOT_CONFIG"
+          BOT_CONFIG=".shared-workflows/config/bot-authors.yml"  # a project's own copy is merged over it
           SUB_BRANCH="$SUB_BRANCH" BOT_CONFIG="$BOT_CONFIG" bash .shared-workflows/.github/actions/resolve-suggestion-scope/determine-changes.sh
 
       - uses: r-lib/actions/setup-r@f9a764fea8d5c63df6ef9a5c7795bf7deb5d7e05 # v2.14.0
@@ -80,7 +80,7 @@ jobs:
       - uses: r-lib/actions/setup-r-dependencies@f9a764fea8d5c63df6ef9a5c7795bf7deb5d7e05 # v2.14.0
         if: steps.commits.outputs.count > 0
         with:
-          packages: any::desc, any::jsonlite, any::httr2, any::purrr
+          packages: any::desc, any::jsonlite, any::httr2, any::purrr, any::yaml
 
       - name: Find and add missing contributors
         if: steps.commits.outputs.count > 0

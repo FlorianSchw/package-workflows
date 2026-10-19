@@ -30,17 +30,14 @@
 library(httr2)
 library(jsonlite)
 library(purrr)
-# config package is used namespaced (config::get()) only — see
-# R/suggest_roxygen.R for why library(config) is avoided.
 
 functions_dir <- if (dir.exists("R/functions")) "R/functions" else ".shared-workflows/R/functions"
 walk(list.files(file.path(functions_dir, c("shared", "tests")), pattern = "\\.R$", full.names = TRUE), source)
 
-# R_CONFIG_ACTIVE (an env var set by the calling workflow step) selects
-# "test-review" for the run's settings (accepted reasons, max new tests);
-# the Claude clients name their profiles explicitly (claude_client()).
-config_path <- resolve_shared_path("config/claude.yml")
-test_review_settings <- config::get(file = config_path)
+# The run's settings (accepted reasons, max new tests): the "test-review"
+# profile of config/claude.yml; the Claude clients name their profiles
+# too (claude_client()).
+test_review_settings <- claude_settings("test-review")
 accept_reasons <- accepted_reasons(Sys.getenv("ACCEPT_REASONS"), test_review_settings$accept_reasons, "tests")
 max_new_tests <- if (is.null(test_review_settings$max_new_tests)) 10L else as.integer(test_review_settings$max_new_tests)
 # Possible bugs in the code to report, by Claude's confidence (input
@@ -73,14 +70,14 @@ check_dslite_setup_mode(dslite_setup_mode)
 claude_access <- claude_auth()
 review_claude <- claude_client("test-review", "prompts/test-review-prompt.md", claude_access)
 classification_claude <- claude_client("test-failure-classification", "prompts/test-failure-classification-prompt.md", claude_access)
-test_role_guidance                    <- read_json_config("config/test-role-guidance.json", required = TRUE)
-category_meanings                     <- read_json_config("config/test-categories.json")$categories
+test_role_guidance                    <- read_config_yaml("config/test-role-guidance.yml")
+category_meanings                     <- read_config_yaml("config/test-categories.yml", required = FALSE)$categories
 package_name                          <- read_package_name()
 
 # DSLite's built-in canned datasets need no server/credentials/per-package
-# matching — unlike datashield-example-env.json, which describes the real
+# matching — unlike datashield-example-env.yml, which describes the real
 # Opal demo server for roxygen's usage examples, a different scenario.
-dslite_datasets <- if (may_use_dslite) read_json_config("config/dslite-canned-datasets.json")$datasets else NULL
+dslite_datasets <- if (may_use_dslite) read_config_yaml("config/dslite-canned-datasets.yml", required = FALSE)$datasets else NULL
 
 
 files <- readLines("files_to_check.txt")

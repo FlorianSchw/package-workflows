@@ -122,7 +122,7 @@ jobs:
 
       - uses: r-lib/actions/setup-r-dependencies@f9a764fea8d5c63df6ef9a5c7795bf7deb5d7e05 # v2.14.0
         with:
-          packages: any::yaml, any::jsonlite, any::httr2, any::purrr, any::config
+          packages: any::yaml, any::jsonlite, any::httr2, any::purrr
 
       - name: Get Anthropic access token
         id: anthropic_auth
@@ -135,7 +135,6 @@ jobs:
 
       - name: Check argument names
         env:
-          R_CONFIG_ACTIVE: ds-naming-classification
           ANTHROPIC_API_KEY: ${{ steps.anthropic_auth.outputs.access-token }}
           # For renewing the token in a long run (refresh_anthropic_token()).
           ANTHROPIC_ORG_ID: ${{ secrets.anthropic-organization-id }}

@@ -1,5 +1,5 @@
 # What a workflow of the repository produces, per config/workflow-outcomes.yml
-# (`config`, read with yaml; see resolve_shared_path() for overrides): the
+# (`config`, read with read_config_yaml(): a project's copy merges over it): the
 # outcomes listed for the workflow file itself, and per job those of the
 # reusable workflow it calls. An entry is a short name from
 # `config$outcomes` or its own wording; "{name}" is filled in with the

@@ -6,7 +6,7 @@
 # clients). Used by call_claude_tool() and the ask_claude_*() functions.
 claude_client <- function(profile, prompt_file = NULL, auth = claude_auth()) {
   list(
-    config = config::get(config = profile, file = resolve_shared_path("config/claude.yml"))$anthropic,
+    config = claude_settings(profile)$anthropic,
     prompt = if (!is.null(prompt_file)) read_text_file(prompt_file),
     auth = auth
   )

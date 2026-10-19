@@ -51,7 +51,7 @@ the live caller used to validate changes before wider rollout.
     Reasons go into the sub-PR body (`suggestion_report.md`). Needs a
     caller trigger on all PRs (no `paths` filter), or tests/docs-only
     contributors are never seen. Bots are skipped per
-    `config/bot-authors.json` (overridable, see `resolve_shared_path()`
+    `config/bot-authors.yml` (overridable, merged, see `read_config_yaml()`
     below). New people: name split by `split_person_name()` (last word +
     particles like `van`/`de` = family; one-word names flagged). Matching
     (`find_author()`): commit e-mail (noreply ignored; e-mails are never
@@ -101,8 +101,8 @@ the live caller used to validate changes before wider rollout.
     (paths, markers, limits, variable types, …), wording
     `config/analysis-texts.yml`, prompts `prompts/analysis-*.md`. A
     project's own copy of either config is merged over the defaults key
-    by key (`read_config_yaml()`), unlike the other workflows' overrides,
-    which replace the whole file. Adjustments go there rather than into R.
+    by key (`read_config_yaml()`), like every config file since v1 (before,
+    the others replaced the whole file). Adjustments go there rather than into R.
     Design, marker formats and the dsAnalysis checklist are in
     [dev-notes/analysis-suggest.md](dev-notes/analysis-suggest.md).
   - `ds-naming-check.yml`, `ds-naming-apply.yml` — DataSHIELD argument
@@ -225,8 +225,9 @@ Details per workflow: [dev-notes/roxygen-suggest.md](dev-notes/roxygen-suggest.m
   packages using the `config` package often have one, which would override
   it), one `default` profile plus one per
   task (`roxygen-review`, `test-review`, `test-failure-classification`),
-  read with `config::get()`. The workflow sets `R_CONFIG_ACTIVE` as an env
-  var on the script step. Every Claude call goes through
+  read with `claude_settings(profile)` (default merged with the profile;
+  no `config` package, no `R_CONFIG_ACTIVE` — since 2026-10-19 on
+  `v1/foundation`). Every Claude call goes through
   `call_claude_tool()` (forced tool call; it sets the tool name from config).
 - **Claude returns fields, R assembles the output.** Never trust prompt
   wording where a structural constraint (schema field, `maxItems`, enum)
@@ -240,9 +241,14 @@ Details per workflow: [dev-notes/roxygen-suggest.md](dev-notes/roxygen-suggest.m
   [dev-notes/suggestion-thresholds.md](dev-notes/suggestion-thresholds.md)
   — update that note when changing it.
 - **Where shared files come from:** callers get this repo checked out into
-  `.shared-workflows/`. `resolve_shared_path("config/x.json")` uses the
-  caller's own file at that same relative path if it exists (an override),
-  else the `.shared-workflows/` copy.
+  `.shared-workflows/`. Config files are YAML and read with
+  `read_config_yaml("config/x.yml")`: the shared copy with the caller's own
+  file at the same path merged over it key by key (lists replaced) — on
+  `v1/foundation` since 2026-10-19 for every config (before: only the
+  analysis and naming configs; the others replaced the whole file and were
+  JSON). Prompt templates are still replaced as a whole
+  (`resolve_shared_path()`). `bot-authors.yml` is also read by
+  `determine-changes.sh`, merged the same way with `yq`.
 - **Committing:** scripts write `updated_files.txt`; `commit-updated-files`
   commits exactly those files. `changed` mode (PR or push; what's new
   since the last run, `determine-changes.sh`):
@@ -387,8 +393,12 @@ and `CONTRIBUTING.md`); no PRs until a branch model and rules exist.
   waiting for the user: prompt audit (`dev-notes/prompt-audit.md`, hunks
   A–F), input renames B (`dev-notes/v1-input-review.md`), config/policy
   C+D (`dev-notes/v1-config-proposal.md`), rulesets, own release,
-  governance YAML (`dev-notes/v1-drafts/`). Docs pending: none of this
-  is user-facing until v1.
+  governance YAML (`dev-notes/v1-drafts/`). Decisions of 2026-10-19 on
+  all of these: in the notes; being built (C done).
+  **Docs pending at v1** (user-facing pages, batched): config files are
+  YAML and merged over the defaults (override table and wording in
+  `suggestions.qmd#adjusting-the-guidance`, file names on the authors,
+  roxygen and test pages); `config` package and `R_CONFIG_ACTIVE` gone.
 - Federation rules for the other two accounts, before rolling out beyond
   dsSupportClient.
 - **Review of the Claude-assisted workflows** (2026-10-14): token levers
@@ -589,7 +599,7 @@ and `CONTRIBUTING.md`); no PRs until a branch model and rules exist.
 
   Added while building: new tests go before a file's clean-up
   ("shutdown" test, disconnect), and a new file can get top-level setup
-  and teardown code. Category meanings: `config/test-categories.json`.
+  and teardown code. Category meanings: `config/test-categories.yml`.
   Decisions and implementation in
   [dev-notes/test-suggest.md](dev-notes/test-suggest.md).
   ~~**Docs pending**~~ Done 2026-10-01: `test-suggest.qmd#test-files`,

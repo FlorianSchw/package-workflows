@@ -38,7 +38,7 @@ just_changed <- vapply(seq_along(state$entries), function(i) {
   !identical(suggestion_choice(before$entries[[i]]), suggestion_choice(state$entries[[i]]))
 }, logical(1))
 open_ids <- vapply(state$entries[just_changed], function(e) as.integer(e$id), integer(1))
-tag_order <- if (identical(kind, "docs")) read_json_config("config/roxygen-style.json", required = TRUE)$tag_order
+tag_order <- if (identical(kind, "docs")) read_config_yaml("config/roxygen-style.yml")$tag_order
 
 changed_files <- character(0)
 for (i in seq_along(state$entries)) {

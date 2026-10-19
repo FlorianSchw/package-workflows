@@ -114,7 +114,7 @@ test_that("review_test_file() keeps passing new tests, classifies failing ones o
     review_claude = NULL, classification_claude = NULL, bot_tests = list(materialized = character(0), user_edited = character(0)),
     reviewed_sha = "abc1234", base_rev = "", datashield = FALSE, ds_type = "", may_use_dslite = FALSE,
     dslite_setup_mode = "auto", dslite_datasets = NULL,
-    test_role_guidance = jsonlite::fromJSON(file.path(repo_root, "config", "test-role-guidance.json"), simplifyVector = FALSE),
+    test_role_guidance = yaml::read_yaml(file.path(repo_root, "config", "test-role-guidance.yml")),
     scheme = detect_test_scheme("add1"), category_meanings = NULL, test_data = "", cache_prompt = FALSE,
     max_new_tests = 10L, accept_reasons = suggestion_reasons("tests"), code_issue_confidence = c("high", "medium"),
     package_name = "minipkg", is_sweep = TRUE

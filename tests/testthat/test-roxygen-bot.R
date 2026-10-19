@@ -9,7 +9,7 @@ local_roxygen_package <- function(env = parent.frame()) {
   writeLines("x <- 1", file.path(dir, "R", "data.R"))  # no function: skipped
   withr::local_dir(dir, .local_envir = env)
   # build_roxygen_block() reads the tag order from the global `style`.
-  assign("style", jsonlite::fromJSON(file.path(repo_root, "config", "roxygen-style.json"), simplifyVector = FALSE), envir = globalenv())
+  assign("style", yaml::read_yaml(file.path(repo_root, "config", "roxygen-style.yml")), envir = globalenv())
   withr::defer(rm("style", envir = globalenv()), envir = env)
   dir
 }

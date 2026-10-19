@@ -120,7 +120,7 @@ jobs:
           else
             SUB_BRANCH="bot-suggest/docs/${BRANCH//\//-}"
             echo "sub_branch=$SUB_BRANCH" >> "$GITHUB_OUTPUT"
-            BOT_CONFIG="config/bot-authors.json"; [ -f "$BOT_CONFIG" ] || BOT_CONFIG=".shared-workflows/$BOT_CONFIG"
+            BOT_CONFIG=".shared-workflows/config/bot-authors.yml"  # a project's own copy is merged over it
             SUB_BRANCH="$SUB_BRANCH" BOT_CONFIG="$BOT_CONFIG" bash .shared-workflows/.github/actions/resolve-suggestion-scope/determine-changes.sh
           fi
 
@@ -132,7 +132,7 @@ jobs:
       - uses: r-lib/actions/setup-r-dependencies@f9a764fea8d5c63df6ef9a5c7795bf7deb5d7e05 # v2.14.0
         if: steps.files.outputs.count > 0
         with:
-          extra-packages: any::roxygen2, any::httr2, any::jsonlite, any::purrr, any::config
+          extra-packages: any::roxygen2, any::httr2, any::jsonlite, any::purrr, any::yaml
           needs: check
 
       - name: Get Anthropic access token
@@ -147,7 +147,6 @@ jobs:
       - name: Run roxygen suggestion script
         if: steps.files.outputs.count > 0
         env:
-          R_CONFIG_ACTIVE: roxygen-review
           ANTHROPIC_API_KEY: ${{ steps.anthropic_auth.outputs.access-token }}
           # For renewing the token in a long run (refresh_anthropic_token()).
           ANTHROPIC_ORG_ID: ${{ secrets.anthropic-organization-id }}

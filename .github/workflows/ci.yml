@@ -30,7 +30,7 @@ jobs:
         with:
           packages: >-
             any::testthat, any::withr, any::httr2, any::jsonlite, any::yaml,
-            any::purrr, any::desc, any::callr, any::config
+            any::purrr, any::desc, any::callr
       - name: Run the tests
         run: Rscript tests/testthat.R
 

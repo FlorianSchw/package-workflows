@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # Tests for the scope and change-detection scripts of
 # .github/actions/resolve-suggestion-scope/, in throwaway git repositories,
-# with a stand-in for `gh` (and for `jq` where it isn't installed).
+# with a stand-in for `gh` (and for `jq` and `yq` where they aren't installed).
 #   bash tests/shell/test-scope.sh
 # Prints one line per test and exits non-zero if any failed.
 set -uo pipefail
@@ -13,9 +13,10 @@ trap 'rm -rf "$WORK"' EXIT
 BIN="$WORK/bin"
 mkdir -p "$BIN"
 command -v jq > /dev/null || printf '#!/usr/bin/env bash\n' > "$BIN/jq"   # event fields: none
+command -v yq > /dev/null || printf '#!/usr/bin/env bash\n' > "$BIN/yq"   # bot-authors lists: none
 chmod +x "$BIN"/* 2> /dev/null || true
 echo '{}' > "$WORK/event.json"
-echo '{}' > "$WORK/bot.json"
+echo '{}' > "$WORK/bot.yml"
 
 passed=0
 failed=0
@@ -69,7 +70,7 @@ changes() {  # changes <event> <workflow ref>
   : > "$WORK/out.txt"
   PATH="$BIN:$PATH" GITHUB_EVENT_NAME="$1" GITHUB_EVENT_PATH="$WORK/event.json" GITHUB_OUTPUT="$WORK/out.txt" \
     GITHUB_REPOSITORY=me/pkg GITHUB_WORKFLOW_REF="me/pkg/.github/workflows/test-suggest.yml@$2" GITHUB_RUN_ID=300 \
-    BRANCH=dev SUB_BRANCH=bot-suggest/tests/dev FILE_PATTERN='R/*.R' BOT_CONFIG="$WORK/bot.json" \
+    BRANCH=dev SUB_BRANCH=bot-suggest/tests/dev FILE_PATTERN='R/*.R' BOT_CONFIG="$WORK/bot.yml" \
     bash "$SCOPE/determine-changes.sh" > /dev/null 2>&1
 }
 changes workflow_dispatch refs/heads/dev

@@ -19,13 +19,13 @@
 # commits a pull request run of this workflow already reviewed (from the
 # run history, so this also holds once the PR's branch is deleted). Merge
 # commits and the bot's own commits (author or subject, from
-# bot-authors.json) are left out. If the history was rewritten (the
+# bot-authors.yml) are left out. If the history was rewritten (the
 # starting point is no ancestor of HEAD), rebuild=true: the bot branch
 # can't be built on.
 #
 # Env: BRANCH, SUB_BRANCH (the bot branch for BRANCH), FILE_PATTERN
-# (pathspec like 'R/*.R'; empty: commits only), BOT_CONFIG (path to
-# bot-authors.json), GH_TOKEN, plus GITHUB_EVENT_NAME, GITHUB_EVENT_PATH.
+# (pathspec like 'R/*.R'; empty: commits only), BOT_CONFIG (path to the shared
+# bot-authors.yml), GH_TOKEN, plus GITHUB_EVENT_NAME, GITHUB_EVENT_PATH.
 # Writes commits.txt (one sha per line), files_to_check.txt (FILE_PATTERN
 # matches still present at HEAD), and count, base_rev, rebuild,
 # reviewed_sha to GITHUB_OUTPUT.
@@ -116,8 +116,14 @@ fi
 if [ -n "$start" ]; then range=("$start..HEAD"); else range=("HEAD"); fi
 git rev-list --no-merges "${range[@]}" ${others[@]:+--not "${others[@]}"} > all_commits.txt
 
-bot_names="$(jq -r '.bot_names[]? // empty' "$BOT_CONFIG")"
-bot_subjects="$(jq -r '.bot_commit_subjects[]? // empty' "$BOT_CONFIG")"
+# The bots' own commits (bot-authors.yml: the shared file with the
+# project's own config/bot-authors.yml merged over it, as
+# read_config_yaml() does in R; yq is on GitHub's Ubuntu runners).
+bot_files=("$BOT_CONFIG")
+if [ -f config/bot-authors.yml ] && [ "$BOT_CONFIG" != config/bot-authors.yml ]; then bot_files+=(config/bot-authors.yml); fi
+bot_list() { yq eval-all -r ". as \$f ireduce ({}; . * \$f) | (.$1 // [])[]" "${bot_files[@]}"; }
+bot_names="$(bot_list bot_names)"
+bot_subjects="$(bot_list bot_commit_subjects)"
 : > commits.txt
 while IFS= read -r c; do
   [ -z "$c" ] && continue

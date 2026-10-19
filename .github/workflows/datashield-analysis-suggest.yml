@@ -82,7 +82,7 @@ jobs:
       - uses: r-lib/actions/setup-r-dependencies@f9a764fea8d5c63df6ef9a5c7795bf7deb5d7e05 # v2.14.0
         with:
           packages: >-
-            any::httr2, any::jsonlite, any::purrr, any::config, any::yaml,
+            any::httr2, any::jsonlite, any::purrr, any::yaml,
             any::pak, any::callr, any::here, any::stringr, any::DSI, any::DSLite
 
       - name: Get Anthropic access token
@@ -95,7 +95,6 @@ jobs:
 
       - name: Draft and test the analysis scripts
         env:
-          R_CONFIG_ACTIVE: datashield-analysis
           ANTHROPIC_API_KEY: ${{ steps.anthropic_auth.outputs.access-token }}
           # For renewing the token in a long run (refresh_anthropic_token()).
           ANTHROPIC_ORG_ID: ${{ secrets.anthropic-organization-id }}

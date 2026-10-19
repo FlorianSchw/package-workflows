@@ -21,7 +21,7 @@
 # checks every value Claude returns — an unknown file or id is ignored
 # (sort_test_decisions(), merge_test_findings(),
 # handle_failed_new_test()). What may vary is per run only:
-# - `dslite_datasets`: config/dslite-canned-datasets.json$datasets when the
+# - `dslite_datasets`: config/dslite-canned-datasets.yml$datasets when the
 #   run may create a DSLite setup, else NULL. The enum covers all of them;
 #   the prompt offers them only for a function that gets a fresh setup, and
 #   the entry script uses the choice only then;

@@ -2,7 +2,7 @@
 # (empty: removed), all other lines unchanged. The field is found as
 # original_roxygen_field() finds it: its tag's lines (parse_r_file()'s
 # tag_chunks), or an untagged title/description paragraph. A field the
-# block doesn't have yet is inserted by `tag_order` (roxygen-style.json):
+# block doesn't have yet is inserted by `tag_order` (roxygen-style.yml):
 # a parameter after the last @param, anything else before the first tag
 # that comes later in the order, else at the end.
 replace_roxygen_field <- function(parsed, key, new_lines, tag_order) {

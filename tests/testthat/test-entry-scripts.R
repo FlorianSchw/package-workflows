@@ -10,7 +10,7 @@ recorded_answers <- function(name) {
 }
 
 bot_env <- function(profile) c(
-  R_CONFIG_ACTIVE = profile, ANTHROPIC_API_KEY = "test-key", GH_TOKEN = "", GITHUB_REPOSITORY = "me/fixturepkg",
+  ANTHROPIC_API_KEY = "test-key", GH_TOKEN = "", GITHUB_REPOSITORY = "me/fixturepkg",
   PR_NUMBER = "", SUB_BRANCH = "", REVIEWED_SHA = "abc1234def", BASE_REV = "", DATASHIELD = "false", DATASHIELD_TYPE = ""
 )
 

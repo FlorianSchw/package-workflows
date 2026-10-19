@@ -31,8 +31,8 @@ flowchart TD
 
 | Function | What it does |
 |---|---|
-| [`resolve_shared_path()`](https://github.com/FlorianSchw/package-workflows/blob/main/R/functions/shared/resolve_shared_path.R) | Finds a settings or prompt file: your repository's own copy if it has one ([override](suggestions.qmd#adjusting-the-guidance)), otherwise the shared one. |
-| [`read_json_config()`](https://github.com/FlorianSchw/package-workflows/blob/main/R/functions/shared/read_json_config.R) | Reads a JSON settings file, e.g. the style guide `config/roxygen-style.json`. |
+| [`resolve_shared_path()`](https://github.com/FlorianSchw/package-workflows/blob/main/R/functions/shared/resolve_shared_path.R) | Finds a prompt template: your repository's own copy if it has one ([override](suggestions.qmd#adjusting-the-guidance)), otherwise the shared one. |
+| [`read_config_yaml()`](https://github.com/FlorianSchw/package-workflows/blob/main/R/functions/shared/read_config_yaml.R) | Reads a settings file, e.g. the style guide `config/roxygen-style.yml`: the shared one, with your repository's own copy merged over it key by key, so yours only needs what you change. |
 | [`read_text_file()`](https://github.com/FlorianSchw/package-workflows/blob/main/R/functions/shared/read_text_file.R) | Reads the prompt template `prompts/roxygen-review-prompt.md`. |
 | [`read_package_name()`](https://github.com/FlorianSchw/package-workflows/blob/main/R/functions/shared/read_package_name.R) | Reads the package name from `DESCRIPTION`. |
 | [`check_datashield_type()`](https://github.com/FlorianSchw/package-workflows/blob/main/R/functions/shared/check_datashield_type.R) | DataSHIELD: stops the run if `datashield-type` isn't `client`, `server` or `utility`. |
