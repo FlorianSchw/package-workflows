@@ -9,7 +9,7 @@
 #   3. the event's "before" (push, PR synchronize);
 #   4. a scheduled or manual run: the last review of this branch, from the
 #      run history (review-history.sh); none yet: nothing to review, this
-#      run becomes the starting point (a full review is scan-mode "all");
+#      run becomes the starting point (a full review is review-scope "all");
 #   5. none (a new branch): commits that exist on no other branch.
 # Files named in "<!-- bot-suggest: retry <file> -->" lines of the open bot
 # PR, or (4.) in that last review's "Suggestion not made" warnings — their
@@ -81,7 +81,7 @@ if [ -z "$start" ] && [ "$event" != "pull_request" ] && [ "$event" != "push" ]; 
     echo "Changes since the last review of $BRANCH (run $history_run, ${start:0:7})."
   else
     start="$head"
-    echo "::notice::No earlier review of $BRANCH found in this workflow's runs: nothing to review now, this run is the starting point. For a full review, run it with scan-mode \"all\"."
+    echo "::notice::No earlier review of $BRANCH found in this workflow's runs: nothing to review now, this run is the starting point. For a full review, run it with review-scope \"all\"."
   fi
 elif [ -z "$start" ]; then
   if [ "$event" = "pull_request" ] && { [ "$action" = "opened" ] || [ "$action" = "reopened" ] || [ -z "$(field '.before')" ]; }; then

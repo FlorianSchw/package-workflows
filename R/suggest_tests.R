@@ -55,9 +55,8 @@ is_sweep   <- !nzchar(pr_number)  # no PR to comment on (a sweep, or a push with
 reviewed_sha <- substr(Sys.getenv("REVIEWED_SHA"), 1, 7)
 sub_branch   <- Sys.getenv("SUB_BRANCH")
 builds_on_open_pr <- nzchar(sub_branch) && identical(Sys.getenv("OPEN_SUGGESTION_PR", "add"), "add") && !identical(Sys.getenv("REBUILD"), "true")
-datashield <- as.logical(Sys.getenv("DATASHIELD", "false"))
-ds_type    <- Sys.getenv("DATASHIELD_TYPE", "")
-check_datashield_type(datashield, ds_type)
+ds_type    <- check_datashield_type(Sys.getenv("DATASHIELD_TYPE", "none"))
+datashield <- !identical(ds_type, "none")
 # Client packages always test against DSLite; utility packages only for
 # functions that use DataSHIELD connections (decided per function below).
 may_use_dslite <- isTRUE(datashield) && ds_type %in% c("client", "utility")

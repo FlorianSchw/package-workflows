@@ -27,7 +27,8 @@ the live caller used to validate changes before wider rollout.
     `extra-r-packages` (plain names, `any::` added internally).
   - `package-release.yml` — semantic-release. Uses a caller-root
     `.releaserc.json` if present, else this repo's `.releaserc.json`
-    fetched at `config-ref` (default: `main`). Pushes with the
+    from the workflow's own commit (`config-repo` / `config-ref` removed on
+    `v1/foundation`, 2026-10-19). Pushes with the
     `resolve-push-token` App token → `commit-push-pat` → `GITHUB_TOKEN`.
     The shared config drafts the release and turns off the GitHub
     plugin's comments, labels and failure issue, so the App needs no
@@ -279,9 +280,9 @@ Details per workflow: [dev-notes/roxygen-suggest.md](dev-notes/roxygen-suggest.m
   - **Link comment** on the originating PR when the sub-PR is newly
     created and `origin-pr-number` is set.
 
-  `all` mode (sweep): checks out and scans the `sweep-base` (empty: the
+  `all` mode (full review): checks out and scans the `review-branch` (`sweep-base` until v1; empty: the
   chosen branch on manual runs, `dev` on schedules, since a schedule
-  starts on `main`), one commit on `bot-suggest/<kind>-sweep-<base>-YYYY-MM`,
+  starts on `main`), one commit on `bot-suggest/<kind>-all-<base>-YYYY-MM` (`-sweep-` until v1),
   force-pushed, plus a PR against the base; a re-run in the same month
   updates that month's open PR instead of failing or duplicating it. In
   both modes only an
@@ -395,14 +396,17 @@ and `CONTRIBUTING.md`); no PRs until a branch model and rules exist.
   A–F), input renames B (`dev-notes/v1-input-review.md`), config/policy
   C+D (`dev-notes/v1-config-proposal.md`), rulesets, own release,
   governance YAML (`dev-notes/v1-drafts/`). Decisions of 2026-10-19 on
-  all of these: in the notes; being built (C and D done).
+  all of these: in the notes; built: B (except 8), C, D.
   **Docs pending at v1** (user-facing pages, batched): config files are
   YAML and merged over the defaults (override table and wording in
   `suggestions.qmd#adjusting-the-guidance`, file names on the authors,
   roxygen and test pages); `config` package and `R_CONFIG_ACTIVE` gone;
   the policy file `config/suggestion-policy.yml` (suggestions page:
   what gets proposed, the override table, routing; `accept_reasons` no
-  longer in `claude.yml`).
+  longer in `claude.yml`); the input renames (B) on the input tables'
+  prose and in `examples/` (`review-scope`, `review-branch`, one
+  `datashield-type` incl. authors, no `config-repo`/`config-ref`) — the
+  examples call `@main`, so they change when v1 is merged.
 - Federation rules for the other two accounts, before rolling out beyond
   dsSupportClient.
 - **Review of the Claude-assisted workflows** (2026-10-14): token levers

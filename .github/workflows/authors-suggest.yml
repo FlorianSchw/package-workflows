@@ -8,6 +8,11 @@ on:
         required: false
         type: string
         default: 'add'
+      datashield-type:
+        description: '"none" (not a DataSHIELD package), "client", "server" or "utility"; only for the usage counts (DataSHIELD or other use), the authors bot itself works the same'
+        required: false
+        type: string
+        default: 'none'
     secrets:
       app-client-id:
         description: 'GitHub App Client ID (Iv23li...); its token lets bot PRs trigger checks (optional).'
@@ -38,8 +43,8 @@ jobs:
         id: scope
         uses: $/.github/actions/resolve-suggestion-scope
         with:
-          scan-mode: changed
-          allow-sweep: 'false'
+          review-scope: changed
+          allow-scheduled: 'false'
 
       # The calling repository first — actions/checkout empties the folder
       # it checks out into, so the shared scripts can only come after it.

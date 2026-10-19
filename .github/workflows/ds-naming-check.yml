@@ -28,25 +28,20 @@ on:
         required: false
         type: string
         default: '.github/ds-naming/transformations.yml'
-      use-claude:
-        description: 'Let Claude classify the arguments the code cannot place; false: they stay unresolved.'
-        required: false
-        type: boolean
-        default: true
       max-claude-calls:
-        description: 'At most this many functions are sent to Claude per run (one call each); earlier answers are reused.'
+        description: 'At most this many functions are sent to Claude per run (one call each) to classify the arguments the code cannot place; earlier answers are reused. 0: no Claude, those arguments stay unresolved.'
         required: false
         type: number
         default: 40
     secrets:
       anthropic-organization-id:
-        description: 'Anthropic organization ID (only with use-claude).'
+        description: 'Anthropic organization ID (only when max-claude-calls is above 0).'
         required: false
       anthropic-service-account-id:
-        description: 'Anthropic service account ID, svac_... (only with use-claude).'
+        description: 'Anthropic service account ID, svac_... (only when max-claude-calls is above 0).'
         required: false
       anthropic-federation-rule-id:
-        description: 'Federation rule ID for this workflow, fdrl_... (only with use-claude).'
+        description: 'Federation rule ID for this workflow, fdrl_... (only when max-claude-calls is above 0).'
         required: false
       app-client-id:
         description: 'GitHub App Client ID (Iv23li...); its token lets the review PR trigger checks (optional).'
@@ -70,7 +65,7 @@ jobs:
       id-token: write
     env:
       BASE_BRANCH: ${{ inputs.base-branch || github.ref_name }}
-      USE_CLAUDE: ${{ inputs.use-claude && secrets.anthropic-federation-rule-id != '' }}
+      USE_CLAUDE: ${{ inputs.max-claude-calls > 0 && secrets.anthropic-federation-rule-id != '' }}
 
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1

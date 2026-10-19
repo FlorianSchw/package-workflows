@@ -4,7 +4,7 @@
 `review-branch`, one `datashield-type` incl. authors, `config-repo` /
 `config-ref` removed, `base-branch` + `server-base-branch`,
 `max-claude-calls` with 0 = off). **8: decide at the move**, when it's
-clear where dsAnalysis lives. Not built yet — together with C/D.
+clear where dsAnalysis lives. **Built 2026-10-19** on `v1/foundation` (1–7).
 
 v1 is the one round of caller changes (move to
 `nfdi4health/datashield-workflows`, `@v1`), so renames cost least now.

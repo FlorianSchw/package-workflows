@@ -29,8 +29,8 @@ transformation_file <- Sys.getenv("TRANSFORMATION_FILE", ".github/ds-naming/tran
 previous_file <- Sys.getenv("PREVIOUS_FILE", transformation_file)
 server_dir <- Sys.getenv("SERVER_DIR")
 package_side <- Sys.getenv("PACKAGE_SIDE", "client")
-use_claude <- tolower(Sys.getenv("USE_CLAUDE", "true")) == "true" && nzchar(Sys.getenv("ANTHROPIC_API_KEY"))
 max_calls <- as.integer(Sys.getenv("MAX_CLAUDE_CALLS", "40"))
+use_claude <- max_calls > 0 && tolower(Sys.getenv("USE_CLAUDE", "true")) == "true" && nzchar(Sys.getenv("ANTHROPIC_API_KEY"))
 
 # --- 1. Packages and links ------------------------------------------------------
 

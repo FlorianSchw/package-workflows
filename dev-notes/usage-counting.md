@@ -117,7 +117,9 @@ repo (columns, same-day replace, next day).
   token, also from private analyst repos. Only `count-run`'s URL changes
   with the move.
 - **New dimension `datashield` / `other`**, from an explicit input
-  (analysis and naming always DataSHIELD); the user's non-DataSHIELD
+  (analysis and naming always DataSHIELD; roxygen, tests and — since
+  2026-10-19 on `v1/foundation` — authors have `datashield-type`, "none"
+  = other; `count-run` takes it as a new input at the counting switch); the user's non-DataSHIELD
   runs drop out of the KPIs on their own. Test runs in the workflow repo
   itself are not counted.
 - **Fresh counting at v1:** the new file names (with the dimension)

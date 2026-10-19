@@ -3,16 +3,6 @@ name: Release
 on:
   workflow_call:
     inputs:
-      config-repo:
-        description: 'owner/repo holding the fallback .releaserc.json'
-        required: false
-        type: string
-        default: 'FlorianSchw/package-workflows'
-      config-ref:
-        description: 'Ref of config-repo to read .releaserc.json from; empty: the commit of this workflow (the version the caller uses)'
-        required: false
-        type: string
-        default: ''
       dry-run:
         description: 'Only report the next version and release notes; release nothing'
         required: false
@@ -45,12 +35,14 @@ jobs:
           ref: main
           fetch-depth: 0
 
+      # The fallback .releaserc.json (a caller's own wins), from the same
+      # commit as this workflow.
       - name: Checkout shared release config
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           persist-credentials: false
-          repository: ${{ inputs.config-repo }}
-          ref: ${{ inputs.config-ref || github.job_workflow_sha }}
+          repository: FlorianSchw/package-workflows   # this repository (changes at the move)
+          ref: ${{ github.job_workflow_sha }}       # the commit the caller runs
           path: .shared-config
 
       - uses: r-lib/actions/setup-r@f9a764fea8d5c63df6ef9a5c7795bf7deb5d7e05 # v2.14.0

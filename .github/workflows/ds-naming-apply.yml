@@ -13,7 +13,7 @@ on:
         required: false
         type: string
         default: ''
-      server-target-branch:
+      server-base-branch:
         description: 'Branch the server PR goes into; empty: server-ref, else the server''s default branch.'
         required: false
         type: string
@@ -23,7 +23,7 @@ on:
         required: false
         type: string
         default: 'client'
-      target-branch:
+      base-branch:
         description: 'Branch the PR in this repository goes into (e.g. a shared integration branch such as "next"); empty: the branch the run started on.'
         required: false
         type: string
@@ -54,7 +54,7 @@ jobs:
       contents: write
       pull-requests: write
     env:
-      TARGET_BRANCH: ${{ inputs.target-branch || github.ref_name }}
+      BASE_BRANCH: ${{ inputs.base-branch || github.ref_name }}
       WITH_SERVER: ${{ inputs.server-repository != '' && inputs.package-side == 'client' }}
 
     steps:
@@ -69,7 +69,7 @@ jobs:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           persist-credentials: false
-          ref: ${{ env.TARGET_BRANCH }}
+          ref: ${{ env.BASE_BRANCH }}
 
       # Actions and scripts at the commit of this workflow, so a caller
       # pinned to a version (or testing a branch) gets that version.
@@ -103,7 +103,7 @@ jobs:
         id: server_base
         if: env.WITH_SERVER == 'true'
         env:
-          WANTED: ${{ inputs.server-target-branch || inputs.server-ref }}
+          WANTED: ${{ inputs.server-base-branch || inputs.server-ref }}
         run: echo "branch=${WANTED:-$(git -C .ds-naming-server rev-parse --abbrev-ref HEAD)}" >> "$GITHUB_OUTPUT"
 
       - uses: r-lib/actions/setup-r@f9a764fea8d5c63df6ef9a5c7795bf7deb5d7e05 # v2.14.0
@@ -125,8 +125,8 @@ jobs:
         uses: $/.github/actions/propose-branch
         with:
           manifest: updated_files.txt
-          branch: bot-suggest/ds-naming-apply/${{ env.TARGET_BRANCH }}
-          base: ${{ env.TARGET_BRANCH }}
+          branch: bot-suggest/ds-naming-apply/${{ env.BASE_BRANCH }}
+          base: ${{ env.BASE_BRANCH }}
           title: 'Harmonise DataSHIELD argument names'
           body-file: naming_apply_report.md
           commit-message: |

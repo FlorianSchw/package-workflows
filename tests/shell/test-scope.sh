@@ -27,19 +27,19 @@ g() { git -c user.email=t@t -c user.name=dev "$@"; }
 
 # --- resolve-suggestion-scope.sh --------------------------------------------------
 
-scope() {  # scope <event> <ref_name> <scan_mode> <allow_sweep> <sweep_base> [head_ref]
+scope() {  # scope <event> <ref_name> <review_scope> <allow_scheduled> <review_branch> [head_ref]
   : > "$WORK/out.txt"
   PATH="$BIN:$PATH" GITHUB_EVENT_NAME="$1" GITHUB_EVENT_PATH="$WORK/event.json" GITHUB_OUTPUT="$WORK/out.txt" \
     GITHUB_REF="refs/heads/$2" REF_NAME="$2" HEAD_REF="${6:-}" ACTOR=someone \
-    SCAN_MODE="$3" ALLOW_SWEEP="$4" SWEEP_BASE="$5" GITHUB_REPOSITORY=me/pkg \
+    REVIEW_SCOPE="$3" ALLOW_SCHEDULED="$4" REVIEW_BRANCH="$5" GITHUB_REPOSITORY=me/pkg \
     bash "$SCOPE/resolve-suggestion-scope.sh" > /dev/null 2>&1
   cat "$WORK/out.txt"
 }
-out="$(scope schedule main auto true "")";            grep -qx "mode=changed" <<< "$out" && grep -qx "branch=dev" <<< "$out"; check "schedule: changed on dev" $?
-out="$(scope workflow_dispatch feature auto true "")"; grep -qx "branch=feature" <<< "$out"; check "manual run: the chosen branch" $?
-out="$(scope workflow_dispatch main all true "")";     grep -qx "mode=all" <<< "$out"; check "scan-mode all: full review" $?
-out="$(scope schedule main auto false "")";            grep -qx "skip=true" <<< "$out"; check "authors: no scheduled runs" $?
-out="$(scope pull_request x auto true "" bot-suggest/tests/dev)"; grep -qx "skip=true" <<< "$out"; check "bot branch skipped" $?
+out="$(scope schedule main changed true "")";            grep -qx "mode=changed" <<< "$out" && grep -qx "branch=dev" <<< "$out"; check "schedule: changed on dev" $?
+out="$(scope workflow_dispatch feature changed true "")"; grep -qx "branch=feature" <<< "$out"; check "manual run: the chosen branch" $?
+out="$(scope workflow_dispatch main all true "")";     grep -qx "mode=all" <<< "$out"; check "review-scope all: full review" $?
+out="$(scope schedule main changed false "")";            grep -qx "skip=true" <<< "$out"; check "authors: no scheduled runs" $?
+out="$(scope pull_request x changed true "" bot-suggest/tests/dev)"; grep -qx "skip=true" <<< "$out"; check "bot branch skipped" $?
 
 # --- determine-changes.sh with review-history.sh ------------------------------------
 

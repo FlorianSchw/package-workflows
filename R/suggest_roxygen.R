@@ -32,8 +32,8 @@ bug_routing <- check_routing(policy$routing$roxygen$possible_bugs, "roxygen poss
 gh_token   <- Sys.getenv("GH_TOKEN")
 repo       <- Sys.getenv("GITHUB_REPOSITORY")
 pr_number  <- Sys.getenv("PR_NUMBER")  # empty in a sweep
-datashield <- as.logical(Sys.getenv("DATASHIELD", "false"))
-ds_type    <- Sys.getenv("DATASHIELD_TYPE", "")
+ds_type    <- check_datashield_type(Sys.getenv("DATASHIELD_TYPE", "none"))
+datashield <- !identical(ds_type, "none")
 # PR and push runs (empty in a sweep): the reviewed commit, the state before
 # this run's changes, and the bot branch whose open PR is built on.
 reviewed_sha <- substr(Sys.getenv("REVIEWED_SHA"), 1, 7)
@@ -41,7 +41,6 @@ base_rev     <- Sys.getenv("BASE_REV")
 sub_branch   <- Sys.getenv("SUB_BRANCH")
 builds_on_open_pr <- nzchar(sub_branch) && identical(Sys.getenv("OPEN_SUGGESTION_PR", "add"), "add") && !identical(Sys.getenv("REBUILD"), "true")
 
-check_datashield_type(datashield, ds_type)
 
 style           <- read_config_yaml("config/roxygen-style.yml")
 # The Claude client: profile settings, prompt template, access token.

@@ -3,12 +3,12 @@ name: Roxygen Doc Suggestions
 on:
   workflow_call:
     inputs:
-      scan-mode:
-        description: '"auto" (= "changed": what changed since the last review — for a PR or push since the last run, for a scheduled or manual run since the last review of the branch) or "all" (every R/*.R file, e.g. a manual full review)'
+      review-scope:
+        description: '"changed": what changed since the last review (for a PR or push since its last run, for a scheduled or manual run since the last review of the branch); "all": every R/*.R file, a full review'
         required: false
         type: string
-        default: 'auto'
-      sweep-base:
+        default: 'changed'
+      review-branch:
         description: 'Branch of scheduled and manual runs (and of the full review PR); empty: the chosen branch on manual runs, dev on schedules'
         required: false
         type: string
@@ -19,25 +19,20 @@ on:
         type: string
         default: 'add'
       accept-reasons:
-        description: 'Reasons that lead to a proposed change, comma-separated, from: missing, inaccurate, incomplete, clarity, style; empty: `accept_reasons` in `config/claude.yml` (missing, inaccurate, incomplete)'
+        description: 'Reasons that lead to a proposed change, comma-separated, from: missing, inaccurate, incomplete, clarity, style; empty: those with `accept: true` in `config/suggestion-policy.yml` (missing, inaccurate, incomplete)'
         required: false
         type: string
         default: ''
       code-issue-confidence:
-        description: 'Possible bugs in the code to report, by how sure Claude is: "high", "high,medium" or "high,medium,low"; "none": not looked for, no such section in the report; empty: `code_issue_confidence` in `config/claude.yml` (high, medium)'
+        description: 'Possible bugs in the code to report, by how sure Claude is: "high", "high,medium" or "high,medium,low"; "none": not looked for, no such section in the report; empty: `possible_bugs: report` in `config/suggestion-policy.yml` (high, medium)'
         required: false
         type: string
         default: ''
-      datashield:
-        description: 'Whether this repo is a DataSHIELD package'
-        required: false
-        type: boolean
-        default: false
       datashield-type:
-        description: '"client", "server" or "utility" (analyst-side helpers) — required when datashield is true'
+        description: '"none" (not a DataSHIELD package), "client", "server" or "utility" (analyst-side helpers)'
         required: false
         type: string
-        default: ''
+        default: 'none'
     secrets:
       anthropic-organization-id:
         description: 'Anthropic organization ID.'
@@ -81,8 +76,8 @@ jobs:
         id: scope
         uses: $/.github/actions/resolve-suggestion-scope
         with:
-          scan-mode: ${{ inputs.scan-mode }}
-          sweep-base: ${{ inputs.sweep-base }}
+          review-scope: ${{ inputs.review-scope }}
+          review-branch: ${{ inputs.review-branch }}
 
       # The calling repository first — actions/checkout empties the folder
       # it checks out into, so the shared scripts can only come after it.
@@ -154,7 +149,6 @@ jobs:
           ANTHROPIC_FEDERATION_RULE_ID: ${{ secrets.anthropic-federation-rule-id }}
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           PR_NUMBER: ${{ github.event.pull_request.number }}
-          DATASHIELD: ${{ inputs.datashield }}
           DATASHIELD_TYPE: ${{ inputs.datashield-type }}
           # PR and push runs (empty in a sweep): an open bot PR is built on —
           # its findings merged with this run's, its proposed blocks the
@@ -194,7 +188,7 @@ jobs:
           pr-body-mode: 'replace'   # the report is rebuilt from all findings each run
           comment-summary-file: 'suggestion_summary.md'
           sweep-base: ${{ steps.scope.outputs.branch }}
-          sweep-branch-prefix: 'bot-suggest/docs-sweep'
+          sweep-branch-prefix: 'bot-suggest/docs-all'
           sweep-commit-message: 'docs: monthly roxygen suggestion sweep'
           sweep-pr-title: 'Monthly roxygen documentation sweep'
           sweep-pr-body: 'Automated suggestions from the roxygen doc-assist workflow. Review before merging.'

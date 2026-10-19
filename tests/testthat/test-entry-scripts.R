@@ -11,7 +11,7 @@ recorded_answers <- function(name) {
 
 bot_env <- function(profile) c(
   ANTHROPIC_API_KEY = "test-key", GH_TOKEN = "", GITHUB_REPOSITORY = "me/fixturepkg",
-  PR_NUMBER = "", SUB_BRANCH = "", REVIEWED_SHA = "abc1234def", BASE_REV = "", DATASHIELD = "false", DATASHIELD_TYPE = ""
+  PR_NUMBER = "", SUB_BRANCH = "", REVIEWED_SHA = "abc1234def", BASE_REV = "", DATASHIELD_TYPE = "none"
 )
 
 test_that("suggest_roxygen.R documents add1's return value and reports clamp's possible bug", {
