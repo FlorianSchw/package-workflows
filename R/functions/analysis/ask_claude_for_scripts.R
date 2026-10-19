@@ -17,6 +17,7 @@ ask_claude_for_scripts <- function(context, step_ids, previous_attempt = "") {
     SYMBOL             = context$symbol,
     SERVERS            = paste(sprintf("`%s`", context$servers), collapse = ", "),
     FUNCTION_REFERENCE = context$function_reference,
+    EXCLUDED_FUNCTIONS = context$excluded_functions %||% "(none)",
     CATALOGUE          = context$catalogue_text,
     GAP_ISSUES         = if (nrow(context$gap_issues) == 0) "(none)" else paste(sprintf("- #%s: %s", context$gap_issues$number, context$gap_issues$title), collapse = "\n"),
     EXISTING_STEPS     = context$existing_steps,

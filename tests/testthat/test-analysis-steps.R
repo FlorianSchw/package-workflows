@@ -64,3 +64,16 @@ test_that("draft_steps_in_order() blocks dependents of a failed step and restore
                c(data_management = "written", descriptives = "written", main_model = "failed", figures = "written", sensitivity = "blocked"))
   expect_match(settled$steps$sensitivity$error, "main_model")
 })
+
+test_that("excluded functions reach the prompt with their reasons; a project can allow one again", {
+  dir <- withr::local_tempdir()
+  dir.create(file.path(dir, "config"))
+  writeLines(c("excluded_functions:", "  ds.glmSLMA: ~", "  ds.rep: use ds.make instead"), file.path(dir, "config", "analysis-suggest.yml"))
+  withr::local_dir(dir)
+  excluded <- read_config_yaml("config/analysis-suggest.yml")$excluded_functions
+  expect_false("ds.glmSLMA" %in% names(excluded))
+  text <- format_excluded_functions(excluded)
+  expect_match(text, "`ds.rep` (use ds.make instead)", fixed = TRUE)
+  expect_match(text, "`datashield.login` (the login has already run)", fixed = TRUE)
+  expect_equal(format_excluded_functions(list()), "(none)")
+})

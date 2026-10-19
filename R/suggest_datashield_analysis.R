@@ -100,13 +100,15 @@ if (is.null(setup_file)) stop(sprintf("The project needs the dsAnalysis DSLite s
 
 # --- 5. Claude, checks and test run ---------------------------------------------------
 
-reference <- client_function_reference(installed$clients, unlist(settings$excluded_functions))
+excluded <- Filter(Negate(is.null), settings$excluded_functions)
+reference <- client_function_reference(installed$clients, names(excluded))
 catalogue_prompt <- format_catalogue_for_prompt(catalogue, functions, c(installed$servers, installed$clients), settings$client_suffix, statuses)
 context <- list(
   connections = login$connections,
   symbol = plan$symbol,
   servers = vapply(plan$studies, function(s) s$server, character(1)),
   function_reference = reference$text,
+  excluded_functions = format_excluded_functions(excluded),
   catalogue_text = catalogue_prompt$text,
   catalogue_names = catalogue_prompt$names,
   catalogue_functions = catalogue_prompt$functions,

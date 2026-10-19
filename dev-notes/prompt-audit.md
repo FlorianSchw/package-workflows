@@ -1,10 +1,10 @@
 # Prompt and context audit (J, step 1) — 2026-10-16
 
 **Decided 2026-10-19 (user): all six hunks accepted.** A, C, D, E, F
-applied on `v1/foundation` the same day (tests pass; not yet compared
-in the CI test round). B waits for the config format (C of the v1
-plan): `excluded_functions` as a map name → reason, prose generated.
-Flags 7–9 unchanged.
+applied on `v1/foundation` the same day, B after C and D:
+`excluded_functions` is a map name → reason (a project allows one again
+with `name: ~`), written into the prompt by `format_excluded_functions()`.
+Tests pass; not yet compared in the CI test round. Flags 7–9 unchanged.
 
 Originally a report only: nothing here was applied. The hunks at the end are
 proposals to take or leave one by one; each prompt change should be
