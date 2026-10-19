@@ -9,8 +9,8 @@ away — **nothing here is wired in or applied.** Plan:
 | `ruleset-main.json` | governance repo (ruleset on `main`) | user |
 | `ruleset-dev.json` | governance repo (ruleset on `dev`) | user |
 | `ruleset-release-tags.json` | governance repo (`v*` tags) | user |
-| `self-pr-checks.yml` | `.github/workflows/pr-checks.yml` | at the branch-model switch |
-| `self-release.yml` + `self.releaserc.json` | `.github/workflows/release.yml` + `.github/release/releaserc.json` | at v1 |
+| ~~`self-pr-checks.yml`~~ | now `.github/workflows/pr-checks.yml` (2026-10-20) | — |
+| ~~`self-release.yml` + `self.releaserc.json`~~ | now `.github/workflows/release.yml` + `.github/release/releaserc.json` (2026-10-20; off until the variable `RELEASE_ENABLED` is `true`) | user sets the variable at v1 |
 | `governance.yml` | governance repo (structure only) | user |
 | `suggestion-policy.yml` | `config/suggestion-policy.yml` | with C and D |
 
@@ -35,7 +35,7 @@ Decided: **no signing rule yet** (add once the signing key is set up);
 the **smoke test** becomes a required check on `main` once its
 federation rule exists and it has run green once. Check names are those
 of `ci.yml` and of the reusable workflows called from
-`self-pr-checks.yml` (`<job id> / <job>`); they change if those jobs are
+`pr-checks.yml` (`<job id> / <job>`); they change if those jobs are
 renamed.
 
 ## Release of this repository
@@ -44,8 +44,11 @@ semantic-release on `main` with `v`-prefixed tags (`v1.0.0`), the GitHub
 release published directly, the major tag `v1` moved by `successCmd`,
 and a **CHANGELOG.md** committed to `main` by the release App
 (user's decision). The R-package default config stays the root
-`.releaserc.json`; this repository's own config goes to
-`.github/release/releaserc.json`, passed with `--extends`.
+`.releaserc.json`; this repository's own config is
+`.github/release/releaserc.json`. Not passed with `--extends` as first
+planned: semantic-release prefers a config file over `--extends`, so the
+root file would win — the release job copies its own config over the
+root file in the runner instead (never committed).
 
 Before the first real release: delete the old unused `v1` tag
 (`8d11341`, CLAUDE.md "Versioning").

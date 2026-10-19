@@ -118,6 +118,14 @@ the live caller used to validate changes before wider rollout.
     `R/check_ds_naming.R`, `R/apply_ds_naming.R`, functions in
     `R/functions/ds-naming/`; generic `propose-branch` action. Design and
     state: [dev-notes/datashield-naming/](dev-notes/datashield-naming/README.md).
+- This repository's own, non-reusable workflows (besides `ci.yml`,
+  `self-test.yml`, `publish-docs.yml`, `collect-usage.yml`): `pr-checks.yml`
+  (commit messages on PRs into dev/main, only `dev` into `main`) and
+  `release.yml` (semantic-release of this repository: `vX.Y.Z`, moving
+  `vX`, CHANGELOG.md, config `.github/release/releaserc.json` copied over
+  the root `.releaserc.json` in the runner — the root one is the R-package
+  default of `package-release.yml`). `release.yml` only runs once the
+  repository variable `RELEASE_ENABLED` is `true` (at v1).
 - Branch-protection rulesets (formerly `rulesets/` + `apply-ruleset.yml`)
   now live in a separate private repo.
 - `.github/actions/` — composite actions: `anthropic-token` (suggestion
