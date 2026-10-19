@@ -36,6 +36,12 @@ round of caller changes) → refactoring → new workflows.
     `ds-client`/`ds-server` pair.
   - Authors bot end to end too (git commits in the fixture, recorded
     GitHub API answers).
+  - **Decided 2026-10-19 (user):** the workflow-level self-test gets a
+    hidden test input (e.g. `self-test-fixture: r-package`, empty for
+    callers): fixture instead of the caller checkout, recorded answers
+    instead of the token step, no push or PR. The smoke test's
+    federation rule is created at the move, for
+    `nfdi4health/datashield-workflows` directly.
   - **Still to build:** the analysis bot end to end (needs DSLite +
     dsBase in CI — heavier; the stepwise logic is unit-tested), the
     workflow-level
