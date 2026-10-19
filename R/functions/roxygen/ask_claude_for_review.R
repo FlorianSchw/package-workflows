@@ -13,6 +13,7 @@ ask_claude_for_review <- function(claude, parsed, profile, role_text, earlier = 
 
   prompt <- fill_template(claude$prompt, list(
     STYLE_GUIDANCE   = build_guidance_text(profile),
+    REASONS          = format_reason_meanings("roxygen", bullets = TRUE),
     ROLE_GUIDANCE    = role_text,
     EXISTING_BLOCK   = existing_block,
     FUNCTION_SOURCE  = fn_source(parsed),

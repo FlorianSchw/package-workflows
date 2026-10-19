@@ -23,10 +23,11 @@ library(purrr)
 functions_dir <- if (dir.exists("R/functions")) "R/functions" else ".shared-workflows/R/functions"
 walk(list.files(file.path(functions_dir, c("shared", "roxygen")), pattern = "\\.R$", full.names = TRUE), source)
 
-# The run's settings: the "roxygen-review" profile of config/claude.yml.
-roxygen_review_settings <- claude_settings("roxygen-review")
-accept_reasons <- accepted_reasons(Sys.getenv("ACCEPT_REASONS"), roxygen_review_settings$accept_reasons, "roxygen")
-code_issue_confidence <- code_issue_confidence_levels(Sys.getenv("CODE_ISSUE_CONFIDENCE"), roxygen_review_settings$code_issue_confidence)
+# The run's rules (config/suggestion-policy.yml; the inputs override them).
+policy <- suggestion_policy()
+accept_reasons <- accepted_reasons(Sys.getenv("ACCEPT_REASONS"), suggestion_reasons("roxygen", accepted = TRUE, policy = policy), "roxygen")
+code_issue_confidence <- code_issue_confidence_levels(Sys.getenv("CODE_ISSUE_CONFIDENCE"), policy$possible_bugs$report)
+bug_routing <- check_routing(policy$routing$roxygen$possible_bugs, "roxygen possible_bugs")
 
 gh_token   <- Sys.getenv("GH_TOKEN")
 repo       <- Sys.getenv("GITHUB_REPOSITORY")
@@ -108,17 +109,18 @@ writeLines(updated_files, "updated_files.txt")
 # pr-body-mode "replace"), with a one-line statistic on top that the link
 # comment on the originating PR repeats (suggestion_summary.md). Written
 # when this run changes files or a bot PR is open; notes alone never open
-# one. Without a suggestion PR, possible bugs go to a comment on the
-# originating PR (posted once), or in a sweep to that month's issue
-# (report_sweep_code_issues(); callers grant `issues: write`).
+# one. Without a suggestion PR, possible bugs go where
+# routing$roxygen$possible_bugs of the policy file says: by default a
+# comment on the originating PR (posted once), or without a PR that
+# month's issue (report_sweep_code_issues(); callers grant `issues: write`).
 if (length(updated_files) > 0 || !is.null(pr_body)) {
   writeLines(format_roxygen_summary(state), "suggestion_summary.md")
   writeLines(format_roxygen_report(state, list(sha = reviewed_sha, stats = stats), state$legacy), "suggestion_report.md")
 } else if (any(vapply(state$entries, function(e) identical(e$kind, "bug"), logical(1)))) {
   bugs <- paste(format_code_issues(state$entries), collapse = "\n")
-  if (nzchar(pr_number)) {
-    comment_once(pr_number, bugs, "possible code bugs")
-  } else {
-    report_sweep_code_issues(bugs)
-  }
+  switch(if (nzchar(pr_number)) bug_routing$on_pr else bug_routing$without_pr,
+    comment = comment_once(pr_number, bugs, "possible code bugs"),
+    issue = report_sweep_code_issues(bugs),
+    log = message("Possible code bugs (routing: log):\n", bugs)
+  )
 }

@@ -44,12 +44,7 @@ build_submit_tests_tool <- function(dslite_datasets, max_new_tests, categories =
       reason = list(
         type = "string",
         enum = as.list(suggestion_reasons("tests")),
-        description = paste(
-          "Why this test adds value. uncovered_branch: a code path no existing test reaches.",
-          "error_handling: an error or warning the function raises. edge_case: unusual but valid input",
-          "(NA, empty, boundary values). regression: pins down behavior likely to break on change.",
-          "other: none of these."
-        )
+        description = paste("Why this test adds value.", format_reason_meanings("tests"))   # config/suggestion-policy.yml
       )
     ), code_fields, list(repeats_earlier = repeats_earlier)),
     required = list("description", "reason", "setup_code", "assertions_code", "repeats_earlier")

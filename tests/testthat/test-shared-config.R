@@ -6,6 +6,7 @@ local_project_with_shared <- function(shared, own = NULL, path = "config/x.yml",
     dir.create(file.path(dir, dirname(path)), recursive = TRUE, showWarnings = FALSE)
     writeLines(own, file.path(dir, path))
   }
+  withr::local_options(bot.shared_root = ".shared-workflows", .local_envir = env)
   withr::local_dir(dir, .local_envir = env)
 }
 

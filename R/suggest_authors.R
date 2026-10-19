@@ -26,6 +26,8 @@ repo      <- Sys.getenv("GITHUB_REPOSITORY")
 pr_number <- Sys.getenv("PR_NUMBER")
 
 bot_names <- unlist(read_config_yaml("config/bot-authors.yml")$bot_names)
+policy <- suggestion_policy()
+match_routing <- check_routing(policy$routing$authors$possible_matches, "authors possible_matches", allowed = c("comment", "log"))
 
 # The commits new since the last run (determine-changes.sh: the whole PR
 # when it is opened, then each push's own commits; merges, the bot's own
@@ -70,7 +72,7 @@ for (sha in shas) {
 
 d <- desc::description$new("DESCRIPTION")
 results <- Filter(Negate(is.null), lapply(names(contributors), function(name) {
-  credit_contributor(d, name, contributors[[name]]$r_files, contributors[[name]]$emails)
+  credit_contributor(d, name, contributors[[name]]$r_files, contributors[[name]]$emails, roles = policy$authors$roles)
 }))
 lines <- vapply(results, function(r) r$line, character(1))
 
@@ -80,8 +82,14 @@ if (any(vapply(results, function(r) r$changed, logical(1)))) {
   d$write("DESCRIPTION")
   writeLines("DESCRIPTION", "updated_files.txt")
   writeLines(c("## Changes", "", lines), "suggestion_report.md")
-} else if (length(lines) > 0 && nzchar(pr_number)) {
+} else if (length(lines) > 0) {
   # Only notes (possible matches), no change: no suggestion PR to carry
-  # them, so they go on the PR itself — once, not on every push.
-  comment_once(pr_number, paste(c("**DESCRIPTION authors** — nothing changed, but please check:", "", lines), collapse = "\n"), "author notes")
+  # them. routing$authors$possible_matches of the policy file: by default
+  # on the PR itself — once, not on every push; without a PR, the log.
+  notes <- paste(c("**DESCRIPTION authors** — nothing changed, but please check:", "", lines), collapse = "\n")
+  if (nzchar(pr_number) && identical(match_routing$on_pr, "comment")) {
+    comment_once(pr_number, notes, "author notes")
+  } else {
+    message(notes)
+  }
 }

@@ -59,12 +59,7 @@ build_submit_review_tool <- function(parsed, profile, earlier = list(), with_cod
         reason = list(
           type = "string",
           enum = as.list(suggestion_reasons("roxygen")),
-          description = paste(
-            "missing: the field is absent or a placeholder. inaccurate: the existing text states something",
-            "the code doesn't do (a default, a type, argument handling, the return shape) — even if the fix is",
-            "a small wording change. incomplete: it leaves out something the code does. clarity: correct and",
-            "complete, but could be clearer. style: formatting or wording only."
-          )
+          description = format_reason_meanings("roxygen")   # config/suggestion-policy.yml
         ),
         explanation = list(type = "string", description = "One sentence: what was wrong or missing, citing the code where it matters.")
       ),

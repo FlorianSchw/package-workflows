@@ -233,9 +233,10 @@ Details per workflow: [dev-notes/roxygen-suggest.md](dev-notes/roxygen-suggest.m
   wording where a structural constraint (schema field, `maxItems`, enum)
   is possible.
 - **Threshold for what gets proposed:** Claude states a reason per change
-  from a fixed enum (`suggestion_reasons()`), R keeps only the accepted
-  ones — the `accept-reasons` input, else `accept_reasons` of
-  `config/claude.yml` (`accepted_reasons()`) — and adds mechanical
+  from a fixed enum (`suggestion_reasons()`, reasons and their meaning in
+  `config/suggestion-policy.yml`), R keeps only the accepted
+  ones — the `accept-reasons` input, else those marked `accept: true` in
+  the policy file (`accepted_reasons()`) — and adds mechanical
   filters.
   A revisable decision, recorded in
   [dev-notes/suggestion-thresholds.md](dev-notes/suggestion-thresholds.md)
@@ -394,11 +395,14 @@ and `CONTRIBUTING.md`); no PRs until a branch model and rules exist.
   A–F), input renames B (`dev-notes/v1-input-review.md`), config/policy
   C+D (`dev-notes/v1-config-proposal.md`), rulesets, own release,
   governance YAML (`dev-notes/v1-drafts/`). Decisions of 2026-10-19 on
-  all of these: in the notes; being built (C done).
+  all of these: in the notes; being built (C and D done).
   **Docs pending at v1** (user-facing pages, batched): config files are
   YAML and merged over the defaults (override table and wording in
   `suggestions.qmd#adjusting-the-guidance`, file names on the authors,
-  roxygen and test pages); `config` package and `R_CONFIG_ACTIVE` gone.
+  roxygen and test pages); `config` package and `R_CONFIG_ACTIVE` gone;
+  the policy file `config/suggestion-policy.yml` (suggestions page:
+  what gets proposed, the override table, routing; `accept_reasons` no
+  longer in `claude.yml`).
 - Federation rules for the other two accounts, before rolling out beyond
   dsSupportClient.
 - **Review of the Claude-assisted workflows** (2026-10-14): token levers
@@ -653,8 +657,15 @@ and `CONTRIBUTING.md`); no PRs until a branch model and rules exist.
   `getting-started.qmd#usage-counting`, roadmap "Recent changes". Still
   to do: the data protection note in dsAnalysis's README (its CLAUDE.md,
   item D11).
-- **Policy file for the bot's rules** (`config/suggestion-policy.yml`):
-  today reasons, action↔reason mapping, the `aut`/`ctb` rule, name
+- ~~**Policy file for the bot's rules**~~ Done on `v1/foundation`
+  (2026-10-19): `config/suggestion-policy.yml` — reasons with meaning and
+  `accept`, `max_new_tests`, `possible_bugs` (`report`, `open_issue`),
+  author roles and name particles, `routing` per situation (on a PR /
+  without a PR: comment, issue, log; checked by `check_routing()`),
+  read with `suggestion_policy()`; reason meanings written into the tool
+  schemas and the roxygen prompt (`format_reason_meanings()`).
+  `accept_reasons`, `code_issue_confidence`, `max_new_tests` left
+  `config/claude.yml`. Docs pending at v1. The original item: today reasons, action↔reason mapping, the `aut`/`ctb` rule, name
   particles and report routing live partly only in R code. Move the
   tunable policy to one readable file that R and the tool schemas read
   (schema descriptions from the same source); keep safety invariants
@@ -674,7 +685,8 @@ and `CONTRIBUTING.md`); no PRs until a branch model and rules exist.
   instead of the job log. ~~**Docs pending:**~~ Done 2026-10-01: the
   roxygen page's report section, and the "Recent changes" in the roadmap
   (as a required caller change).
-- **Report routing is code, not config:** where test failures, possible
+- ~~**Report routing is code, not config:**~~ Done with the policy file
+  (`routing`, today's behaviour as the default). The original item: where test failures, possible
   bugs, deletion notes and code issues go (PR comment, PR description,
   issue, log) is decided in R (`publish_test_report()`,
   `suggest_roxygen.R`). The user expects it to be configurable — do it as

@@ -34,15 +34,16 @@ library(purrr)
 functions_dir <- if (dir.exists("R/functions")) "R/functions" else ".shared-workflows/R/functions"
 walk(list.files(file.path(functions_dir, c("shared", "tests")), pattern = "\\.R$", full.names = TRUE), source)
 
-# The run's settings (accepted reasons, max new tests): the "test-review"
-# profile of config/claude.yml; the Claude clients name their profiles
-# too (claude_client()).
-test_review_settings <- claude_settings("test-review")
-accept_reasons <- accepted_reasons(Sys.getenv("ACCEPT_REASONS"), test_review_settings$accept_reasons, "tests")
-max_new_tests <- if (is.null(test_review_settings$max_new_tests)) 10L else as.integer(test_review_settings$max_new_tests)
-# Possible bugs in the code to report, by Claude's confidence (input
-# code-issue-confidence, else config); an issue is opened only for "high".
-code_issue_confidence <- code_issue_confidence_levels(Sys.getenv("CODE_ISSUE_CONFIDENCE"), test_review_settings$code_issue_confidence)
+# The run's rules (config/suggestion-policy.yml; the inputs override them):
+# accepted reasons, max new tests, which possible bugs in the code are
+# reported (by Claude's confidence) and which open an issue, and where
+# findings go without a bot PR.
+policy <- suggestion_policy()
+accept_reasons <- accepted_reasons(Sys.getenv("ACCEPT_REASONS"), suggestion_reasons("tests", accepted = TRUE, policy = policy), "tests")
+max_new_tests <- as.integer(policy$tests$max_new_tests)
+code_issue_confidence <- code_issue_confidence_levels(Sys.getenv("CODE_ISSUE_CONFIDENCE"), policy$possible_bugs$report)
+issue_confidence <- unlist(policy$possible_bugs$open_issue)
+report_routing <- check_routing(policy$routing$tests$report, "tests report")
 
 gh_token   <- Sys.getenv("GH_TOKEN")
 repo       <- Sys.getenv("GITHUB_REPOSITORY")
@@ -121,7 +122,8 @@ ctx <- list(
   test_data = test_data,
   cache_prompt = length(files) > 1,   # the prompt cache only pays with a second call in the run
   max_new_tests = max_new_tests, accept_reasons = accept_reasons,
-  code_issue_confidence = code_issue_confidence, package_name = package_name, is_sweep = is_sweep
+  code_issue_confidence = code_issue_confidence, issue_confidence = issue_confidence, package_name = package_name,
+  comment_failures = !is_sweep && isTRUE(policy$routing$tests$failed_test_comments)
 )
 reviewed <- review_files(files, state, function(f, parsed, state) review_test_file(f, parsed, state, ctx))
 state <- reviewed$state
@@ -167,5 +169,5 @@ open_kinds <- vapply(Filter(function(e) identical(e$status, "active"), state$ent
 if (length(updated_files) > 0) writeLines(format_test_summary(state), "suggestion_summary.md")
 if (has_pr || any(open_kinds %in% c("note", "bug")) || any(vapply(state$entries, function(e) isTRUE(e$in_report), logical(1)))) {
   report <- format_test_report(state, list(sha = reviewed_sha, stats = stats), state$legacy)
-  publish_test_report(report, has_pr = has_pr)
+  publish_test_report(report, has_pr = has_pr, routing = report_routing)
 }

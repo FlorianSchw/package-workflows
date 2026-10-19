@@ -18,7 +18,8 @@
 # (materialize_bot_tests()), reviewed_sha, base_rev, datashield, ds_type,
 # may_use_dslite, dslite_setup_mode, dslite_datasets, test_role_guidance,
 # scheme, category_meanings, test_data, cache_prompt, max_new_tests,
-# accept_reasons, code_issue_confidence, package_name, is_sweep.
+# accept_reasons, code_issue_confidence, issue_confidence, package_name,
+# comment_failures (one PR comment per failed generated test).
 # Returns list(state, stats, updated, new_kept).
 review_test_file <- function(f, parsed, state, ctx) {
   function_name <- parsed$fn_name
@@ -128,7 +129,7 @@ review_test_file <- function(f, parsed, state, ctx) {
     verdicts <- classify_failures(ctx$classification_claude, failures, fn_source(parsed), function_name)
     for (k in seq_along(failures)) {
       outcome <- handle_failed_new_test(failures[[k]]$fail, failures[[k]]$block, failures[[k]]$path, verdicts[[k]],
-                                        function_name, ctx$code_issue_confidence, ctx$is_sweep)
+                                        function_name, ctx$code_issue_confidence, ctx$issue_confidence, ctx$comment_failures)
       if (is.null(outcome)) next
       if (outcome$kind == "bug") run$bugs[[length(run$bugs) + 1]] <- outcome$entry
       if (outcome$kind == "failed") run$failed[[length(run$failed) + 1]] <- outcome$entry

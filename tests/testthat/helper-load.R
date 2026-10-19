@@ -7,6 +7,9 @@ suppressPackageStartupMessages({
   library(purrr)
 })
 repo_root <- normalizePath(file.path(testthat::test_path(), "..", ".."), winslash = "/")
+# Config defaults come from this repository (read_config_yaml()), wherever
+# a test runs.
+options(bot.shared_root = repo_root)
 for (f in list.files(file.path(repo_root, "R", "functions"), pattern = "\\.R$", recursive = TRUE, full.names = TRUE)) {
   sys.source(f, envir = globalenv())
 }

@@ -117,7 +117,7 @@ test_that("review_test_file() keeps passing new tests, classifies failing ones o
     test_role_guidance = yaml::read_yaml(file.path(repo_root, "config", "test-role-guidance.yml")),
     scheme = detect_test_scheme("add1"), category_meanings = NULL, test_data = "", cache_prompt = FALSE,
     max_new_tests = 10L, accept_reasons = suggestion_reasons("tests"), code_issue_confidence = c("high", "medium"),
-    package_name = "minipkg", is_sweep = TRUE
+    package_name = "minipkg", issue_confidence = "high", comment_failures = FALSE
   )
   out <- review_files("R/add1.R", decode_suggestion_state(NULL), function(f, parsed, state) review_test_file(f, parsed, state, ctx))
   expect_equal(out$updated, "tests/testthat/test-add1.R")
