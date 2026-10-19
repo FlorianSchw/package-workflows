@@ -161,6 +161,12 @@ the live caller used to validate changes before wider rollout.
   `gh`/`jq`), `fixtures/` (made-up packages only: `r-package`,
   `ds-client` + `ds-server`). Run by `ci.yml` with the static checks;
   locally `Rscript tests/testthat.R` and `bash tests/shell/test-scope.sh`.
+  `self-test.yml` (not reusable) runs `roxygen-suggest.yml` and
+  `test-suggest.yml` themselves with the input `self-test-fixture:
+  r-package` (fixture instead of the caller checkout via
+  `tests/self-test/use-fixture.sh`, no token, `CLAUDE_RECORDED_ANSWERS`
+  → `use_recorded_answers()`, nothing pushed or counted, results as an
+  artifact) and checks them with `tests/self-test/check-results.sh`.
   A change to an entry script or a bot's output should keep
   `test-entry-scripts.R` passing (or update its recorded answers).
   External actions are pinned to commit SHAs with the version as a
