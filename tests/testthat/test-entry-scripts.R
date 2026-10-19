@@ -99,7 +99,7 @@ test_that("self-test mode: the script itself serves the recorded answers (separa
            CLAUDE_RECORDED_ANSWERS = file.path(repo_root, "tests", "fixtures", "claude-answers", "r-package.json"))
   run <- run_entry_script("suggest_roxygen.R", dir, env)
   expect_equal(run$status, 0L, info = paste(run$output, collapse = "\n"))
-  expect_true(any(grepl("Self-test: Claude answers from", run$output, fixed = TRUE)))
+  expect_true(any(grepl("Self-test: answers from", run$output, fixed = TRUE)))
   expect_equal(readLines(file.path(dir, "updated_files.txt")), "R/add1.R")
   expect_match(paste(readLines(file.path(dir, "suggestion_report.md")), collapse = "\n"), "returns hi everywhere when lo > hi", fixed = TRUE)
 })

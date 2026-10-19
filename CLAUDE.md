@@ -162,7 +162,7 @@ the live caller used to validate changes before wider rollout.
   `ds-client` + `ds-server`). Run by `ci.yml` with the static checks;
   locally `Rscript tests/testthat.R` and `bash tests/shell/test-scope.sh`.
   `self-test.yml` (not reusable) runs `roxygen-suggest.yml` and
-  `test-suggest.yml` themselves with the input `self-test-fixture:
+  `test-suggest.yml` and `authors-suggest.yml` themselves with the input `self-test-fixture:
   r-package` (fixture instead of the caller checkout via
   `tests/self-test/use-fixture.sh`, no token, `CLAUDE_RECORDED_ANSWERS`
   → `use_recorded_answers()`, nothing pushed or counted, results as an

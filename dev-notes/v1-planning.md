@@ -42,7 +42,7 @@ round of caller changes) → refactoring → new workflows.
     instead of the token step, no push or PR. The smoke test's
     federation rule is created at the move, for
     `nfdi4health/datashield-workflows` directly. **Built** the same day:
-    `self-test.yml` (roxygen and tests; authors and analysis not yet).
+    `self-test.yml` (roxygen, tests, authors; analysis not yet).
   - **Still to build:** the analysis bot end to end (needs DSLite +
     dsBase in CI — heavier; the stepwise logic is unit-tested), the
     workflow-level

@@ -34,5 +34,13 @@ grep -q "clamp keeps values inside the range" "$tst/tests/testthat/test-clamp.R"
 [ -f "$tst/tests/testthat/test-clamp.R" ] && ! grep -q "clamp stops when lo is above hi" "$tst/tests/testthat/test-clamp.R"; check "tests: failing test not proposed" $?
 grep -q "clamp stops when lo is above hi" "$tst/suggestion_report.md"; check "tests: failing test reported" $?
 
+# Authors (history-r-package.sh): Bea's R change -> aut under her profile
+# name, Carl's tests change -> ctb, the bot's commit left out, no e-mails.
+aut="$dir/self-test-authors-r-package"
+[ "$(cat "$aut/updated_files.txt" 2> /dev/null)" = "DESCRIPTION" ]; check "authors: proposes DESCRIPTION" $?
+grep -q 'person("Beatrice", "van Muster", role = "aut")' "$aut/DESCRIPTION"; check "authors: Bea as aut, named from her profile" $?
+grep -q 'person("Carl", "Test", role = "ctb")' "$aut/DESCRIPTION"; check "authors: Carl as ctb" $?
+[ -f "$aut/DESCRIPTION" ] && ! grep -q 'dependabot\|bea@example.org\|carl@example.org' "$aut/DESCRIPTION"; check "authors: no bot, no e-mails" $?
+
 echo "$passed passed, $failed failed"
 [ "$failed" = 0 ]

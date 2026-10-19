@@ -1,5 +1,14 @@
 {
-  "_about": "Recorded (made-up) Claude answers for tests/fixtures/r-package, by tool name, served in order of the calls: R/add1.R first, then R/clamp.R. Used by test-entry-scripts.R.",
+  "_about": "Recorded (made-up) answers for tests/fixtures/r-package. Claude: by tool name, served in order of the calls (R/add1.R first, then R/clamp.R). github: the GitHub login per commit author name of tests/self-test/history-r-package.sh (none: no account) and the profiles of those logins. Used by test-entry-scripts.R and the self-test workflow (use_recorded_answers()).",
+  "github": {
+    "logins": {
+      "Bea M": "bea",
+      "dependabot[bot]": "dependabot[bot]"
+    },
+    "users": {
+      "bea": { "login": "bea", "name": "Beatrice van Muster" }
+    }
+  },
   "submit_review": [
     {
       "needs_changes": true,
