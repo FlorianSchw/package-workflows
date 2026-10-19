@@ -31,7 +31,7 @@ check "tests: proposes test-add1.R and test-clamp.R" $?
 grep -q "add1 adds one" "$tst/tests/testthat/test-add1.R"; check "tests: the existing test stays" $?
 grep -q "add1 works element-wise on vectors" "$tst/tests/testthat/test-add1.R"; check "tests: new passing test for add1" $?
 grep -q "clamp keeps values inside the range" "$tst/tests/testthat/test-clamp.R"; check "tests: new passing test for clamp" $?
-! grep -q "clamp stops when lo is above hi" "$tst/tests/testthat/test-clamp.R"; check "tests: failing test not proposed" $?
+[ -f "$tst/tests/testthat/test-clamp.R" ] && ! grep -q "clamp stops when lo is above hi" "$tst/tests/testthat/test-clamp.R"; check "tests: failing test not proposed" $?
 grep -q "clamp stops when lo is above hi" "$tst/suggestion_report.md"; check "tests: failing test reported" $?
 
 echo "$passed passed, $failed failed"
