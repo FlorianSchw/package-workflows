@@ -34,12 +34,7 @@ scratch (a missing title, description or parameter must be written).
 
 List every field you change in `changes`, with the reason that
 honestly fits and a one-sentence explanation:
-- missing: the field is absent or a placeholder;
-- inaccurate: the existing text states something the code doesn't do —
-  even if the fix is a small wording change;
-- incomplete: it leaves out something the code does;
-- clarity: correct and complete, but could be clearer;
-- style: formatting or wording only.
+{{REASONS}}
 Not every reason leads to a proposed change, so don't upgrade a clarity
 or style change to a stronger reason — and don't downgrade a correction
 of a false statement to clarity or style.
