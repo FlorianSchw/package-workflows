@@ -13,11 +13,8 @@ The failed tests, each with its label:
 
 {{FAILURES}}
 
-For each failure, reason it through in `explanation` first, then give
-the category and how confident you are. Choose real_bug only when the
-test's expectation is clearly what the function is meant to do; when the
-intended behaviour is unclear, say so with a lower confidence. Judge
-each failure on its own; several can share one cause.
-
-Call the submit_failure_classification tool with one entry per listed
-failure. Do not write any prose response — only call the tool.
+For each failure give the category, how confident you are, and a short
+explanation citing the failure output and the code. Choose real_bug
+only when the test's expectation is clearly what the function is meant
+to do; when the intended behaviour is unclear, say so with a lower
+confidence. Judge each failure on its own; several can share one cause.

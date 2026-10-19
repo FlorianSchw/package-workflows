@@ -1,6 +1,12 @@
 # Prompt and context audit (J, step 1) — 2026-10-16
 
-Report only: **nothing here is applied.** The hunks at the end are
+**Decided 2026-10-19 (user): all six hunks accepted.** A, C, D, E, F
+applied on `v1/foundation` the same day (tests pass; not yet compared
+in the CI test round). B waits for the config format (C of the v1
+plan): `excluded_functions` as a map name → reason, prose generated.
+Flags 7–9 unchanged.
+
+Originally a report only: nothing here was applied. The hunks at the end are
 proposals to take or leave one by one; each prompt change should be
 checked in the CI test round (`dev-notes/ci-test-round.md`) before and
 after, since prompts are per-model artifacts.

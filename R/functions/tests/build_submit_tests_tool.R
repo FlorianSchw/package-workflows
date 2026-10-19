@@ -57,7 +57,7 @@ build_submit_tests_tool <- function(dslite_datasets, max_new_tests, categories =
   if (length(categories) > 0) {
     test_item_schema$properties$category <- list(
       type = "string", enum = as.list(unname(categories)),
-      description = "The test file category this test belongs to (see the categories in the prompt); the script writes the test into test-<category>-<function>.R."
+      description = "The test file category this test belongs to (see the categories in the prompt); the script writes the test into test-<category>-<R file>.R, <R file> being the function's file name without .R."
     )
     test_item_schema$required <- c(test_item_schema$required, list("category"))
   }

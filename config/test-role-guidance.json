@@ -12,9 +12,10 @@
     "in the setup, or in each test file through the package's own helper",
     "functions, which then also disconnect at the end. Use exactly the",
     "connection objects, data symbols, tables and helper functions the package",
-    "defines, under the names it uses — do NOT write your own login code, and",
-    "do NOT assume data beyond what those files assign. Leave dslite_dataset",
-    "empty — it is not used when reusing an existing setup."
+    "defines, under the names it uses. Add no login code: the setup has",
+    "already connected, and a second login breaks that session. Use only the",
+    "data those files assign. Leave dslite_dataset empty — it is not used",
+    "when reusing an existing setup."
   ],
   "client_new_setup": {
     "intro": [
@@ -30,8 +31,8 @@
       "The generated setup file logs in and defines `conns` (the DSLite",
       "connections to pass as `datasources`), with the chosen dataset",
       "already assigned on every study under the symbol `D` — so refer to",
-      "it as \"D\" (and its columns as e.g. \"D$LAB_TSC\"), and do NOT write",
-      "your own login/connection code. Server-side methods are registered",
+      "it as \"D\" (and its columns as e.g. \"D$LAB_TSC\"). Add no login code:",
+      "the setup has already connected. Server-side methods are registered",
       "automatically — you do not need to identify, name, or register a",
       "specific server-side function."
     ]
