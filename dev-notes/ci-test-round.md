@@ -6,6 +6,15 @@ nfdi4health/dsSupportClient (callers on `dev`, all `@main`). Tick items
 here or move results into the feature's dev-note; afterwards update
 "Not yet confirmed in real CI" and the items in CLAUDE.md STILL OPEN.
 
+**Update 2026-10-20:** the round now runs against branch
+`v1/foundation`, not `@main` — it adds the v1 changes (`$/` actions,
+renamed inputs, YAML config, the policy file, prompt changes). The
+dsSupportClient callers for it, and what else is needed (federation rules
+matching `@refs/heads/v1/foundation`), are in
+[v1-callers/dsSupportClient/](v1-callers/dsSupportClient/README.md).
+The items below still apply, with the new input names (`review-scope`
+instead of `scan-mode`).
+
 ## Before starting
 
 - `main` of package-workflows contains everything to test (callers use
