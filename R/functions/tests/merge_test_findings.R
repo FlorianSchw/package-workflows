@@ -33,15 +33,9 @@
 merge_test_findings <- function(state, fn, run, sha) {
   entries <- state$entries
   next_id <- state$next_id
-  stats <- c(new = 0L, crossed = 0L, repeats = if (is.null(run$repeats)) {
-    0L
-  } else {
-    as.integer(run$repeats)
-  })
-  text <- function(x) if (is.null(x)) {
-    ""
-  } else {
-    x
+  stats <- c(new = 0L, crossed = 0L, repeats = as.integer(run$repeats %||% 0L))
+  text <- function(x) {
+    x %||% ""
   }
 
   is_open <- function(e, kinds) identical(e$status, "active") && isTRUE(e$kind %in% kinds)
@@ -61,11 +55,7 @@ merge_test_findings <- function(state, fn, run, sha) {
     entries[[length(entries) + 1]] <<- c(
       list(id = next_id, kind = kind, fn = fn),
       modifyList(blank, fields),
-      list(sha = sha, code = if (is.null(run$code)) {
-        ""
-      } else {
-        run$code
-      }, status = "active", status_sha = "", status_note = "")
+      list(sha = sha, code = run$code %||% "", status = "active", status_sha = "", status_note = "")
     )
     next_id <<- next_id + 1L
     stats[["new"]] <<- stats[["new"]] + 1L

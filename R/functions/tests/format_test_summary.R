@@ -8,11 +8,12 @@
 format_test_summary <- function(state) {
   open <- Filter(function(e) identical(e$status, "active"), state$entries)
   n <- function(kind) sum(vapply(open, function(e) identical(e$kind, kind), logical(1)))
-  plural <- function(k, one, many) sprintf("%d %s", k, if (k == 1) {
-    one
-  } else {
-    many
-  })
+  plural <- function(k, one, many) {
+    if (k == 1) {
+      return(sprintf("%d %s", k, one))
+    }
+    sprintf("%d %s", k, many)
+  }
   files <- function(x) paste0("`", x, "`", collapse = ", ")
   setups <- vapply(Filter(function(e) identical(e$kind, "setup"), open), function(e) e$file, character(1))
   dslite <- setups[grepl("^setup", basename(setups))]

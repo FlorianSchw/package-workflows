@@ -19,23 +19,22 @@ build_test_evidence <- function(function_file, test_paths, base_rev) {
     list(time = as.numeric(parts[1]), text = paste(parts[-1], collapse = "|"))
   }
 
+  changed_text <- function(change) {
+    if (is.null(change)) {
+      return("not committed yet")
+    }
+    change$text
+  }
+
   fn_change <- last_change(function_file)
-  lines <- sprintf("Function file `%s` last changed: %s", function_file, if (is.null(fn_change)) {
-    "not committed yet"
-  } else {
-    fn_change$text
-  })
+  lines <- sprintf("Function file `%s` last changed: %s", function_file, changed_text(fn_change))
 
   if (length(test_paths) == 0) {
     lines <- c(lines, "No test file exists yet.")
   }
   for (test_path in test_paths) {
     test_change <- last_change(test_path)
-    lines <- c(lines, sprintf("Test file `%s` last changed: %s", test_path, if (is.null(test_change)) {
-      "not committed yet"
-    } else {
-      test_change$text
-    }))
+    lines <- c(lines, sprintf("Test file `%s` last changed: %s", test_path, changed_text(test_change)))
     if (!is.null(fn_change) && !is.null(test_change)) {
       order <- if (fn_change$time > test_change$time) {
         "The function file changed after this test file."

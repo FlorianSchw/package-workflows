@@ -12,16 +12,12 @@ format_test_scheme_guidance <- function(scheme, meanings, name, existing_files) 
   }
   has_file <- vapply(existing_files, function(f) f$category, character(1))
   lines <- vapply(scheme$categories, function(cat) {
-    meaning <- if (is.null(meanings[[cat]])) {
-      sprintf("(no description; see the repository's existing `test-%s-*.R` files)", cat)
-    } else {
-      meanings[[cat]]
+    meaning <- meanings[[cat]] %||% sprintf("(no description; see the repository's existing `test-%s-*.R` files)", cat)
+    existing <- ""
+    if (cat %in% has_file) {
+      existing <- sprintf(" This function already has `%s`.", basename(test_file_path(name, cat)))
     }
-    sprintf("- `%s`: %s%s", cat, meaning, if (cat %in% has_file) {
-      sprintf(" This function already has `%s`.", basename(test_file_path(name, cat)))
-    } else {
-      ""
-    })
+    sprintf("- `%s`: %s%s", cat, meaning, existing)
   }, character(1))
   paste(c(
     sprintf("This repository names its test files `test-<category>-<R file name>.R`, one file per purpose. Give each new test the category that fits; the script writes it into `test-<category>-%s.R` and creates that file if needed. The categories:", name),

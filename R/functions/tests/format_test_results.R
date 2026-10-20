@@ -17,11 +17,10 @@ format_test_results <- function(results) {
       }
       sprintf("- \"%s\": FAILED — %s", r$description, msg)
     }, character(1))
-    paste(c(sprintf("File `%s`:", basename(path)), if (length(lines) > 0) {
-      lines
-    } else {
-      "- (no results: the file did not run)"
-    }), collapse = "\n")
+    if (length(lines) == 0) {
+      lines <- "- (no results: the file did not run)"
+    }
+    paste(c(sprintf("File `%s`:", basename(path)), lines), collapse = "\n")
   }, character(1))
   paste(per_file, collapse = "\n\n")
 }

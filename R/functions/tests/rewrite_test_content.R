@@ -44,9 +44,11 @@ rewrite_test_content <- function(original, blocks, updates = character(0), delet
 
   content <- sub("\\s+$", "", paste(out, collapse = "\n"))
   if (length(appended) > 0 && is.null(insert_after)) {
-    content <- paste(c(if (nzchar(content)) {
-      content
-    }, appended), collapse = "\n\n")
+    parts <- appended
+    if (nzchar(content)) {
+      parts <- c(content, appended)
+    }
+    content <- paste(parts, collapse = "\n\n")
   }
   content
 }

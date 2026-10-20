@@ -17,27 +17,26 @@ handle_failed_new_test <- function(fail, block_text, path, classification, funct
   }
 
   if (identical(classification$category, "real_bug") && isTRUE(classification$confidence %in% confidences)) {
-    issue <- if (isTRUE(classification$confidence %in% issue_confidences)) {
-      create_bug_issue(function_name, block_text, fail$message, classification)
+    issue <- NULL
+    if (isTRUE(classification$confidence %in% issue_confidences)) {
+      issue <- create_bug_issue(function_name, block_text, fail$message, classification)
     }
     return(list(kind = "bug", entry = list(
       file = path, description = fail$description, origin = "failure", explanation = classification$explanation,
-      confidence = classification$confidence, issue = if (is.null(issue)) {
-        ""
-      } else {
-        issue
-      }
+      confidence = classification$confidence, issue = issue %||% ""
     )))
   }
+
+  # Commented on the PR: the short explanation; otherwise the report gets
+  # the whole failure.
   if (comment) {
     post_test_failure_comment(function_name, block_text, fail$message, classification)
+    explanation <- classification$explanation
+  } else {
+    explanation <- format_test_failure(function_name, block_text, fail$message, classification)
   }
   list(kind = "failed", entry = list(
     file = path, description = fail$description, classification = classification$category, in_report = !comment,
-    explanation = if (!comment) {
-      format_test_failure(function_name, block_text, fail$message, classification)
-    } else {
-      classification$explanation
-    }
+    explanation = explanation
   ))
 }

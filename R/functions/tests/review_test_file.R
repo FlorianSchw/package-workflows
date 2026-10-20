@@ -69,18 +69,21 @@ review_test_file <- function(f, parsed, state, ctx) {
     NULL
   }
   support_files <- test_support_files()
+  categories <- NULL
+  if (ctx$scheme$categorised) {
+    categories <- ctx$scheme$categories
+  }
+  # Without test files of its own, the function gets examples of others.
+  examples <- list()
+  if (length(test_files) == 0) {
+    examples <- example_test_files(ctx$scheme)
+  }
   context <- list(
     role_text = build_test_role_guidance(ctx$datashield, ctx$ds_type, identical(setup_plan, "reuse"), offered_datasets, ctx$test_role_guidance, uses_connections),
     scheme_text = format_test_scheme_guidance(ctx$scheme, ctx$category_meanings, file_name, test_files),
-    categories = if (ctx$scheme$categorised) {
-      ctx$scheme$categories
-    },
+    categories = categories,
     test_files = test_files,
-    examples = if (length(test_files) == 0) {
-      example_test_files(ctx$scheme)
-    } else {
-      list()
-    },
+    examples = examples,
     support_files = c(support_files, test_sourced_files(support_files)),
     test_data = ctx$test_data,
     test_results = format_test_results(baseline),

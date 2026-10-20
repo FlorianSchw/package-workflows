@@ -18,31 +18,24 @@ apply_function_test_changes <- function(changed_paths, review, run, function_nam
   kept_new <- 0
   failures <- list()
   for (path in changed_paths) {
-    test_file <- if (path %in% paths) {
-      review$test_files[[path]]
+    if (path %in% paths) {
+      # An existing test file: its decisions and parsed blocks.
+      test_file <- review$test_files[[path]]
+      file_review <- review$reviews[[path]]
+      existing_blocks <- review$blocks[[path]]
     } else {
-      read_test_file(path, if (review$scheme$categorised) {
-        review$new_tests[review$targets %in% path][[1]]$category
-      } else {
-        NA_character_
-      })
+      # A new test file, named by category in a categorised repository.
+      category <- NA_character_
+      if (review$scheme$categorised) {
+        category <- review$new_tests[review$targets %in% path][[1]]$category
+      }
+      test_file <- read_test_file(path, category)
+      file_review <- list(updates = character(0), deletes = character(0), explanations = character(0))
+      existing_blocks <- list()
     }
-    file_review <- if (path %in% paths) {
-      review$reviews[[path]]
-    } else {
-      list(updates = character(0), deletes = character(0), explanations = character(0))
-    }
-    test_blocks <- if (is.null(review$new_by_file[[path]])) {
-      character(0)
-    } else {
-      review$new_by_file[[path]]
-    }
-    applied <- apply_test_file_changes(test_file, if (path %in% paths) {
-      review$blocks[[path]]
-    } else {
-      list()
-    },
-                                       file_review$updates, file_review$deletes, test_blocks, review$result, function_name, package_name)
+    test_blocks <- review$new_by_file[[path]] %||% character(0)
+    applied <- apply_test_file_changes(test_file, existing_blocks, file_review$updates, file_review$deletes,
+                                       test_blocks, review$result, function_name, package_name)
 
     for (d in applied$failed_updates) {
       run$notes[[length(run$notes) + 1]] <- list(file = path, description = d, text = sprintf("an update was proposed (%s) but still failed, so the original test was kept.", file_review$explanations[[d]]))
