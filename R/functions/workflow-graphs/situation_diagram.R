@@ -59,12 +59,11 @@ situation_diagram <- function(situation, workflows, chains, outcomes) {
 
   for (f in included) {
     notes <- Filter(nzchar, c(situation$members[[f]], flows[[f]]$box_note))
-    lines <- c(lines, sprintf('  %s["<b>%s</b>%s"]', mermaid_id("wf", f), mermaid_label(by_file[[f]]$name),
-                              if (length(notes) > 0) {
-                                paste0("<br/>", mermaid_label(notes))
-                              } else {
-                                ""
-                              }))
+    note_text <- ""
+    if (length(notes) > 0) {
+      note_text <- paste0("<br/>", mermaid_label(notes))
+    }
+    lines <- c(lines, sprintf('  %s["<b>%s</b>%s"]', mermaid_id("wf", f), mermaid_label(by_file[[f]]$name), note_text))
     if (f %in% names(situation$members)) {
       lines <- c(lines, sprintf("  ev --> %s", mermaid_id("wf", f)))
     }

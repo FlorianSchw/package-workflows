@@ -56,10 +56,8 @@ merge_roxygen_findings <- function(state, path, run, sha, user_edited = FALSE) {
     hit <- Find(function(e) identical(as.integer(e$id), id), entries)
     !is.null(hit) && is_open(hit, kind)
   }
-  text <- function(x) if (is.null(x)) {
-    ""
-  } else {
-    x
+  text <- function(x) {
+    x %||% ""
   }
 
   if (isTRUE(user_edited)) {

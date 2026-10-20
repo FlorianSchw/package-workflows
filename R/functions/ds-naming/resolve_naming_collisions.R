@@ -70,13 +70,13 @@ resolve_naming_collisions <- function(rows, rules) {
       if (length(holder) != 1) {
         holder <- integer(0)
       }
+      keeps <- ""
+      if (length(holder) == 1) {
+        keeps <- sprintf("; `%s` keeps it", rows$arg[holder])
+      }
       for (i in setdiff(idx, holder)) {
-        conflict(i, sprintf("`%s` is proposed for %s too%s", name, paste(sprintf("`%s`", setdiff(rows$arg[idx], rows$arg[i])), collapse = ", "),
-                            if (length(holder) == 1) {
-                              sprintf("; `%s` keeps it", rows$arg[holder])
-                            } else {
-                              ""
-                            }))
+        others <- paste(sprintf("`%s`", setdiff(rows$arg[idx], rows$arg[i])), collapse = ", ")
+        conflict(i, sprintf("`%s` is proposed for %s too%s", name, others, keeps))
       }
       next
     }

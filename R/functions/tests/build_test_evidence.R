@@ -50,18 +50,17 @@ build_test_evidence <- function(function_file, test_paths, base_rev) {
   if (nzchar(base_rev)) {
     diff <- git("diff", base_rev, "HEAD", "--", function_file)
     tests_touched <- length(test_paths) > 0 && length(git("diff", "--name-only", base_rev, "HEAD", "--", test_paths)) > 0
+    function_change <- "did not change"
+    if (length(diff) > 0) {
+      function_change <- "changed"
+    }
+    tests_change <- "did not change"
+    if (tests_touched) {
+      tests_change <- "changed as well"
+    }
     lines <- c(lines, sprintf(
       "In the changes under review, the function file %s and its test files %s.",
-      if (length(diff) > 0) {
-        "changed"
-      } else {
-        "did not change"
-      },
-      if (tests_touched) {
-        "changed as well"
-      } else {
-        "did not change"
-      }
+      function_change, tests_change
     ))
     if (length(diff) > 0) {
       lines <- c(lines, "", "Diff of the function file in the changes under review:", "```diff", diff, "```")

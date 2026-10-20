@@ -10,9 +10,10 @@ usable_server_packages <- function(plan, texts) {
   rows <- list()
 
   for (p in unique(unlist(lapply(per_study, names)))) {
-    versions <- vapply(per_study, function(x) if (p %in% names(x)) {
-      x[[p]]
-    } else {
+    versions <- vapply(per_study, function(x) {
+      if (p %in% names(x)) {
+        return(x[[p]])
+      }
       NA_character_
     }, character(1))
     if (anyNA(versions)) {

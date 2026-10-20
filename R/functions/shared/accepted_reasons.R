@@ -14,12 +14,12 @@ accepted_reasons <- function(input, configured, task) {
   reasons <- reasons[nzchar(reasons)]
   known <- suggestion_reasons(task)
   if (length(reasons) == 0 || length(setdiff(reasons, known)) > 0) {
+    given <- paste(reasons, collapse = ",")
+    if (nzchar(trimws(input))) {
+      given <- input
+    }
     stop(sprintf("accept-reasons is '%s' — use one or more of: %s, separated by commas.",
-                 if (nzchar(trimws(input))) {
-                   input
-                 } else {
-                   paste(reasons, collapse = ",")
-                 }, paste(known, collapse = ", ")), call. = FALSE)
+                 given, paste(known, collapse = ", ")), call. = FALSE)
   }
   reasons
 }

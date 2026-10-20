@@ -18,30 +18,29 @@ format_test_summary <- function(state) {
   setups <- vapply(Filter(function(e) identical(e$kind, "setup"), open), function(e) e$file, character(1))
   dslite <- setups[grepl("^setup", basename(setups))]
   testthat <- setdiff(setups, dslite)
-  parts <- c(
-    if (n("new") > 0) {
-      plural(n("new"), "new test", "new tests")
-    },
-    if (n("updated") > 0) {
-      plural(n("updated"), "existing test updated", "existing tests updated")
-    },
-    if (n("deleted") > 0) {
-      plural(n("deleted"), "existing test deleted", "existing tests deleted")
-    },
-    if (length(dslite) > 0) {
-      sprintf("DSLite test setup created (%s)", files(dslite))
-    },
-    if (length(testthat) > 0) {
-      sprintf("testthat set up (%s)", files(testthat))
-    },
-    if (n("dependency") > 0) {
-      sprintf("added to Suggests: %s",
-                                     files(vapply(Filter(function(e) identical(e$kind, "dependency"), open), function(e) e$description, character(1))))
-    },
-    if (n("bug") > 0) {
-      plural(n("bug"), "possible bug", "possible bugs")
-    }
-  )
+  parts <- character(0)
+  if (n("new") > 0) {
+    parts <- c(parts, plural(n("new"), "new test", "new tests"))
+  }
+  if (n("updated") > 0) {
+    parts <- c(parts, plural(n("updated"), "existing test updated", "existing tests updated"))
+  }
+  if (n("deleted") > 0) {
+    parts <- c(parts, plural(n("deleted"), "existing test deleted", "existing tests deleted"))
+  }
+  if (length(dslite) > 0) {
+    parts <- c(parts, sprintf("DSLite test setup created (%s)", files(dslite)))
+  }
+  if (length(testthat) > 0) {
+    parts <- c(parts, sprintf("testthat set up (%s)", files(testthat)))
+  }
+  if (n("dependency") > 0) {
+    added <- vapply(Filter(function(e) identical(e$kind, "dependency"), open), function(e) e$description, character(1))
+    parts <- c(parts, sprintf("added to Suggests: %s", files(added)))
+  }
+  if (n("bug") > 0) {
+    parts <- c(parts, plural(n("bug"), "possible bug", "possible bugs"))
+  }
   if (length(parts) == 0) {
     return("no changes")
   }

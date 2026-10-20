@@ -119,14 +119,16 @@ entries <- merge_naming_entries(naming_entries(rows, links), previous$entries)
 
 # No dates or commits in the file: an unchanged result leaves it unchanged,
 # so a re-run without news makes no commit. They go into the PR text.
-repository_of <- function(p) if (identical(p, own)) {
-  Sys.getenv("GITHUB_REPOSITORY")
-} else {
+repository_of <- function(p) {
+  if (identical(p, own)) {
+    return(Sys.getenv("GITHUB_REPOSITORY"))
+  }
   Sys.getenv("SERVER_REPOSITORY")
 }
-commit_of <- function(p) if (identical(p, own)) {
-  Sys.getenv("GITHUB_SHA")
-} else {
+commit_of <- function(p) {
+  if (identical(p, own)) {
+    return(Sys.getenv("GITHUB_SHA"))
+  }
   Sys.getenv("SERVER_SHA")
 }
 meta <- list(

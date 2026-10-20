@@ -10,10 +10,17 @@ format_naming_report <- function(rows, entries, checks, file_path, rules_version
   es <- unname(entries)
   field <- function(f) vapply(es, function(e) as.character(e[[f]] %||% ""), character(1))
   status <- field("status")
-  pct <- function(n, d) if (d == 0) {
-    "–"
-  } else {
+  pct <- function(n, d) {
+    if (d == 0) {
+      return("–")
+    }
     sprintf("%d %%", round(100 * n / d))
+  }
+  code_list <- function(x) {
+    if (length(x) == 0) {
+      return("none")
+    }
+    paste(sprintf("`%s`", x), collapse = ", ")
   }
   open <- vapply(es, function(e) isTRUE(e$rule_open), logical(1))
 
@@ -70,25 +77,15 @@ format_naming_report <- function(rows, entries, checks, file_path, rules_version
               "### Skipped", "", table(in_pkg & status == "skip"), "")
   }
   for (ch in checks) {
+    test_lines <- "None."
+    if (nrow(ch$tests) > 0) {
+      test_lines <- sprintf("- `%s`: %s", ch$tests$file, ch$tests$problem)
+    }
     full <- c(full, sprintf("## %s: other findings (report only)", ch$package), "",
-              paste0("**Function names not following the pattern:** ",
-                     if (length(ch$function_names) > 0) {
-                       paste(sprintf("`%s`", ch$function_names), collapse = ", ")
-                     } else {
-                       "none"
-                     }), "",
-              paste0("**`datasources` not last:** ",
-                     if (length(ch$order) > 0) {
-                       paste(sprintf("`%s`", ch$order), collapse = ", ")
-                     } else {
-                       "none"
-                     }), "",
+              paste0("**Function names not following the pattern:** ", code_list(ch$function_names)), "",
+              paste0("**`datasources` not last:** ", code_list(ch$order)), "",
               "**Test file names:**", "",
-              if (nrow(ch$tests) > 0) {
-                sprintf("- `%s`: %s", ch$tests$file, ch$tests$problem)
-              } else {
-                "None."
-              }, "")
+              test_lines, "")
   }
   list(full = paste(full, collapse = "\n"), summary = paste(summary, collapse = "\n"))
 }

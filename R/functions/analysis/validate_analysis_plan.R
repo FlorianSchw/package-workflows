@@ -13,14 +13,23 @@ validate_analysis_plan <- function(plan, types, texts) {
   add <- function(key, ...) problems <<- c(problems, fill_template(texts$plan[[key]], list(...)))
   label <- function(key, name, section, index) {
     if (is.character(name)) {
-      fill_template(texts$plan[[key]], list(NAME = name))
+      return(fill_template(texts$plan[[key]], list(NAME = name)))
     }
-    else {
-      fill_template(texts$plan$label_entry, list(SECTION = section, INDEX = index))
-    }
+    fill_template(texts$plan$label_entry, list(SECTION = section, INDEX = index))
   }
   is_name <- function(x) is.character(x) && length(x) == 1 && identical(make.names(x), x)
   duplicated_of <- function(x) paste(unique(x[duplicated(x)]), collapse = ", ")
+  # The text values of one field across a list of entries, skipping entries
+  # that aren't lists or whose field isn't text.
+  text_values <- function(entries, field) {
+    values <- lapply(entries, function(e) {
+      if (is.list(e) && is.character(e[[field]])) {
+        return(e[[field]])
+      }
+      NULL
+    })
+    unlist(values)
+  }
 
   if (!is_name(plan$symbol)) {
     add("symbol")
@@ -51,9 +60,7 @@ validate_analysis_plan <- function(plan, types, texts) {
         }
       }
     }
-    servers <- unlist(lapply(studies, function(s) if (is.character(s$server)) {
-      s$server
-    }))
+    servers <- text_values(studies, "server")
     if (anyDuplicated(servers)) {
       add("duplicate_servers", NAMES = duplicated_of(servers))
     }
@@ -82,9 +89,7 @@ validate_analysis_plan <- function(plan, types, texts) {
         }
       }
     }
-    names_seen <- unlist(lapply(variables, function(v) if (is.character(v$name)) {
-      v$name
-    }))
+    names_seen <- text_values(variables, "name")
     if (anyDuplicated(names_seen)) {
       add("duplicate_variables", NAMES = duplicated_of(names_seen))
     }
@@ -102,9 +107,7 @@ validate_analysis_plan <- function(plan, types, texts) {
         add("step_id", TITLE = s$title)
       }
     }
-    ids <- unlist(lapply(steps, function(s) if (is.list(s) && is.character(s$id)) {
-      s$id
-    }))
+    ids <- text_values(steps, "id")
     if (anyDuplicated(ids)) {
       add("duplicate_steps", NAMES = duplicated_of(ids))
     }
@@ -115,9 +118,7 @@ validate_analysis_plan <- function(plan, types, texts) {
         next
       }
       deps <- unlist(s$depends_on)
-      earlier <- unlist(lapply(steps[seq_len(i - 1)], function(x) if (is.list(x) && is.character(x$id)) {
-        x$id
-      }))
+      earlier <- text_values(steps[seq_len(i - 1)], "id")
       if (!is.character(deps) && length(deps) > 0) {
         add("depends_on", TITLE = s$title, STEPS = paste(deps, collapse = ", "))
       } else if (length(setdiff(deps, earlier)) > 0) {

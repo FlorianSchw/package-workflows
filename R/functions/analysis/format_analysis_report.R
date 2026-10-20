@@ -16,12 +16,11 @@ format_analysis_report <- function(r, texts) {
   if (length(written) > 0) {
     out <- c(out, "", t$scripts_heading, "")
     for (s in written) {
-      out <- c(out, sprintf("- **%s**: %s%s", s$title, paste(sprintf("`%s`", s$files), collapse = ", "),
-        if (identical(s$status, "not_possible")) {
-          t$notes_only_suffix
-        } else {
-          ""
-        }))
+      suffix <- ""
+      if (identical(s$status, "not_possible")) {
+        suffix <- t$notes_only_suffix
+      }
+      out <- c(out, sprintf("- **%s**: %s%s", s$title, paste(sprintf("`%s`", s$files), collapse = ", "), suffix))
     }
     out <- c(out, "", fill_template(t$try_it, r$names))
   }

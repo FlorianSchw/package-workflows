@@ -14,11 +14,11 @@ check_argument_order <- function(rows, rules) {
       next
     }
     after <- r$arg[seq_len(nrow(r)) > max(conn)]
-    if (length(setdiff(after, if (isTRUE(rules$order$dots_after_datasources)) {
-      "..."
-    } else {
-      character(0)
-    })) > 0) {
+    allowed_after <- character(0)
+    if (isTRUE(rules$order$dots_after_datasources)) {
+      allowed_after <- "..."
+    }
+    if (length(setdiff(after, allowed_after)) > 0) {
       bad <- c(bad, fn)
     }
   }

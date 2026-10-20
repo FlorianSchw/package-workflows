@@ -60,9 +60,10 @@ merge_test_findings <- function(state, fn, run, sha) {
     next_id <<- next_id + 1L
     stats[["new"]] <<- stats[["new"]] + 1L
   }
-  id_of <- function(label) if (is.null(label) || !nzchar(label)) {
-    NA_integer_
-  } else {
+  id_of <- function(label) {
+    if (is.null(label) || !nzchar(label)) {
+      return(NA_integer_)
+    }
     suppressWarnings(as.integer(sub("^E", "", label)))
   }
   same_test <- function(e, file, description) identical(e$file, file) && identical(e$description, description)

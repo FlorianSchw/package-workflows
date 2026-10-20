@@ -24,14 +24,13 @@ install_ds_package <- function(package, version, catalogue, texts) {
   } else {
     NA_character_
   }
-  refs <- c(
-    if (is.null(entry) || nzchar(entry$cran)) {
-      sprintf("%s@%s", package, version)
-    },
-    if (!is.na(repo)) {
-      c(sprintf("%s@v%s", repo, version), sprintf("%s@%s", repo, version), repo)
-    }
-  )
+  refs <- character(0)
+  if (is.null(entry) || nzchar(entry$cran)) {
+    refs <- c(refs, sprintf("%s@%s", package, version))
+  }
+  if (!is.na(repo)) {
+    refs <- c(refs, sprintf("%s@v%s", repo, version), sprintf("%s@%s", repo, version), repo)
+  }
 
   for (ref in refs) {
     ok <- tryCatch({

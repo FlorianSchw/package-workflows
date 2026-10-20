@@ -13,9 +13,10 @@
 workflow_flow <- function(wf, outs, chains) {
   box <- mermaid_id("wf", wf$file)
   label_of <- function(parts) paste(Filter(nzchar, parts), collapse = ", ")
-  jobs_out <- vapply(outs, function(o) if (is.na(o$job)) {
-    ""
-  } else {
+  jobs_out <- vapply(outs, function(o) {
+    if (is.na(o$job)) {
+      return("")
+    }
     o$job
   }, character(1))
   keys <- sprintf("%s|%s|%d", wf$file, jobs_out, seq_along(outs))

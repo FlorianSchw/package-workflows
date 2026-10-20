@@ -49,12 +49,11 @@ run_analysis_scripts <- function(login_file, scripts, profile, timeout, connecti
           }
           stmt <- paste(deparse(exprs[[i]], width.cutoff = 500L), collapse = " ")
           objs <- tryCatch(describe_objects(exprs[[i]]), error = function(e2) "")
-          paste0(msg, " [failing statement: ", substr(stmt, 1, 400), "]",
-                 if (nzchar(objs)) {
-                   paste0("\nObjects used in that statement:\n", objs)
-                 } else {
-                   ""
-                 })
+          used <- ""
+          if (nzchar(objs)) {
+            used <- paste0("\nObjects used in that statement:\n", objs)
+          }
+          paste0(msg, " [failing statement: ", substr(stmt, 1, 400), "]", used)
         })
         if (!is.na(res)) {
           return(res)
