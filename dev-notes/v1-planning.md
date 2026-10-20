@@ -111,6 +111,29 @@ raw counts first; fresh counting at v1. See
   independently: a key used only for signing, registered on GitHub as a
   signing key; set up when the governance repo is built).
 
+**Checked against Anthropic's docs (2026-10-20)** — corrections to the
+above:
+- Federation rules **can be updated** (`POST /v1/organizations/federation_rules/{id}`:
+  `match`, `target`, `name`, scope, workspaces; only `issuer_id` is
+  fixed). IDs stay stable, so neither the move nor a wider match changes
+  callers' secrets.
+- A prefix match on `job_workflow_ref` is a CEL `condition`
+  (`claims.job_workflow_ref.startsWith("<repo>/.github/workflows/<file>@")`);
+  `claims` are exact only. Rules on GitHub's shared issuer must also pin
+  the tenant (`repo:<owner>/…` subject prefix or `repository_owner`).
+- Only an `org:admin` OAuth token works on these endpoints (no Admin API
+  key). The workload's token can manage only `workspace:developer` /
+  `workspace:inference` rules and developer-role service accounts; the
+  `org:admin` bootstrap rule (admin service account, subject pinned to
+  the governance repo's `main` exactly, a dedicated issuer recommended)
+  is made in the Console once.
+- GitHub OIDC tokens carry `jti`: one exchange per token.
+
+**Decided 2026-10-20 (user): governance repo first** (order b): its
+first run widens dsSupportClient's existing rules to a prefix match, then
+the CI test round. Scripts in R, not bash (user). Work in
+`repo-governance` on a feature branch.
+
 **Drafts** (not applied): rulesets for `main`, `dev` and `v*` tags, this
 repository's own PR-check caller and release (`v` tags, moving `v1`),
 and the governance YAML structure — [v1-drafts/](v1-drafts/README.md).
