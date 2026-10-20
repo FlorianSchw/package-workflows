@@ -16,9 +16,10 @@ decode_suggestion_state <- function(body) {
   found <- regmatches(body, regexec("<!-- bot-suggest-state: ([A-Za-z0-9+/=]+) -->", body))[[1]]
   if (length(found) < 2) {
     legacy <- trimws(gsub("<!-- bot-suggest: reviewed up to [0-9a-f]+ -->", "", body))
-    return(modifyList(empty, list(legacy = if (nzchar(legacy)) {
-      legacy
-    })))
+    if (nzchar(legacy)) {
+      empty$legacy <- legacy
+    }
+    return(empty)
   }
   state <- tryCatch(
     jsonlite::fromJSON(rawToChar(jsonlite::base64_dec(found[2])), simplifyVector = FALSE),
@@ -33,7 +34,9 @@ decode_suggestion_state <- function(body) {
   # Text of a pre-format description, shown collapsed by
   # format_roxygen_report(), is carried forward run after run.
   kept <- regmatches(body, regexec("(?s)<summary>Earlier reports \\(before this report format\\)</summary>\n\n(.*?)\n\n</details>", body, perl = TRUE))[[1]]
-  list(entries = state$entries, next_id = as.integer(state$next_id), legacy = if (length(kept) == 2) {
-    kept[2]
-  })
+  legacy <- NULL
+  if (length(kept) == 2) {
+    legacy <- kept[2]
+  }
+  list(entries = state$entries, next_id = as.integer(state$next_id), legacy = legacy)
 }

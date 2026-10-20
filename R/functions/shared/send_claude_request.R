@@ -8,16 +8,17 @@
 # `forced`: tool_choice names the tool; otherwise "auto".
 send_claude_request <- function(claude, tool, messages, forced, renewed = FALSE) {
   config <- claude$config
+  if (forced) {
+    tool_choice <- list(type = config$tool_choice_type, name = config$tool_name)
+  } else {
+    tool_choice <- list(type = "auto")
+  }
   body <- list(
     model = config$model,
     max_tokens = config$max_tokens,
     thinking = config$thinking,
     tools = list(tool),
-    tool_choice = if (forced) {
-      list(type = config$tool_choice_type, name = config$tool_name)
-    } else {
-      list(type = "auto")
-    },
+    tool_choice = tool_choice,
     messages = messages
   )
   if (!is.null(config$effort)) {
@@ -79,11 +80,7 @@ send_claude_request <- function(claude, tool, messages, forced, renewed = FALSE)
     stop(sprintf("Claude's response was cut off at max_tokens (%s) — raise max_tokens for this profile in config/claude.yml.", config$max_tokens))
   }
   if (identical(body$stop_reason, "refusal")) {
-    category <- if (is.null(body$stop_details$category)) {
-      "unknown"
-    } else {
-      body$stop_details$category
-    }
+    category <- body$stop_details$category %||% "unknown"
     stop(sprintf("Claude declined the request (refusal, category: %s).", category))
   }
   body

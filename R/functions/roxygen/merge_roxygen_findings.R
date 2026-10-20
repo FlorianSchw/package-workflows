@@ -42,11 +42,7 @@ merge_roxygen_findings <- function(state, path, run, sha, user_edited = FALSE) {
     entries[[length(entries) + 1]] <<- c(
       list(id = next_id, file = path, kind = kind),
       modifyList(blank, fields),
-      list(sha = sha, code = if (is.null(run$code)) {
-        ""
-      } else {
-        run$code
-      }, status = "active", status_sha = "", status_note = "")
+      list(sha = sha, code = run$code %||% "", status = "active", status_sha = "", status_note = "")
     )
     next_id <<- next_id + 1L
     stats[["new"]] <<- stats[["new"]] + 1L

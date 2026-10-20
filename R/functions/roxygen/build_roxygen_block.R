@@ -60,9 +60,11 @@ build_roxygen_block <- function(result, parsed, path, accepted) {
       sections[["description"]] <- required_field("description", "description", "description")
     } else if (tag == "details") {
       details <- clean(result$details, "details")
-      sections[["details"]] <- optional_field("details", if (nzchar(trimws(details))) {
-        wrap(paste0("@details ", details))
-      })
+      details_lines <- NULL
+      if (nzchar(trimws(details))) {
+        details_lines <- wrap(paste0("@details ", details))
+      }
+      sections[["details"]] <- optional_field("details", details_lines)
     } else if (tag == "param") {
       param_lines <- character(0)
       for (p in parsed$params) {
@@ -76,14 +78,16 @@ build_roxygen_block <- function(result, parsed, path, accepted) {
       sections[["return"]] <- required_field("return", "return", "return_doc")
     } else if (tag == "examples") {
       examples_body <- clean(result$examples_body, "examples_body")
-      sections[["examples"]] <- optional_field("examples", if (nzchar(trimws(examples_body))) {
-        c(
-        "#' @examples",
-        "#' \\dontrun{",
-        paste0("#' ", strsplit(examples_body, "\n")[[1]]),
-        "#' }"
-      )
-      })
+      examples_lines <- NULL
+      if (nzchar(trimws(examples_body))) {
+        examples_lines <- c(
+          "#' @examples",
+          "#' \\dontrun{",
+          paste0("#' ", strsplit(examples_body, "\n")[[1]]),
+          "#' }"
+        )
+      }
+      sections[["examples"]] <- optional_field("examples", examples_lines)
     }
   }
 

@@ -10,6 +10,10 @@ ask_claude_for_review <- function(claude, parsed, profile, role_text, earlier = 
   } else {
     "(none — no roxygen block exists for this function yet)"
   }
+  params <- "(none)"
+  if (length(parsed$params) > 0) {
+    params <- paste(parsed$params, collapse = ", ")
+  }
 
   prompt <- fill_template(claude$prompt, list(
     STYLE_GUIDANCE   = build_guidance_text(profile),
@@ -17,11 +21,7 @@ ask_claude_for_review <- function(claude, parsed, profile, role_text, earlier = 
     ROLE_GUIDANCE    = role_text,
     EXISTING_BLOCK   = existing_block,
     FUNCTION_SOURCE  = fn_source(parsed),
-    PARAMS           = if (length(parsed$params) > 0) {
-      paste(parsed$params, collapse = ", ")
-    } else {
-      "(none)"
-    },
+    PARAMS           = params,
     EARLIER_FINDINGS = format_earlier_findings(earlier)
   ))
 

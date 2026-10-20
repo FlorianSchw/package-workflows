@@ -7,11 +7,14 @@
 # existing block has no such field.
 original_roxygen_field <- function(parsed, key) {
   is_param <- startsWith(key, "param:")
-  chunks <- Filter(function(ch) ch$tag == if (is_param) {
-    "param"
+  if (is_param) {
+    tag <- "param"
+    tag_label <- "^@param\\s+\\S+\\s*"
   } else {
-    key
-  }, parsed$tag_chunks)
+    tag <- key
+    tag_label <- "^@[A-Za-z]+\\s*"
+  }
+  chunks <- Filter(function(ch) ch$tag == tag, parsed$tag_chunks)
   if (is_param) {
     name <- sub("^param:", "", key)
     chunks <- Filter(function(ch) identical(sub("^\\s*#'\\s*@param\\s+(\\S+).*$", "\\1", ch$lines[1]), name), chunks)
@@ -27,11 +30,7 @@ original_roxygen_field <- function(parsed, key) {
 
   lines <- chunks[[1]]$lines
   text <- sub("^\\s*#'\\s?", "", lines)
-  text[1] <- sub(if (is_param) {
-    "^@param\\s+\\S+\\s*"
-  } else {
-    "^@[A-Za-z]+\\s*"
-  }, "", text[1])
+  text[1] <- sub(tag_label, "", text[1])
   text <- text[!grepl("^\\s*(\\\\dontrun\\{|\\})\\s*$", text)]
   list(lines = lines, text = paste(text, collapse = "\n"))
 }

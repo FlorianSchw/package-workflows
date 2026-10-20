@@ -29,10 +29,9 @@ implicit_roxygen_field <- function(parsed, key) {
     return(NULL)
   }
   text <- paragraphs[[index]]
-  list(
-    lines = c(sprintf("#' @%s %s", key, text[1]), if (length(text) > 1) {
-      paste0("#' ", text[-1])
-    }),
-    text = paste(text, collapse = "\n")
-  )
+  lines <- sprintf("#' @%s %s", key, text[1])
+  if (length(text) > 1) {
+    lines <- c(lines, paste0("#' ", text[-1]))
+  }
+  list(lines = lines, text = paste(text, collapse = "\n"))
 }

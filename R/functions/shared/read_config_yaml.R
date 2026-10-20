@@ -26,13 +26,6 @@ read_config_yaml <- function(rel_path, required = TRUE) {
     }
     stop(sprintf("Config not found: %s", rel_path), call. = FALSE)
   }
-  utils::modifyList(if (is.null(defaults)) {
-    list()
-  } else {
-    defaults
-  }, if (is.null(own)) {
-    list()
-  } else {
-    own
-  })
+  # An empty YAML file reads as NULL.
+  utils::modifyList(defaults %||% list(), own %||% list())
 }

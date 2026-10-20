@@ -8,18 +8,14 @@ format_latest_review <- function(latest) {
     return(NULL)
   }
   s <- latest$stats
-  parts <- c(
-    sprintf("%d new", s[["new"]]),
-    if (s[["crossed"]] > 0) {
-      sprintf("%d crossed out", s[["crossed"]])
-    },
-    if (s[["repeats"]] > 0) {
-      sprintf("%d %s of earlier findings skipped", s[["repeats"]], if (s[["repeats"]] == 1) {
-      "repeat"
-    } else {
-      "repeats"
-    })
-    }
-  )
+  parts <- sprintf("%d new", s[["new"]])
+  if (s[["crossed"]] > 0) {
+    parts <- c(parts, sprintf("%d crossed out", s[["crossed"]]))
+  }
+  if (s[["repeats"]] == 1) {
+    parts <- c(parts, "1 repeat of earlier findings skipped")
+  } else if (s[["repeats"]] > 1) {
+    parts <- c(parts, sprintf("%d repeats of earlier findings skipped", s[["repeats"]]))
+  }
   sprintf("**Latest review** (`%s`): %s", latest$sha, paste(parts, collapse = " · "))
 }

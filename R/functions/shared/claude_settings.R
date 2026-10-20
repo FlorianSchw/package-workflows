@@ -7,9 +7,5 @@ claude_settings <- function(profile) {
   if (is.null(cfg[[profile]])) {
     stop(sprintf("No profile '%s' in config/claude.yml.", profile), call. = FALSE)
   }
-  utils::modifyList(if (is.null(cfg$default)) {
-    list()
-  } else {
-    cfg$default
-  }, cfg[[profile]])
+  utils::modifyList(cfg$default %||% list(), cfg[[profile]])
 }

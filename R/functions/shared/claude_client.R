@@ -5,11 +5,13 @@
 # and the run's access token (`auth`, claude_auth(), shared by the run's
 # clients). Used by call_claude_tool() and the ask_claude_*() functions.
 claude_client <- function(profile, prompt_file = NULL, auth = claude_auth()) {
+  prompt <- NULL
+  if (!is.null(prompt_file)) {
+    prompt <- read_text_file(prompt_file)
+  }
   list(
     config = claude_settings(profile)$anthropic,
-    prompt = if (!is.null(prompt_file)) {
-      read_text_file(prompt_file)
-    },
+    prompt = prompt,
     auth = auth
   )
 }

@@ -32,12 +32,12 @@ use_recorded_answers <- function(path = Sys.getenv("CLAUDE_RECORDED_ANSWERS"), e
       }
       parts <- strsplit(who, "\t", fixed = TRUE)[[1]]
       login <- github$logins[[parts[1]]]
-      return(json_response(list(commit = list(author = list(name = parts[1], email = parts[2])),
-                                author = if (is.null(login)) {
-                                  NULL
-                                } else {
-                                  list(login = login)
-                                })))
+      author <- NULL
+      if (!is.null(login)) {
+        author <- list(login = login)
+      }
+      commit <- list(author = list(name = parts[1], email = parts[2]))
+      return(json_response(list(commit = commit, author = author)))
     }
     if (grepl("^/users/[^/]+$", route)) {
       user <- github$users[[sub("^/users/", "", route)]]

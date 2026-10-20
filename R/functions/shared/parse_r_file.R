@@ -39,10 +39,15 @@ parse_r_file <- function(path) {
     character(0)
   }
 
-  pre_end <- if (has_roxygen) {
-    rox_start - 1
+  # Without a block, it "starts" at the function and ends just above it.
+  if (has_roxygen) {
+    roxygen_start <- rox_start
+    roxygen_end <- rox_end
+    pre_end <- rox_start - 1
   } else {
-    fn_start - 1
+    roxygen_start <- fn_start
+    roxygen_end <- fn_start - 1
+    pre_end <- fn_start - 1
   }
   gap_lines <- if (has_roxygen && (rox_end + 1) <= (fn_start - 1)) {
     lines[(rox_end + 1):(fn_start - 1)]
@@ -84,16 +89,8 @@ parse_r_file <- function(path) {
   list(
     lines = lines, fn_start = fn_start, fn_name = fn_name, params = params,
     has_roxygen = has_roxygen,
-    roxygen_start = if (has_roxygen) {
-      rox_start
-    } else {
-      fn_start
-    },
-    roxygen_end = if (has_roxygen) {
-      rox_end
-    } else {
-      fn_start - 1
-    },
+    roxygen_start = roxygen_start,
+    roxygen_end = roxygen_end,
     roxygen_lines = roxygen_lines,
     pre_end = pre_end,
     gap_lines = gap_lines,
