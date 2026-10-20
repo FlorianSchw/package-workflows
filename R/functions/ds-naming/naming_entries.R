@@ -25,18 +25,18 @@ naming_entries <- function(rows, links) {
         character(0)
       }
     }
+    # No proposal, or a conflict: left for a person to decide.
+    if (is.na(r$proposed) || r$match == "conflict") {
+      proposed <- ""
+      status <- "unresolved"
+    } else {
+      proposed <- r$proposed
+      status <- "proposed"
+    }
     list(
       id = id_of(r$package, r$`function`, r$arg), package = r$package, side = r$side, `function` = r$`function`,
-      current = r$arg, proposed = if (is.na(r$proposed) || r$match == "conflict") {
-        ""
-      } else {
-        r$proposed
-      },
-      status = if (is.na(r$proposed) || r$match == "conflict") {
-        "unresolved"
-      } else {
-        "proposed"
-      },
+      current = r$arg, proposed = proposed,
+      status = status,
       rule = r$rule, rule_open = r$rule_open, match = r$match, role = r$role, class = r$class,
       confidence = r$confidence, source = r$source, reason = r$reason, linked = as.list(unique(linked)), note = r$note
     )

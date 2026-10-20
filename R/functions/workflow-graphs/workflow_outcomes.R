@@ -32,11 +32,13 @@ workflow_outcomes <- function(workflow, called, config) {
         text <- gsub(sprintf("{%s}", name), as.character(value), text, fixed = TRUE)
       }
     }
-    conditions <- c(if (!is.null(only_on)) {
-      paste("only if:", event_noun(only_on))
-    }, if (nzchar(run$own)) {
-      run$own
-    })
+    conditions <- character(0)
+    if (!is.null(only_on)) {
+      conditions <- c(conditions, paste("only if:", event_noun(only_on)))
+    }
+    if (nzchar(run$own)) {
+      conditions <- c(conditions, run$own)
+    }
     list(text = text, job = job_id, needs = run$needs, condition = paste(conditions, collapse = ", "))
   }
 

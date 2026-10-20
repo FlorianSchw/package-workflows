@@ -31,16 +31,11 @@ classify_ds_argument <- function(arg, default, doc) {
   }
   # by documentation only when it is about a name (not "a logical ... output object")
   if (rx(newobj_name, arg) || (rx(newobj_doc, doc) && !rx("^logical", low) && rx("\\bname\\b", low) && !default %in% c("TRUE", "FALSE"))) {
-    by_name <- rx(newobj_name, arg)
-    return(out("new_object", doc_class$class, if (by_name) {
-      "high"
-    } else {
-      "medium"
-    }, if (by_name) {
-      "name"
-    } else {
-      "doc"
-    }))
+    # Recognised by its name: high confidence; only by its documentation: medium.
+    if (rx(newobj_name, arg)) {
+      return(out("new_object", doc_class$class, "high", "name"))
+    }
+    return(out("new_object", doc_class$class, "medium", "doc"))
   }
   if (rx("session|handle|cursor|manifest|_json$|operation_id|request_|chunk|symbol|token|nonce|sha256|batch_", arg)) {
     return(out("plumbing", confidence = "medium", evidence = "name"))
@@ -97,11 +92,10 @@ classify_ds_argument <- function(arg, default, doc) {
     return(out("value", "numeric", "medium", "doc"))
   }
   if (rx("^-?[0-9.eE]+L?$", default, FALSE) || rx("^(a |an )?(numeric|integer|number|positive|non-negative|single number)", low)) {
-    return(out("value", "numeric", if (nzchar(doc)) {
-      "high"
-    } else {
-      "medium"
-    }, "default/doc"))
+    if (nzchar(doc)) {
+      return(out("value", "numeric", "high", "default/doc"))
+    }
+    return(out("value", "numeric", "medium", "default/doc"))
   }
   # name only, no documentation to go by
   nm <- tolower(arg)

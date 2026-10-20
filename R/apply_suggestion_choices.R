@@ -71,16 +71,15 @@ for (i in seq_along(state$entries)) {
     next
   }
   if (result$changed) {
-    message(sprintf("E%d: %s %s in %s.", as.integer(e$id), if (ticked) {
-      "applied"
-    } else {
-      "reverted"
-    },
-                    if (identical(kind, "tests")) {
-                      sprintf("\"%s\"", e$description)
-                    } else {
-                      sprintf("`%s`", e$field)
-                    }, e$file))
+    done <- "reverted"
+    if (ticked) {
+      done <- "applied"
+    }
+    what <- sprintf("`%s`", e$field)
+    if (identical(kind, "tests")) {
+      what <- sprintf("\"%s\"", e$description)
+    }
+    message(sprintf("E%d: %s %s in %s.", as.integer(e$id), done, what, e$file))
     changed_files <- c(changed_files, e$file)
   }
   # A not-applied roxygen suggestion the user ticked is now an applied

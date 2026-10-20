@@ -12,6 +12,10 @@
 # calls of a run and is sent with a cache marker (split_cached_prompt()):
 # a run makes a call per step plus repair rounds, minutes apart.
 ask_claude_for_scripts <- function(context, step_ids, previous_attempt = "") {
+  gap_issues <- "(none)"
+  if (nrow(context$gap_issues) > 0) {
+    gap_issues <- paste(sprintf("- #%s: %s", context$gap_issues$number, context$gap_issues$title), collapse = "\n")
+  }
   prompt <- fill_template(context$prompt_template, list(
     CONNECTIONS        = context$connections,
     SYMBOL             = context$symbol,
@@ -19,11 +23,7 @@ ask_claude_for_scripts <- function(context, step_ids, previous_attempt = "") {
     FUNCTION_REFERENCE = context$function_reference,
     EXCLUDED_FUNCTIONS = context$excluded_functions %||% "(none)",
     CATALOGUE          = context$catalogue_text,
-    GAP_ISSUES         = if (nrow(context$gap_issues) == 0) {
-      "(none)"
-    } else {
-      paste(sprintf("- #%s: %s", context$gap_issues$number, context$gap_issues$title), collapse = "\n")
-    },
+    GAP_ISSUES         = gap_issues,
     EXISTING_STEPS     = context$existing_steps,
     CREATED_OBJECTS    = context$created_objects %||% "(none known yet)",
     PLAN               = context$plan_text,

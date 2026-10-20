@@ -136,11 +136,12 @@ if (length(updated_files) > 0 || !is.null(pr_body)) {
   writeLines(format_roxygen_report(state, list(sha = reviewed_sha, stats = stats), state$legacy), "suggestion_report.md")
 } else if (any(vapply(state$entries, function(e) identical(e$kind, "bug"), logical(1)))) {
   bugs <- paste(format_code_issues(state$entries), collapse = "\n")
-  switch(if (nzchar(pr_number)) {
-    bug_routing$on_pr
+  if (nzchar(pr_number)) {
+    destination <- bug_routing$on_pr
   } else {
-    bug_routing$without_pr
-  },
+    destination <- bug_routing$without_pr
+  }
+  switch(destination,
     comment = comment_once(pr_number, bugs, "possible code bugs"),
     issue = report_sweep_code_issues(bugs),
     log = message("Possible code bugs (routing: log):\n", bugs)

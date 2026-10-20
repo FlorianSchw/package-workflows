@@ -63,11 +63,11 @@ propose_ds_name <- function(arg, role, class, package, rules) {
     if (last %in% c("name", "names", "var", "vars", "variable", "variables", "column", "columns", suffix, paste0(suffix, "s"))) {
       words <- head(words, -1)
     }
-    words <- c(words, if (plural) {
-      paste0(suffix, "s")
+    if (plural) {
+      words <- c(words, paste0(suffix, "s"))
     } else {
-      suffix
-    })
+      words <- c(words, suffix)
+    }
     return(result(paste(words, collapse = sep$name), "reference_kinds.column", TRUE))
   }
   if (role %in% c("value", "plumbing")) {

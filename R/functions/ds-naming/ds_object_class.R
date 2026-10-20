@@ -35,9 +35,9 @@ ds_object_class <- function(doc) {
   } else {
     "medium"
   }
-  list(class = if (first == "factor") {
-    "vector"
-  } else {
-    first
-  }, confidence = confidence)
+  # A factor counts as a vector.
+  if (first == "factor") {
+    first <- "vector"
+  }
+  list(class = first, confidence = confidence)
 }

@@ -38,15 +38,13 @@ test_that("draft_steps_in_order() blocks dependents of a failed step and restore
     path <- sprintf("new_%s.R", id)
     writeLines(id, path)
     unlink(existing$path[existing$step == id])
-    fail <- id == "main_model"
+    problems <- list()
+    if (id == "main_model") {
+      problems <- setNames(list("still fails"), id)
+    }
     list(answers = setNames(list(list(step_id = id, sections = list("x"), notes = list())), id),
          candidate = setNames(list(path), id), notes = character(0), attempts = 3L,
-         outcome = list(problems = if (fail) {
-           setNames(list("still fails"), id)
-         } else {
-           list()
-         },
-                        broken_other = character(0), objects = sprintf("- `%s_obj`", id)))
+         outcome = list(problems = problems, broken_other = character(0), objects = sprintf("- `%s_obj`", id)))
   }
   original <- draft_and_test_steps
   assign("draft_and_test_steps", stub, envir = globalenv())

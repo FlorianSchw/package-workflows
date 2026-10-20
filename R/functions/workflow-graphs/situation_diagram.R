@@ -79,14 +79,16 @@ situation_diagram <- function(situation, workflows, chains, outcomes) {
     lines <- c(lines, sprintf('  %s(["%s"]):::outcome', node, mermaid_label(outcome_text[[key]])))
   }
   for (e in unique(edges)) {
-    from <- node_of(e$from); to <- node_of(e$to)
-    lines <- c(lines, if (e$dotted) {
-      sprintf('  %s -. "%s" .-> %s', from, mermaid_text(e$label), to)
+    from <- node_of(e$from)
+    to <- node_of(e$to)
+    if (e$dotted) {
+      edge <- sprintf('  %s -. "%s" .-> %s', from, mermaid_text(e$label), to)
     } else if (nzchar(e$label)) {
-      sprintf('  %s -- "%s" --> %s', from, mermaid_label(e$label, width = 20), to)
+      edge <- sprintf('  %s -- "%s" --> %s', from, mermaid_label(e$label, width = 20), to)
     } else {
-      sprintf("  %s --> %s", from, to)
-    })
+      edge <- sprintf("  %s --> %s", from, to)
+    }
+    lines <- c(lines, edge)
   }
   paste(unique(c(lines, "  classDef outcome stroke-dasharray: 4 3")), collapse = "\n")
 }

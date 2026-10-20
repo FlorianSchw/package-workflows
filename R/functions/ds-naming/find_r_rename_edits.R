@@ -114,9 +114,9 @@ find_r_rename_edits <- function(lines, renames, server_renames = NULL) {
       }
     }
   }
-  list(edits = if (length(edits) > 0) {
-    unique(do.call(rbind, edits))
-  } else {
-    empty
-  }, notes = notes)
+  all_edits <- empty
+  if (length(edits) > 0) {
+    all_edits <- unique(do.call(rbind, edits))
+  }
+  list(edits = all_edits, notes = notes)
 }

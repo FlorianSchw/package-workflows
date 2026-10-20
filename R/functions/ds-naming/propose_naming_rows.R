@@ -11,11 +11,11 @@ propose_naming_rows <- function(rows, links, rules) {
   with_suffix <- nzchar(suffix) & rows$side == "server" & endsWith(rows$arg, suffix)
   stem <- ifelse(with_suffix, substr(rows$arg, 1, nchar(rows$arg) - nchar(suffix)), rows$arg)
   proposals <- lapply(seq_len(nrow(rows)), function(i) {
-    p <- propose_ds_name(stem[i], if (rows$role[i] == "unclear") {
-      "unknown"
-    } else {
-      rows$role[i]
-    }, rows$class[i], rows$package[i], rules)
+    role <- rows$role[i]
+    if (role == "unclear") {
+      role <- "unknown"
+    }
+    p <- propose_ds_name(stem[i], role, rows$class[i], rows$package[i], rules)
     if (with_suffix[i]) {
       if (!is.na(p$proposed)) {
         p$proposed <- paste0(p$proposed, suffix)
@@ -71,15 +71,16 @@ propose_naming_rows <- function(rows, links, rules) {
         rows$note[si] <- sprintf("client callers differ: %s", paste(sprintf("%s(%s -> %s)", l$client_fn, l$client_arg, rows$proposed[ci]), collapse = ", "))
         next
       }
-      l <- l[ci %in% own, ][1, ]; ci <- own[1]
+      l <- l[ci %in% own, ][1, ]
+      ci <- own[1]
     } else {
-      l <- l[1, ]; ci <- ci[1]
+      l <- l[1, ]
+      ci <- ci[1]
     }
-    wanted <- paste0(rows$proposed[ci], if (with_suffix[si]) {
-      suffix
-    } else {
-      ""
-    })
+    wanted <- rows$proposed[ci]
+    if (with_suffix[si]) {
+      wanted <- paste0(wanted, suffix)
+    }
     if (identical(rows$proposed[si], wanted)) {
       next
     }

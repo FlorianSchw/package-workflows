@@ -46,20 +46,20 @@ format_naming_report <- function(rows, entries, checks, file_path, rules_version
     if (!any(sel)) {
       return("None.")
     }
-    e <- es[sel]
+    row <- function(x) {
+      proposed <- "–"
+      if (nzchar(x$proposed %||% "")) {
+        proposed <- sprintf("`%s`", x$proposed)
+      }
+      rule <- x$rule
+      if (isTRUE(x$rule_open)) {
+        rule <- paste(rule, "(open)")
+      }
+      reason <- gsub("\\|", "/", paste(c(x$reason, x$note), collapse = " "))
+      sprintf("| `%s` | `%s` | %s | %s | %s | %s |", x$`function`, x$current, proposed, rule, x$confidence %||% "", reason)
+    }
     c("| Function | Current | Proposed | Rule | Confidence | Reason |", "|---|---|---|---|---|---|",
-      vapply(e, function(x) sprintf("| `%s` | `%s` | %s | %s%s | %s | %s |", x$`function`, x$current,
-                                    if (nzchar(x$proposed %||% "")) {
-                                      sprintf("`%s`", x$proposed)
-                                    } else {
-                                      "–"
-                                    },
-                                    x$rule, if (isTRUE(x$rule_open)) {
-                                      " (open)"
-                                    } else {
-                                      ""
-                                    }, x$confidence %||% "",
-                                    gsub("\\|", "/", paste(c(x$reason, x$note), collapse = " "))), character(1)))
+      vapply(es[sel], row, character(1)))
   }
   full <- c(summary[seq_len(which(summary == "### How to review") - 1)])
   for (pkg in unique(field("package"))) {

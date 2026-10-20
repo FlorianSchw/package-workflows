@@ -28,11 +28,10 @@ workflow_summary_table <- function(workflows, called, outcomes, chains) {
     runs_on <- vapply(events, function(e) {
       filter <- event_filter(wf$triggers[[e]])
       text <- describe_trigger(e, wf$triggers[[e]])
-      cell(if (nzchar(filter)) {
-        sprintf("%s (%s)", text, filter)
-      } else {
-        text
-      })
+      if (nzchar(filter)) {
+        text <- sprintf("%s (%s)", text, filter)
+      }
+      cell(text)
     }, character(1), USE.NAMES = FALSE)
 
     calls <- unique(unlist(lapply(wf$jobs, function(job) {
@@ -40,11 +39,11 @@ workflow_summary_table <- function(workflows, called, outcomes, chains) {
       if (is.null(ref)) {
         return(NULL)
       }
-      cell(paste0(ref$label, if (isTRUE(called[[ref$key]]$readable)) {
-        ""
-      } else {
-        " (not readable)"
-      }))
+      label <- ref$label
+      if (!isTRUE(called[[ref$key]]$readable)) {
+        label <- paste0(label, " (not readable)")
+      }
+      cell(label)
     })))
 
     produced <- vapply(outcomes[[wf$file]], function(o) {

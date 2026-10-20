@@ -38,9 +38,9 @@ usable_server_packages <- function(plan, texts) {
     rows[[length(rows) + 1]] <- data.frame(package = p, version = version)
   }
 
-  list(packages = if (length(rows) > 0) {
-    do.call(rbind, rows)
-  } else {
-    data.frame(package = character(0), version = character(0))
-  }, notes = notes)
+  packages <- data.frame(package = character(0), version = character(0))
+  if (length(rows) > 0) {
+    packages <- do.call(rbind, rows)
+  }
+  list(packages = packages, notes = notes)
 }

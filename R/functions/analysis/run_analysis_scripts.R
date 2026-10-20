@@ -83,18 +83,16 @@ run_analysis_scripts <- function(login_file, scripts, profile, timeout, connecti
         if ("data.frame" %in% cls) {
           dims <- tryCatch(unlist(dsBaseClient::ds.dim(s, type = "combine", datasources = conns))[1:2], error = function(e) NULL)
           cols <- tryCatch(unique(unlist(dsBaseClient::ds.colnames(s, datasources = conns))), error = function(e) character(0))
-          extra <- sprintf("%s; columns: %s", if (length(dims) == 2) {
-            sprintf(", %s rows x %s columns in total", dims[1], dims[2])
-          } else {
-            ""
-          },
-                           paste(utils::head(cols, 40), collapse = ", "))
+          if (length(dims) == 2) {
+            extra <- sprintf(", %s rows x %s columns in total", dims[1], dims[2])
+          }
+          extra <- sprintf("%s; columns: %s", extra, paste(utils::head(cols, 40), collapse = ", "))
         }
-        sprintf("- `%s` (%s%s)", s, if (length(cls) > 0) {
-          paste(cls, collapse = "/")
-        } else {
-          "class unknown"
-        }, extra)
+        class_text <- "class unknown"
+        if (length(cls) > 0) {
+          class_text <- paste(cls, collapse = "/")
+        }
+        sprintf("- `%s` (%s%s)", s, class_text, extra)
       }, character(1))
       paste(lines, collapse = "\n")
     }

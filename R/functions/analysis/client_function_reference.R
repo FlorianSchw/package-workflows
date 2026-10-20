@@ -28,19 +28,17 @@ client_function_reference <- function(packages, excluded = character(0)) {
       args <- names(fm)
       # An argument without default is an empty symbol, which can't be
       # stored in a variable, so it is compared in place.
-      signature <- paste0(fn, "(", paste(vapply(args, function(a) {
+      shown_args <- vapply(args, function(a) {
         if (identical(fm[[a]], quote(expr = ))) {
-          a
-        } else {
-          paste(a, "=", paste(deparse(fm[[a]], width.cutoff = 500L), collapse = " "))
+          return(a)
         }
-      }, character(1)), collapse = ", "), ")")
-      title <- titles[[fn]]
-      lines <- c(lines, if (is.null(title)) {
-        signature
-      } else {
-        paste0(signature, " — ", title)
-      })
+        paste(a, "=", paste(deparse(fm[[a]], width.cutoff = 500L), collapse = " "))
+      }, character(1))
+      line <- paste0(fn, "(", paste(shown_args, collapse = ", "), ")")
+      if (!is.null(titles[[fn]])) {
+        line <- paste0(line, " — ", titles[[fn]])
+      }
+      lines <- c(lines, line)
       functions[[fn]] <- list(package = pkg, args = setdiff(args, "..."), dots = "..." %in% args)
     }
   }

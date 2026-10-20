@@ -65,16 +65,13 @@ if (is.null(outcomes_config)) {
 }
 
 blocks <- workflow_graph_blocks(workflows, called, chains, outcomes_config)
-current <- if (file.exists(readme_path)) {
-  readLines(readme_path, warn = FALSE)
-} else {
-  NULL
+current <- NULL
+cleaned <- NULL
+if (file.exists(readme_path)) {
+  current <- readLines(readme_path, warn = FALSE)
+  cleaned <- drop_old_starter_headings(current)
 }
-updated <- update_marked_blocks(if (is.null(current)) {
-  NULL
-} else {
-  drop_old_starter_headings(current)
-}, blocks, workflow_readme_starter)
+updated <- update_marked_blocks(cleaned, blocks, workflow_readme_starter)
 if (identical(current, updated)) {
   message("README is up to date.")
 } else {

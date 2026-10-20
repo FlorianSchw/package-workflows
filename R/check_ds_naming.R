@@ -64,11 +64,7 @@ for (i in which(rows$id %in% names(classifications))) {
   if (!identical(cl$fingerprint, rows$fingerprint[i])) {
     next
   }
-  rows[i, c("role", "class", "reason")] <- list(cl$role, if (identical(cl$class, "none")) {
-    ""
-  } else {
-    cl$class
-  }, cl$reason %||% "")
+  rows[i, c("role", "class", "reason")] <- list(cl$role, no_class_as_empty(cl$class), cl$reason %||% "")
   rows$confidence[i] <- "medium"
   rows$source[i] <- "claude"
 }
@@ -86,11 +82,13 @@ if (length(fn_keys) > 0 && use_claude) {
   for (key in head(fn_keys, max_calls)) {
     idx <- ask[paste(rows$package[ask], rows$`function`[ask], sep = "::") == key]
     def <- Find(function(d) paste(d$package, d$name, sep = "::") == key, defs)
-    linked <- with(links, if (rows$side[idx[1]] == "client") {
-      unique(server_fn[client_fn == rows$`function`[idx[1]]])
+    # The function's counterparts on the other side.
+    fn <- rows$`function`[idx[1]]
+    if (rows$side[idx[1]] == "client") {
+      linked <- unique(links$server_fn[links$client_fn == fn])
     } else {
-      unique(client_fn[server_fn == rows$`function`[idx[1]]])
-    })
+      linked <- unique(links$client_fn[links$server_fn == fn])
+    }
     answer <- tryCatch(ask_claude_for_naming(naming_claude, def, rows[idx, ], rules, linked, cache = length(fn_keys) > 1), error = function(e) {
       warn_failed_call(key, def$file, e)
       NULL
@@ -100,11 +98,7 @@ if (length(fn_keys) > 0 && use_claude) {
       if (length(i) != 1) {
         next
       }
-      rows[i, c("role", "class", "reason")] <- list(a$role, if (identical(a$class, "none")) {
-        ""
-      } else {
-        a$class
-      }, a$reason %||% "")
+      rows[i, c("role", "class", "reason")] <- list(a$role, no_class_as_empty(a$class), a$reason %||% "")
       rows$confidence[i] <- "medium"
       rows$source[i] <- "claude"
       classifications[[rows$id[i]]] <- list(id = rows$id[i], role = a$role, class = a$class, reason = a$reason %||% "", fingerprint = rows$fingerprint[i])

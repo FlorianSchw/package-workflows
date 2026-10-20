@@ -84,22 +84,15 @@ message(sprintf("Steps to write: %s", paste(to_write, collapse = ", ")))
 # --- 3. Packages -------------------------------------------------------------------
 
 usable <- usable_server_packages(plan, texts)
-catalogue <- read_package_catalogue(if (is.null(plan$`package-catalogue`)) {
-  settings$package_catalogue
-} else {
-  plan$`package-catalogue`
-})
+catalogue <- read_package_catalogue(plan$`package-catalogue` %||% settings$package_catalogue)
 functions <- read_function_catalogue(settings$function_catalogue)
 # Which catalogue packages may be suggested: the plan's package-status, else the settings'.
-statuses <- unlist(if (is.null(plan$`package-status`)) {
-  settings$package_status
-} else {
-  plan$`package-status`
-})
+statuses <- unlist(plan$`package-status` %||% settings$package_status)
 installed <- install_study_packages(usable$packages, catalogue, settings$client_suffix, texts)
-notes <- c(usable$notes, installed$notes, if ("retired" %in% statuses) {
-  texts$notes$retired_included
-})
+notes <- c(usable$notes, installed$notes)
+if ("retired" %in% statuses) {
+  notes <- c(notes, texts$notes$retired_included)
+}
 if (length(installed$clients) == 0) {
   stop("No client package could be installed for the studies' server packages; see the messages above.", call. = FALSE)
 }

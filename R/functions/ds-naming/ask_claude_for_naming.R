@@ -11,6 +11,10 @@ ask_claude_for_naming <- function(claude, def, rows, rules, linked = character(0
   }
   args_text <- paste(sprintf("- `%s` (default: %s): %s", rows$arg, ifelse(nzchar(rows$default), rows$default, "none"),
                              ifelse(nzchar(rows$doc), rows$doc, "(undocumented)")), collapse = "\n")
+  linked_text <- ""
+  if (length(linked) > 0) {
+    linked_text <- paste0("\nServer/client counterparts: ", paste(linked, collapse = "; "), "\n")
+  }
   prompt <- fill_template(claude$prompt, list(
     ROLES = bullet(rules$roles),
     CLASSES = bullet(rules$classes),
@@ -18,11 +22,7 @@ ask_claude_for_naming <- function(claude, def, rows, rules, linked = character(0
     SIDE = rows$side[1],
     FUNCTION_SOURCE = source,
     ARGUMENTS = args_text,
-    LINKED = if (length(linked) > 0) {
-      paste0("\nServer/client counterparts: ", paste(linked, collapse = "; "), "\n")
-    } else {
-      ""
-    }
+    LINKED = linked_text
   ))
   sent <- if (cache) {
     split_cached_prompt(prompt)

@@ -68,11 +68,11 @@ describe <- function(pkg_name, sel, result) {
     return(character(0))
   }
   lines <- c(sprintf("## %s", pkg_name), "")
-  lines <- c(lines, if (nrow(sel$renames) > 0) {
-    sprintf("- `%s()`: `%s` → `%s`", sel$renames$fn, sel$renames$old, sel$renames$new)
+  if (nrow(sel$renames) > 0) {
+    lines <- c(lines, sprintf("- `%s()`: `%s` → `%s`", sel$renames$fn, sel$renames$old, sel$renames$new), "")
   } else {
-    "No renames."
-  }, "")
+    lines <- c(lines, "No renames.", "")
+  }
   if (length(result$files) > 0) {
     lines <- c(lines, "Files changed (edits):", "", sprintf("- `%s` (%d)", names(result$counts), result$counts), "")
   }
@@ -109,19 +109,22 @@ if (length(own_applied) > 0) {
   mark_entries_applied(transformation_file, own_applied)
 }
 
-head_lines <- c("Renames the DataSHIELD arguments approved in the naming review.", "",
-                if (length(lockstep) > 0) {
-                  c("**Client and server out of step:**", "", sprintf("- %s", lockstep), "")
-                } else {
-                  character(0)
-                })
-writeLines(c(head_lines, describe(own$name, own_sel, own_result),
-             if (!is.null(server)) {
-               sprintf("The server package %s gets its own PR.", server$name)
-             }, "", footer), "naming_apply_report.md")
-writeLines(c(own_result$files, if (length(own_applied) > 0) {
-  transformation_file
-}), "updated_files.txt")
+head_lines <- c("Renames the DataSHIELD arguments approved in the naming review.", "")
+if (length(lockstep) > 0) {
+  head_lines <- c(head_lines, "**Client and server out of step:**", "", sprintf("- %s", lockstep), "")
+}
+report <- c(head_lines, describe(own$name, own_sel, own_result))
+if (!is.null(server)) {
+  report <- c(report, sprintf("The server package %s gets its own PR.", server$name))
+}
+writeLines(c(report, "", footer), "naming_apply_report.md")
+
+# The transformation file is proposed too once entries were marked applied.
+updated <- own_result$files
+if (length(own_applied) > 0) {
+  updated <- c(updated, transformation_file)
+}
+writeLines(updated, "updated_files.txt")
 if (!is.null(server)) {
   writeLines(c(head_lines, describe(server$name, server_sel, server_result), footer), "naming_apply_report_server.md")
   writeLines(server_result$files, "server_updated_files.txt")
