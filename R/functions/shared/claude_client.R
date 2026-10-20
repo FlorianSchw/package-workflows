@@ -7,7 +7,9 @@
 claude_client <- function(profile, prompt_file = NULL, auth = claude_auth()) {
   list(
     config = claude_settings(profile)$anthropic,
-    prompt = if (!is.null(prompt_file)) read_text_file(prompt_file),
+    prompt = if (!is.null(prompt_file)) {
+      read_text_file(prompt_file)
+    },
     auth = auth
   )
 }

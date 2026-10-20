@@ -10,7 +10,11 @@ format_naming_report <- function(rows, entries, checks, file_path, rules_version
   es <- unname(entries)
   field <- function(f) vapply(es, function(e) as.character(e[[f]] %||% ""), character(1))
   status <- field("status")
-  pct <- function(n, d) if (d == 0) "–" else sprintf("%d %%", round(100 * n / d))
+  pct <- function(n, d) if (d == 0) {
+    "–"
+  } else {
+    sprintf("%d %%", round(100 * n / d))
+  }
   open <- vapply(es, function(e) isTRUE(e$rule_open), logical(1))
 
   counts <- vapply(split(rows, rows$package), function(r) {
@@ -39,12 +43,22 @@ format_naming_report <- function(rows, entries, checks, file_path, rules_version
   )
 
   table <- function(sel) {
-    if (!any(sel)) return("None.")
+    if (!any(sel)) {
+      return("None.")
+    }
     e <- es[sel]
     c("| Function | Current | Proposed | Rule | Confidence | Reason |", "|---|---|---|---|---|---|",
       vapply(e, function(x) sprintf("| `%s` | `%s` | %s | %s%s | %s | %s |", x$`function`, x$current,
-                                    if (nzchar(x$proposed %||% "")) sprintf("`%s`", x$proposed) else "–",
-                                    x$rule, if (isTRUE(x$rule_open)) " (open)" else "", x$confidence %||% "",
+                                    if (nzchar(x$proposed %||% "")) {
+                                      sprintf("`%s`", x$proposed)
+                                    } else {
+                                      "–"
+                                    },
+                                    x$rule, if (isTRUE(x$rule_open)) {
+                                      " (open)"
+                                    } else {
+                                      ""
+                                    }, x$confidence %||% "",
                                     gsub("\\|", "/", paste(c(x$reason, x$note), collapse = " "))), character(1)))
   }
   full <- c(summary[seq_len(which(summary == "### How to review") - 1)])
@@ -58,11 +72,23 @@ format_naming_report <- function(rows, entries, checks, file_path, rules_version
   for (ch in checks) {
     full <- c(full, sprintf("## %s: other findings (report only)", ch$package), "",
               paste0("**Function names not following the pattern:** ",
-                     if (length(ch$function_names) > 0) paste(sprintf("`%s`", ch$function_names), collapse = ", ") else "none"), "",
+                     if (length(ch$function_names) > 0) {
+                       paste(sprintf("`%s`", ch$function_names), collapse = ", ")
+                     } else {
+                       "none"
+                     }), "",
               paste0("**`datasources` not last:** ",
-                     if (length(ch$order) > 0) paste(sprintf("`%s`", ch$order), collapse = ", ") else "none"), "",
+                     if (length(ch$order) > 0) {
+                       paste(sprintf("`%s`", ch$order), collapse = ", ")
+                     } else {
+                       "none"
+                     }), "",
               "**Test file names:**", "",
-              if (nrow(ch$tests) > 0) sprintf("- `%s`: %s", ch$tests$file, ch$tests$problem) else "None.", "")
+              if (nrow(ch$tests) > 0) {
+                sprintf("- `%s`: %s", ch$tests$file, ch$tests$problem)
+              } else {
+                "None."
+              }, "")
   }
   list(full = paste(full, collapse = "\n"), summary = paste(summary, collapse = "\n"))
 }

@@ -4,6 +4,8 @@
 report_style <- function() {
   defaults <- list(section_heading = 2, group_heading = 4, blank_line_between_groups = FALSE)
   style <- read_config_yaml("config/report-style.yml", required = FALSE)
-  if (is.null(style)) return(defaults)
+  if (is.null(style)) {
+    return(defaults)
+  }
   modifyList(defaults, style)
 }

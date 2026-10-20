@@ -21,11 +21,27 @@ apply_function_test_changes <- function(changed_paths, review, run, function_nam
     test_file <- if (path %in% paths) {
       review$test_files[[path]]
     } else {
-      read_test_file(path, if (review$scheme$categorised) review$new_tests[review$targets %in% path][[1]]$category else NA_character_)
+      read_test_file(path, if (review$scheme$categorised) {
+        review$new_tests[review$targets %in% path][[1]]$category
+      } else {
+        NA_character_
+      })
     }
-    file_review <- if (path %in% paths) review$reviews[[path]] else list(updates = character(0), deletes = character(0), explanations = character(0))
-    test_blocks <- if (is.null(review$new_by_file[[path]])) character(0) else review$new_by_file[[path]]
-    applied <- apply_test_file_changes(test_file, if (path %in% paths) review$blocks[[path]] else list(),
+    file_review <- if (path %in% paths) {
+      review$reviews[[path]]
+    } else {
+      list(updates = character(0), deletes = character(0), explanations = character(0))
+    }
+    test_blocks <- if (is.null(review$new_by_file[[path]])) {
+      character(0)
+    } else {
+      review$new_by_file[[path]]
+    }
+    applied <- apply_test_file_changes(test_file, if (path %in% paths) {
+      review$blocks[[path]]
+    } else {
+      list()
+    },
                                        file_review$updates, file_review$deletes, test_blocks, review$result, function_name, package_name)
 
     for (d in applied$failed_updates) {

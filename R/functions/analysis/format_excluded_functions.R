@@ -5,6 +5,8 @@
 # the merge already.
 format_excluded_functions <- function(excluded) {
   excluded <- Filter(Negate(is.null), excluded)
-  if (length(excluded) == 0) return("(none)")
+  if (length(excluded) == 0) {
+    return("(none)")
+  }
   paste(sprintf("`%s` (%s)", names(excluded), unlist(excluded)), collapse = "; ")
 }

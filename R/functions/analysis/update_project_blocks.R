@@ -10,7 +10,9 @@ update_project_blocks <- function(steps, installed, catalogue, settings, texts) 
     sprintf("source(here::here(\"%s\", \"%s\"))", paths$scripts, scripts))
 
   other_packages <- unique(unlist(lapply(steps, function(s) {
-    lapply(s$notes, function(n) if (identical(n$kind, "other_package") && nzchar(n$package)) n$package)
+    lapply(s$notes, function(n) if (identical(n$kind, "other_package") && nzchar(n$package)) {
+      n$package
+    })
   })))
   deps_block <- update_dependencies_file(paths$dependencies, installed$clients, installed$servers, other_packages, catalogue, settings, texts)
 

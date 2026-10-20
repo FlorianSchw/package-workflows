@@ -4,6 +4,8 @@
 # for a prompt. From config/suggestion-policy.yml (suggestion_reasons()).
 format_reason_meanings <- function(task, bullets = FALSE) {
   m <- suggestion_reasons(task, meanings = TRUE)
-  if (bullets) return(paste(sprintf("- %s: %s;", names(m), m), collapse = "\n"))
+  if (bullets) {
+    return(paste(sprintf("- %s: %s;", names(m), m), collapse = "\n"))
+  }
   paste(sprintf("%s: %s.", names(m), m), collapse = " ")
 }

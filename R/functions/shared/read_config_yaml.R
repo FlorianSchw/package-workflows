@@ -10,11 +10,29 @@
 # this repository's root).
 read_config_yaml <- function(rel_path, required = TRUE) {
   shared <- file.path(getOption("bot.shared_root", ".shared-workflows"), rel_path)
-  defaults <- if (file.exists(shared)) yaml::read_yaml(shared) else list()
-  own <- if (file.exists(rel_path)) yaml::read_yaml(rel_path) else list()
+  defaults <- if (file.exists(shared)) {
+    yaml::read_yaml(shared)
+  } else {
+    list()
+  }
+  own <- if (file.exists(rel_path)) {
+    yaml::read_yaml(rel_path)
+  } else {
+    list()
+  }
   if (length(defaults) == 0 && length(own) == 0) {
-    if (!required) return(NULL)
+    if (!required) {
+      return(NULL)
+    }
     stop(sprintf("Config not found: %s", rel_path), call. = FALSE)
   }
-  utils::modifyList(if (is.null(defaults)) list() else defaults, if (is.null(own)) list() else own)
+  utils::modifyList(if (is.null(defaults)) {
+    list()
+  } else {
+    defaults
+  }, if (is.null(own)) {
+    list()
+  } else {
+    own
+  })
 }

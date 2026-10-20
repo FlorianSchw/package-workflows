@@ -16,7 +16,9 @@ review_files <- function(files, state, review_file) {
       message(sprintf("Skipping %s: %s", f, conditionMessage(e)))
       NULL
     })
-    if (is.null(parsed)) next
+    if (is.null(parsed)) {
+      next
+    }
     out <- review_file(f, parsed, state)
     state <- out$state
     stats <- stats + out$stats

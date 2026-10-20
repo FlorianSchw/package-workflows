@@ -24,7 +24,9 @@ format_roxygen_report <- function(state, latest = NULL, legacy = NULL, open = in
   # Counted: open findings, not the ones the user declined.
   count <- function(x) sum(vapply(x, function(e) is_active(e) && !identical(suggestion_choice(e), "declined"), logical(1)))
   quote <- function(text) {
-    if (is.null(text) || !nzchar(trimws(text))) return(character(0))
+    if (is.null(text) || !nzchar(trimws(text))) {
+      return(character(0))
+    }
     paste0("  > ", strsplit(text, "\n", fixed = TRUE)[[1]])
   }
   is_open <- function(x) any(vapply(x, function(e) as.integer(e$id) %in% open, logical(1)))
@@ -43,7 +45,9 @@ format_roxygen_report <- function(state, latest = NULL, legacy = NULL, open = in
     lines <- unlist(lapply(unique(vapply(of_reason, function(e) e$file, character(1))), function(p) {
       c(sprintf("**`%s`**", p), unlist(lapply(active_first(Filter(function(e) identical(e$file, p), of_reason)), function(e) {
         c(choice_line(e, sprintf("`%s`: %s", e$field, e$explanation), sprintf("`%s`: %s", e$field, e$explanation)),
-          if (is_active(e)) quote(e$proposed))
+          if (is_active(e)) {
+            quote(e$proposed)
+          })
       })), "")
     }))
     list(title = group_title(r, of_reason), lines = lines, open = is_open(of_reason))
@@ -53,18 +57,24 @@ format_roxygen_report <- function(state, latest = NULL, legacy = NULL, open = in
 
   body <- c(
     paste("**Summary:**", format_roxygen_summary(state)),
-    if (!is.null(latest_line)) c("", latest_line),
+    if (!is.null(latest_line)) {
+      c("", latest_line)
+    },
     "",
-    if (length(applied) > 0) c(report_heading(sprintf("Applied changes (%d)", count(applied)), style), "",
+    if (length(applied) > 0) {
+      c(report_heading(sprintf("Applied changes (%d)", count(applied)), style), "",
                                "Untick what you don't want: the branch follows within a minute, and an unticked change isn't suggested again while the function's code stays the same.", "",
-                               applied_groups),
-    if (length(dropped) > 0) c(
+                               applied_groups)
+    },
+    if (length(dropped) > 0) {
+      c(
       report_heading(sprintf("No changes applied (%d)", count(dropped)), style),
       "",
       "Suggestions whose reason isn't on the accepted list (the `accept-reasons` input, or `accept_reasons` in `config/claude.yml`). Tick one to apply it: the branch follows within a minute.",
       "",
       dropped_groups
-    ),
+    )
+    },
     format_code_issues(entries, style)
   )
   finish_suggestion_report(body, state, legacy)

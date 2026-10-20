@@ -6,7 +6,9 @@
 # so they name the setting's path in the file.
 check_analysis_settings <- function(settings) {
   problems <- character(0)
-  need <- function(ok, what) if (!isTRUE(ok)) problems <<- c(problems, what)
+  need <- function(ok, what) if (!isTRUE(ok)) {
+    problems <<- c(problems, what)
+  }
   number <- function(x) is.numeric(x) && length(x) == 1 && !is.na(x)
   text <- function(x) is.character(x) && length(x) == 1 && nzchar(x)
 

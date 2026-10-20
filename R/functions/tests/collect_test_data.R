@@ -14,12 +14,20 @@ collect_test_data <- function(files, out) {
         counts <- table(x)
         shown <- utils::head(counts, 10)
         sprintf("factor: %s%s", paste(sprintf("\"%s\" ×%d", names(shown), as.integer(shown)), collapse = ", "),
-                if (length(counts) > 10) sprintf(", … %d levels", length(counts)) else "")
+                if (length(counts) > 10) {
+                  sprintf(", … %d levels", length(counts))
+                } else {
+                  ""
+                })
       } else {
         class(x)[1]
       }
       nas <- sum(is.na(x))
-      sprintf("%s (%s%s)", col, detail, if (nas > 0) sprintf("; %d missing", nas) else "")
+      sprintf("%s (%s%s)", col, detail, if (nas > 0) {
+        sprintf("; %d missing", nas)
+      } else {
+        ""
+      })
     }, character(1))
     sprintf("- %s: %d rows — %s", label, nrow(df), paste(cols, collapse = "; "))
   }
@@ -59,7 +67,11 @@ collect_test_data <- function(files, out) {
       tables <- frames
     }
 
-    if (length(tables) == 0) "(no data tables found)" else vapply(names(tables), function(n) describe(n, tables[[n]]), character(1))
+    if (length(tables) == 0) {
+      "(no data tables found)"
+    } else {
+      vapply(names(tables), function(n) describe(n, tables[[n]]), character(1))
+    }
   }, error = function(e) sprintf("(could not be determined: %s)", conditionMessage(e)))
 
   writeLines(c(lines, problems), out)

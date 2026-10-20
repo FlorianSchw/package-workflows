@@ -9,19 +9,35 @@ read_r_definitions <- function(path) {
     warning(sprintf("%s does not parse, skipped: %s", path, conditionMessage(e)), call. = FALSE)
     NULL
   })
-  if (is.null(exprs)) return(list())
+  if (is.null(exprs)) {
+    return(list())
+  }
   refs <- attr(exprs, "srcref")
 
   defs <- list()
   for (i in seq_along(exprs)) {
     e <- exprs[[i]]
-    if (!is.call(e) || !is.name(e[[1]]) || !as.character(e[[1]]) %in% c("<-", "=", "<<-")) next
+    if (!is.call(e) || !is.name(e[[1]]) || !as.character(e[[1]]) %in% c("<-", "=", "<<-")) {
+      next
+    }
     value <- e[[3]]
-    if (!is.call(value) || !identical(value[[1]], as.name("function"))) next
-    name <- if (is.name(e[[2]])) as.character(e[[2]]) else if (is.character(e[[2]])) e[[2]] else next
+    if (!is.call(value) || !identical(value[[1]], as.name("function"))) {
+      next
+    }
+    name <- if (is.name(e[[2]])) {
+      as.character(e[[2]])
+    } else if (is.character(e[[2]])) {
+      e[[2]]
+    } else {
+      next
+    }
     fmls <- value[[2]]
     defaults <- vapply(as.list(fmls), function(d) {
-      if (is.name(d) && !nzchar(as.character(d))) "" else paste(deparse(d, width.cutoff = 500L), collapse = " ")
+      if (is.name(d) && !nzchar(as.character(d))) {
+        ""
+      } else {
+        paste(deparse(d, width.cutoff = 500L), collapse = " ")
+      }
     }, character(1))
     line <- refs[[i]][1]
     rox <- roxygen_params(lines, line)

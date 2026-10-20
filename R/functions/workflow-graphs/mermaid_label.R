@@ -15,7 +15,9 @@ mermaid_label <- function(lines, width = 26) {
     pieces <- character(0); glue <- logical(0)
     for (word in strsplit(line, " ", fixed = TRUE)[[1]]) {
       split_after <- function(x, char) {
-        if (nchar(x) <= width) return(x)
+        if (nchar(x) <= width) {
+          return(x)
+        }
         p <- regmatches(x, gregexpr(sprintf("[^%s]*%s?", char, char), x))[[1]]
         p[nzchar(p)]
       }
@@ -24,7 +26,15 @@ mermaid_label <- function(lines, width = 26) {
     }
     out <- character(0); current <- ""
     for (i in seq_along(pieces)) {
-      candidate <- if (!nzchar(current)) pieces[i] else paste0(current, if (glue[i]) "" else " ", pieces[i])
+      candidate <- if (!nzchar(current)) {
+        pieces[i]
+      } else {
+        paste0(current, if (glue[i]) {
+        ""
+      } else {
+        " "
+      }, pieces[i])
+      }
       if (nchar(candidate) > width && nzchar(current)) {
         out <- c(out, current); current <- pieces[i]
       } else {

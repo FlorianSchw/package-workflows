@@ -13,7 +13,11 @@ post_issue_once <- function(title, body, context) {
     url <- tryCatch(httr2::resp_body_json(resp)$html_url, error = function(e) NULL)
     return(invisible(url))
   }
-  if (identical(trimws(if (is.null(existing$body)) "" else existing$body), trimws(body))) {
+  if (identical(trimws(if (is.null(existing$body)) {
+    ""
+  } else {
+    existing$body
+  }), trimws(body))) {
     message(sprintf("Issue #%s \"%s\" already says this — nothing added (%s).", existing$number, title, context))
   } else {
     message(sprintf("Issue #%s \"%s\" is already open — adding to it (%s).", existing$number, title, context))

@@ -3,7 +3,9 @@
 # has param/return/details and optionally examples) into one prose
 # paragraph.
 build_role_guidance_text <- function(cfg) {
-  if (is.null(cfg)) return("")
+  if (is.null(cfg)) {
+    return("")
+  }
   join <- function(x) paste(unlist(x), collapse = " ")
   doc <- cfg$documentation
   parts <- c(

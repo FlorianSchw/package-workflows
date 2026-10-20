@@ -7,8 +7,14 @@
 # dev-notes/suggestion-thresholds.md.
 suggestion_reasons <- function(task, meanings = FALSE, accepted = FALSE, policy = suggestion_policy()) {
   reasons <- policy[[task]]$reasons
-  if (is.null(reasons) || length(reasons) == 0) stop(sprintf("Unknown suggestion task '%s'.", task))
-  if (accepted) reasons <- Filter(function(r) isTRUE(r$accept), reasons)
-  if (meanings) return(vapply(reasons, function(r) r$meaning, character(1)))
+  if (is.null(reasons) || length(reasons) == 0) {
+    stop(sprintf("Unknown suggestion task '%s'.", task))
+  }
+  if (accepted) {
+    reasons <- Filter(function(r) isTRUE(r$accept), reasons)
+  }
+  if (meanings) {
+    return(vapply(reasons, function(r) r$meaning, character(1)))
+  }
   names(reasons)
 }

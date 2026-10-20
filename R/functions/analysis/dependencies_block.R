@@ -10,6 +10,8 @@ dependencies_block <- function(clients, servers, not_on_servers, texts) {
     texts$dependencies$servers,
     "library(DSLite)",
     sprintf("library(%s)", servers),
-    if (length(not_on_servers) > 0) c(unlist(texts$dependencies$not_on_servers), sprintf("# library(%s)", not_on_servers))
+    if (length(not_on_servers) > 0) {
+      c(unlist(texts$dependencies$not_on_servers), sprintf("# library(%s)", not_on_servers))
+    }
   )
 }

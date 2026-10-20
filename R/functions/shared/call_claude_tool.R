@@ -43,7 +43,9 @@ call_claude_tool <- function(claude, tool, prompt) {
 
   content <- if (is.list(prompt)) {
     marker <- list(type = "ephemeral")
-    if (identical(config$cache_ttl, "1h")) marker$ttl <- "1h"
+    if (identical(config$cache_ttl, "1h")) {
+      marker$ttl <- "1h"
+    }
     list(
       list(type = "text", text = prompt$cached, cache_control = marker),
       list(type = "text", text = prompt$rest)

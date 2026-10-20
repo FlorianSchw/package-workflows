@@ -10,13 +10,21 @@
 # without the hidden state, which only a bot PR carries. Capped below
 # GitHub's 65536-character body limit.
 publish_test_report <- function(body, has_pr, routing) {
-  if (!has_pr) body <- sub("\n*<!-- bot-suggest-state: [A-Za-z0-9+/=]+ -->\\s*$", "", body)
+  if (!has_pr) {
+    body <- sub("\n*<!-- bot-suggest-state: [A-Za-z0-9+/=]+ -->\\s*$", "", body)
+  }
   max_chars <- 60000
   if (nchar(body) > max_chars) {
     body <- paste0(substr(body, 1, max_chars), "\n\n… truncated — see the job log for the rest.")
   }
 
-  destination <- if (has_pr) "description" else if (is_sweep) routing$without_pr else routing$on_pr
+  destination <- if (has_pr) {
+    "description"
+  } else if (is_sweep) {
+    routing$without_pr
+  } else {
+    routing$on_pr
+  }
   switch(destination,
     description = writeLines(body, "suggestion_report.md"),
     issue = post_issue_once("Test coverage sweep: findings", body, "test report"),

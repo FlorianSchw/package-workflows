@@ -31,7 +31,11 @@ library(httr2)
 library(jsonlite)
 library(purrr)
 
-functions_dir <- if (dir.exists("R/functions")) "R/functions" else ".shared-workflows/R/functions"
+functions_dir <- if (dir.exists("R/functions")) {
+  "R/functions"
+} else {
+  ".shared-workflows/R/functions"
+}
 walk(list.files(file.path(functions_dir, c("shared", "tests")), pattern = "\\.R$", full.names = TRUE), source)
 use_recorded_answers()  # self-test mode only (input self-test-fixture)
 
@@ -78,7 +82,11 @@ package_name                          <- read_package_name()
 # DSLite's built-in canned datasets need no server/credentials/per-package
 # matching — unlike datashield-example-env.yml, which describes the real
 # Opal demo server for roxygen's usage examples, a different scenario.
-dslite_datasets <- if (may_use_dslite) read_config_yaml("config/dslite-canned-datasets.yml", required = FALSE)$datasets else NULL
+dslite_datasets <- if (may_use_dslite) {
+  read_config_yaml("config/dslite-canned-datasets.yml", required = FALSE)$datasets
+} else {
+  NULL
+}
 
 
 files <- readLines("files_to_check.txt")
@@ -89,14 +97,24 @@ files <- files[nzchar(files)]
 # runs, so its tests count as existing, and its report is merged with this
 # run's findings instead of growing an update per run (see
 # dev-notes/test-suggest.md).
-pr_body <- if (builds_on_open_pr) fetch_suggestion_pr_body(sub_branch) else NULL
+pr_body <- if (builds_on_open_pr) {
+  fetch_suggestion_pr_body(sub_branch)
+} else {
+  NULL
+}
 state <- decode_suggestion_state(pr_body)
 # The user's checkboxes (dev-notes/suggestion-choices.md): recorded before
 # anything else, so the rebuilt description keeps them.
 state <- record_suggestion_choices(state, read_suggestion_choices(pr_body))
 # code-issue-confidence "none": no possible bugs, also not earlier ones.
-if (length(code_issue_confidence) == 0) state$entries <- Filter(function(e) !identical(e$kind, "bug"), state$entries)
-bot_ref <- if (!is.null(pr_body)) fetch_bot_branch(sub_branch) else NULL
+if (length(code_issue_confidence) == 0) {
+  state$entries <- Filter(function(e) !identical(e$kind, "bug"), state$entries)
+}
+bot_ref <- if (!is.null(pr_body)) {
+  fetch_bot_branch(sub_branch)
+} else {
+  NULL
+}
 bot_tests <- materialize_bot_tests(bot_ref, base_rev)
 
 # How the repository names its test files (test-<name>.R or
@@ -104,7 +122,9 @@ bot_tests <- materialize_bot_tests(bot_ref, base_rev)
 # run. The names to recognise: the R files' names (test_file_name()), plus
 # the function names, which other repositories' category files may use.
 scheme <- detect_test_scheme(unique(c(test_file_name(list.files("R", pattern = "[.][Rr]$")), package_function_names())))
-if (scheme$categorised) message("Test files are named by category: ", paste(scheme$categories, collapse = ", "))
+if (scheme$categorised) {
+  message("Test files are named by category: ", paste(scheme$categories, collapse = ", "))
+}
 
 # Structure of the test data the package's setup/helper files create —
 # once per run, in a separate R process.
@@ -139,9 +159,15 @@ merge_run <- function(run) {
 
 # Proposed tests only count if R CMD check runs them: set up testthat in
 # packages that don't have it yet.
-testthat_setup <- if (new_total > 0) ensure_testthat_setup(package_name) else character(0)
+testthat_setup <- if (new_total > 0) {
+  ensure_testthat_setup(package_name)
+} else {
+  character(0)
+}
 updated_files <- c(updated_files, testthat_setup)
-if (length(testthat_setup) > 0) merge_run(list(setups = testthat_setup))
+if (length(testthat_setup) > 0) {
+  merge_run(list(setups = testthat_setup))
+}
 
 # Packages the proposed tests use but DESCRIPTION doesn't declare go into
 # Suggests, so R CMD check doesn't warn about them.
@@ -166,7 +192,9 @@ restore_unproposed_files(bot_tests$materialized, updated_files)
 # or issue on every run would be noise.
 has_pr <- length(updated_files) > 0 || !is.null(pr_body)
 open_kinds <- vapply(Filter(function(e) identical(e$status, "active"), state$entries), function(e) e$kind, character(1))
-if (length(updated_files) > 0) writeLines(format_test_summary(state), "suggestion_summary.md")
+if (length(updated_files) > 0) {
+  writeLines(format_test_summary(state), "suggestion_summary.md")
+}
 if (has_pr || any(open_kinds %in% c("note", "bug")) || any(vapply(state$entries, function(e) isTRUE(e$in_report), logical(1)))) {
   report <- format_test_report(state, list(sha = reviewed_sha, stats = stats), state$legacy)
   publish_test_report(report, has_pr = has_pr, routing = report_routing)

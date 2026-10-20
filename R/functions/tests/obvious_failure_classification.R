@@ -10,8 +10,12 @@ obvious_failure_classification <- function(message) {
     return(known("bad_test", "the generated test code doesn't parse."))
   }
   fn <- regmatches(msg, regexec("could not find function \"([^\"]+)\"", msg))[[1]]
-  if (length(fn) == 2) return(known("bad_test", sprintf("the test calls `%s()`, which doesn't exist.", fn[2])))
+  if (length(fn) == 2) {
+    return(known("bad_test", sprintf("the test calls `%s()`, which doesn't exist.", fn[2])))
+  }
   pkg <- regmatches(msg, regexec("there is no package called .([A-Za-z0-9.]+).", msg))[[1]]
-  if (length(pkg) == 2) return(known("env_misconfiguration", sprintf("the package `%s` isn't installed in the test environment.", pkg[2])))
+  if (length(pkg) == 2) {
+    return(known("env_misconfiguration", sprintf("the package `%s` isn't installed in the test environment.", pkg[2])))
+  }
   NULL
 }

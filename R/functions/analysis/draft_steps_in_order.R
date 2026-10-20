@@ -52,7 +52,9 @@ draft_steps_in_order <- function(to_write, plan, steps, existing, context, check
 
     if (is.null(d) || is.null(d$answers[[id]]) || id %in% names(d$outcome$problems)) {
       failed <- c(failed, id)
-      if (!is.null(d)) out$outcome$problems[[id]] <- d$outcome$problems[[id]]
+      if (!is.null(d)) {
+        out$outcome$problems[[id]] <- d$outcome$problems[[id]]
+      }
       # Shown in the job log before the scripts are removed.
       for (f in out$candidate[[id]][file.exists(out$candidate[[id]])]) {
         cat(sprintf("::group::Failed script %s (step %s)\n", f, id))
@@ -60,11 +62,15 @@ draft_steps_in_order <- function(to_write, plan, steps, existing, context, check
         cat("\n::endgroup::\n")
       }
       unlink(out$candidate[[id]])
-      for (p in rewritten$path[rewritten$step == id]) writeLines(old_content[[p]], p)
+      for (p in rewritten$path[rewritten$step == id]) {
+        writeLines(old_content[[p]], p)
+      }
       next
     }
     present <- rbind(present[present$step != id, ], data.frame(path = out$candidate[[id]], step = rep(id, length(out$candidate[[id]]))))
-    if (nzchar(d$outcome$objects %||% "")) context$created_objects <- d$outcome$objects
+    if (nzchar(d$outcome$objects %||% "")) {
+      context$created_objects <- d$outcome$objects
+    }
   }
   out
 }

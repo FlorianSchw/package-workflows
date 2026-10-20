@@ -18,7 +18,9 @@
 review_roxygen_file <- function(f, parsed, state, ctx) {
   source_block <- review_source_block(f, parsed, ctx$bot_ref, ctx$base_rev)
   parsed <- source_block$parsed
-  if (source_block$from_bot) message(sprintf("%s: reviewing the block the open bot PR proposes.", f))
+  if (source_block$from_bot) {
+    message(sprintf("%s: reviewing the block the open bot PR proposes.", f))
+  }
   fingerprint <- code_fingerprint(fn_source(parsed))
   declined <- declined_suggestions(state, function(e) identical(e$file, f), fingerprint, ctx$reviewed_sha)
   state <- declined$state
@@ -27,16 +29,24 @@ review_roxygen_file <- function(f, parsed, state, ctx) {
   no_change <- list(state = state, stats = c(new = 0L, crossed = 0L, repeats = 0L), updated = character(0))
 
   with_code_issues <- length(ctx$code_issue_confidence) > 0
-  role_text <- if (identical(ctx$ds_type, "utility") && !uses_ds_connections(parsed)) ctx$role_text_local else ctx$role_text
+  role_text <- if (identical(ctx$ds_type, "utility") && !uses_ds_connections(parsed)) {
+    ctx$role_text_local
+  } else {
+    ctx$role_text
+  }
   result <- try_claude_call(function() {
     ask_claude_for_review(ctx$claude, parsed, select_profile(parsed), role_text, earlier, with_code_issues)
   }, f)
-  if (is.null(result)) return(no_change)
+  if (is.null(result)) {
+    return(no_change)
+  }
 
   # Code defects are reported whether or not the documentation changes.
   run <- list(applied = list(), dropped = list(), decisions = result$earlier_findings,
               bugs = kept_code_issues(result$code_issues, ctx$code_issue_confidence, f), code = fingerprint)
-  if (length(run$bugs) > 0) message(sprintf("%s: %d possible code issue(s) noted.", f, length(run$bugs)))
+  if (length(run$bugs) > 0) {
+    message(sprintf("%s: %d possible code issue(s) noted.", f, length(run$bugs)))
+  }
 
   updated <- character(0)
   if (!isTRUE(result$needs_changes)) {

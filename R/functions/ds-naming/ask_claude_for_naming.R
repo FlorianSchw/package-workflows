@@ -6,7 +6,9 @@
 ask_claude_for_naming <- function(claude, def, rows, rules, linked = character(0), cache = FALSE) {
   bullet <- function(items) paste(sprintf("- `%s`: %s", names(items), vapply(items, function(x) x$description %||% "", character(1))), collapse = "\n")
   source <- def$source
-  if (nchar(source) > 12000) source <- paste0(substr(source, 1, 12000), "\n# ... (rest cut)")
+  if (nchar(source) > 12000) {
+    source <- paste0(substr(source, 1, 12000), "\n# ... (rest cut)")
+  }
   args_text <- paste(sprintf("- `%s` (default: %s): %s", rows$arg, ifelse(nzchar(rows$default), rows$default, "none"),
                              ifelse(nzchar(rows$doc), rows$doc, "(undocumented)")), collapse = "\n")
   prompt <- fill_template(claude$prompt, list(
@@ -16,8 +18,16 @@ ask_claude_for_naming <- function(claude, def, rows, rules, linked = character(0
     SIDE = rows$side[1],
     FUNCTION_SOURCE = source,
     ARGUMENTS = args_text,
-    LINKED = if (length(linked) > 0) paste0("\nServer/client counterparts: ", paste(linked, collapse = "; "), "\n") else ""
+    LINKED = if (length(linked) > 0) {
+      paste0("\nServer/client counterparts: ", paste(linked, collapse = "; "), "\n")
+    } else {
+      ""
+    }
   ))
-  sent <- if (cache) split_cached_prompt(prompt) else sub("<!-- per function -->\n", "", prompt, fixed = TRUE)
+  sent <- if (cache) {
+    split_cached_prompt(prompt)
+  } else {
+    sub("<!-- per function -->\n", "", prompt, fixed = TRUE)
+  }
   call_claude_tool(claude, build_naming_classification_tool(rules), sent)$arguments
 }

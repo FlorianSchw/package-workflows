@@ -24,7 +24,11 @@ assemble_test_block <- function(tests, function_name) {
     }
 
     body_lines <- c(
-      if (nzchar(trimws(setup_code))) strsplit(setup_code, "\n")[[1]] else character(0),
+      if (nzchar(trimws(setup_code))) {
+        strsplit(setup_code, "\n")[[1]]
+      } else {
+        character(0)
+      },
       strsplit(assertions, "\n")[[1]]
     )
     body <- paste(paste0("  ", body_lines), collapse = "\n")

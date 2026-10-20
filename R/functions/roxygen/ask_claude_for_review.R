@@ -17,7 +17,11 @@ ask_claude_for_review <- function(claude, parsed, profile, role_text, earlier = 
     ROLE_GUIDANCE    = role_text,
     EXISTING_BLOCK   = existing_block,
     FUNCTION_SOURCE  = fn_source(parsed),
-    PARAMS           = if (length(parsed$params) > 0) paste(parsed$params, collapse = ", ") else "(none)",
+    PARAMS           = if (length(parsed$params) > 0) {
+      paste(parsed$params, collapse = ", ")
+    } else {
+      "(none)"
+    },
     EARLIER_FINDINGS = format_earlier_findings(earlier)
   ))
 

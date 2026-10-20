@@ -20,7 +20,11 @@ library(httr2)
 library(jsonlite)
 library(purrr)
 
-functions_dir <- if (dir.exists("R/functions")) "R/functions" else ".shared-workflows/R/functions"
+functions_dir <- if (dir.exists("R/functions")) {
+  "R/functions"
+} else {
+  ".shared-workflows/R/functions"
+}
 walk(list.files(file.path(functions_dir, c("shared", "roxygen")), pattern = "\\.R$", full.names = TRUE), source)
 use_recorded_answers()  # self-test mode only (input self-test-fixture)
 
@@ -58,7 +62,11 @@ if (isTRUE(datashield)) {
   demo_snippet <- NULL
   if (ds_type %in% c("client", "utility")) {
     example_env <- read_config_yaml("config/datashield-example-env.yml", required = FALSE)
-    candidates <- if (identical(ds_type, "utility")) c(package_name, read_package_dependencies()) else package_name
+    candidates <- if (identical(ds_type, "utility")) {
+      c(package_name, read_package_dependencies())
+    } else {
+      package_name
+    }
     group <- find_study_group(example_env, candidates)
     if (is.null(group)) {
       message(sprintf("No compatible demo study group found for package '%s' — skipping canonical example guidance.", package_name))
@@ -78,7 +86,11 @@ files <- files[nzchar(files)]
 # the starting point: functions are reviewed on top of what it already
 # proposes, and its report is merged with this run's findings instead of
 # growing an update per run (see dev-notes/roxygen-suggest.md).
-pr_body <- if (builds_on_open_pr) fetch_suggestion_pr_body(sub_branch) else NULL
+pr_body <- if (builds_on_open_pr) {
+  fetch_suggestion_pr_body(sub_branch)
+} else {
+  NULL
+}
 state <- decode_suggestion_state(pr_body)
 # The user's checkboxes (dev-notes/suggestion-choices.md): recorded before
 # anything else, so the rebuilt description keeps them.
@@ -86,8 +98,14 @@ state <- record_suggestion_choices(state, read_suggestion_choices(pr_body))
 # code-issue-confidence "none": no possible bugs — not asked for, and
 # earlier ones leave the report too.
 with_code_issues <- length(code_issue_confidence) > 0
-if (!with_code_issues) state$entries <- Filter(function(e) !identical(e$kind, "bug"), state$entries)
-bot_ref <- if (!is.null(pr_body)) fetch_bot_branch(sub_branch) else NULL
+if (!with_code_issues) {
+  state$entries <- Filter(function(e) !identical(e$kind, "bug"), state$entries)
+}
+bot_ref <- if (!is.null(pr_body)) {
+  fetch_bot_branch(sub_branch)
+} else {
+  NULL
+}
 
 # --- Main loop: one review per file (review_roxygen_file()) -----------------
 
@@ -118,7 +136,11 @@ if (length(updated_files) > 0 || !is.null(pr_body)) {
   writeLines(format_roxygen_report(state, list(sha = reviewed_sha, stats = stats), state$legacy), "suggestion_report.md")
 } else if (any(vapply(state$entries, function(e) identical(e$kind, "bug"), logical(1)))) {
   bugs <- paste(format_code_issues(state$entries), collapse = "\n")
-  switch(if (nzchar(pr_number)) bug_routing$on_pr else bug_routing$without_pr,
+  switch(if (nzchar(pr_number)) {
+    bug_routing$on_pr
+  } else {
+    bug_routing$without_pr
+  },
     comment = comment_once(pr_number, bugs, "possible code bugs"),
     issue = report_sweep_code_issues(bugs),
     log = message("Possible code bugs (routing: log):\n", bugs)

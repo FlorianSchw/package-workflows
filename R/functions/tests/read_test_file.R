@@ -7,7 +7,11 @@ read_test_file <- function(path, category = NA_character_) {
   list(
     path = path,
     exists = exists,
-    content = if (exists) paste(readLines(path, warn = FALSE), collapse = "\n") else "",
+    content = if (exists) {
+      paste(readLines(path, warn = FALSE), collapse = "\n")
+    } else {
+      ""
+    },
     category = category
   )
 }

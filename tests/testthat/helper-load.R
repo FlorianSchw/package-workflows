@@ -29,7 +29,9 @@ local_fixture <- function(name, env = parent.frame()) {
 run_entry_script <- function(script, dir, env = character(0)) {
   shared <- file.path(dir, ".shared-workflows")
   dir.create(shared, showWarnings = FALSE)
-  for (part in c("R", "config", "prompts")) file.copy(file.path(repo_root, part), shared, recursive = TRUE)
+  for (part in c("R", "config", "prompts")) {
+    file.copy(file.path(repo_root, part), shared, recursive = TRUE)
+  }
   out <- withr::with_dir(dir, withr::with_envvar(env, suppressWarnings(system2(
     file.path(R.home("bin"), "Rscript"), shQuote(file.path(".shared-workflows", "R", script)),
     stdout = TRUE, stderr = TRUE
@@ -50,7 +52,9 @@ run_entry_script <- function(script, dir, env = character(0)) {
 run_entry_script_mocked <- function(script, dir, env = character(0), answers = list(), github = list()) {
   shared <- file.path(dir, ".shared-workflows")
   dir.create(shared, showWarnings = FALSE)
-  for (part in c("R", "config", "prompts")) file.copy(file.path(repo_root, part), shared, recursive = TRUE)
+  for (part in c("R", "config", "prompts")) {
+    file.copy(file.path(repo_root, part), shared, recursive = TRUE)
+  }
   queue <- answers
   requests <- list()
   mock <- function(req) {
@@ -59,11 +63,15 @@ run_entry_script_mocked <- function(script, dir, env = character(0), answers = l
       return(httr2::response(status_code = 200, headers = list("content-type" = "application/json"),
                              body = charToRaw(jsonlite::toJSON(github[[path]], auto_unbox = TRUE, null = "null"))))
     }
-    if (!grepl("api.anthropic.com", req$url, fixed = TRUE)) return(httr2::response(status_code = 404))
+    if (!grepl("api.anthropic.com", req$url, fixed = TRUE)) {
+      return(httr2::response(status_code = 404))
+    }
     body <- request_body(req)
     tool <- body$tools[[1]]$name
     requests[[length(requests) + 1]] <<- body
-    if (length(queue[[tool]]) == 0) stop("No recorded answer left for ", tool)
+    if (length(queue[[tool]]) == 0) {
+      stop("No recorded answer left for ", tool)
+    }
     input <- queue[[tool]][[1]]
     queue[[tool]] <<- queue[[tool]][-1]
     claude_response(list(list(type = "tool_use", id = "toolu_1", name = tool, input = input)))
@@ -82,8 +90,12 @@ run_entry_script_mocked <- function(script, dir, env = character(0), answers = l
 local_global_mock <- function(..., env = parent.frame()) {
   mocks <- list(...)
   originals <- mget(names(mocks), envir = globalenv())
-  for (n in names(mocks)) assign(n, mocks[[n]], envir = globalenv())
-  withr::defer(for (n in names(originals)) assign(n, originals[[n]], envir = globalenv()), envir = env)
+  for (n in names(mocks)) {
+    assign(n, mocks[[n]], envir = globalenv())
+  }
+  withr::defer(for (n in names(originals)) {
+    assign(n, originals[[n]], envir = globalenv())
+  }, envir = env)
 }
 
 # A response of the Messages API for httr2::with_mocked_responses().
@@ -100,7 +112,11 @@ claude_response <- function(content, stop_reason = "tool_use") {
 # The JSON body of a request as the API receives it.
 request_body <- function(req) {
   body <- httr2::req_get_body(req)
-  if (is.raw(body)) body <- rawToChar(body)
-  if (is.list(body)) body <- jsonlite::toJSON(body, auto_unbox = TRUE, null = "null", digits = 22)
+  if (is.raw(body)) {
+    body <- rawToChar(body)
+  }
+  if (is.list(body)) {
+    body <- jsonlite::toJSON(body, auto_unbox = TRUE, null = "null", digits = 22)
+  }
   jsonlite::fromJSON(body, simplifyVector = FALSE)
 }

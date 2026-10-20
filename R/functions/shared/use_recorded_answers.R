@@ -11,7 +11,9 @@
 #   (/users/<login>) from `github.users`; anything else gets 404.
 # Does nothing otherwise. Called at the start of the entry scripts.
 use_recorded_answers <- function(path = Sys.getenv("CLAUDE_RECORDED_ANSWERS"), env = globalenv()) {
-  if (!nzchar(path)) return(invisible(FALSE))
+  if (!nzchar(path)) {
+    return(invisible(FALSE))
+  }
   answers <- jsonlite::read_json(path)
   github <- answers$github
   queue <- new.env()
@@ -25,25 +27,41 @@ use_recorded_answers <- function(path = Sys.getenv("CLAUDE_RECORDED_ANSWERS"), e
     if (grepl("^/repos/[^/]+/[^/]+/commits/[0-9a-f]+$", route)) {
       sha <- sub("^.*/", "", route)
       who <- suppressWarnings(system2("git", c("log", "-1", "--format=%an%x09%ae", sha), stdout = TRUE, stderr = FALSE))
-      if (length(who) == 0) return(httr2::response(status_code = 404))
+      if (length(who) == 0) {
+        return(httr2::response(status_code = 404))
+      }
       parts <- strsplit(who, "\t", fixed = TRUE)[[1]]
       login <- github$logins[[parts[1]]]
       return(json_response(list(commit = list(author = list(name = parts[1], email = parts[2])),
-                                author = if (is.null(login)) NULL else list(login = login))))
+                                author = if (is.null(login)) {
+                                  NULL
+                                } else {
+                                  list(login = login)
+                                })))
     }
     if (grepl("^/users/[^/]+$", route)) {
       user <- github$users[[sub("^/users/", "", route)]]
-      if (!is.null(user)) return(json_response(user))
+      if (!is.null(user)) {
+        return(json_response(user))
+      }
     }
     httr2::response(status_code = 404)
   }
   mock <- function(req) {
-    if (!grepl("api.anthropic.com", req$url, fixed = TRUE)) return(github_response(req$url))
+    if (!grepl("api.anthropic.com", req$url, fixed = TRUE)) {
+      return(github_response(req$url))
+    }
     body <- httr2::req_get_body(req)
-    if (is.raw(body)) body <- rawToChar(body)
-    if (is.character(body)) body <- jsonlite::fromJSON(body, simplifyVector = FALSE)
+    if (is.raw(body)) {
+      body <- rawToChar(body)
+    }
+    if (is.character(body)) {
+      body <- jsonlite::fromJSON(body, simplifyVector = FALSE)
+    }
     tool <- body$tools[[1]]$name
-    if (length(queue$answers[[tool]]) == 0) stop("Self-test: no recorded answer left for ", tool, call. = FALSE)
+    if (length(queue$answers[[tool]]) == 0) {
+      stop("Self-test: no recorded answer left for ", tool, call. = FALSE)
+    }
     input <- queue$answers[[tool]][[1]]
     queue$answers[[tool]] <- queue$answers[[tool]][-1]
     json_response(list(

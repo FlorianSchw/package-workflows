@@ -45,7 +45,11 @@ review_test_file <- function(f, parsed, state, ctx) {
   # in this run is reused by later ones.
   uses_connections <- uses_ds_connections(parsed)
   needs_dslite <- ctx$may_use_dslite && (identical(ctx$ds_type, "client") || uses_connections)
-  setup_plan <- if (needs_dslite) decide_dslite_setup(ctx$dslite_setup_mode, detect_connection_approaches()) else "not_needed"
+  setup_plan <- if (needs_dslite) {
+    decide_dslite_setup(ctx$dslite_setup_mode, detect_connection_approaches())
+  } else {
+    "not_needed"
+  }
   if (identical(setup_plan, "none")) {
     message(sprintf("%s: needs DataSHIELD connections, but the tests have none and dslite-setup is 'never' — not tested.", function_name))
     return(finish(c(run, list(untested = f))))
@@ -59,14 +63,24 @@ review_test_file <- function(f, parsed, state, ctx) {
   run$current <- unlist(lapply(paths, function(p) lapply(baseline[[p]], function(r) list(file = p, description = r$description, passed = isTRUE(r$passed)))), recursive = FALSE)
   earlier <- Filter(function(e) identical(e$fn, function_name) && identical(e$status, "active") && e$kind %in% c("note", "bug", "failed"), state$entries)
 
-  offered_datasets <- if (identical(setup_plan, "create")) ctx$dslite_datasets else NULL
+  offered_datasets <- if (identical(setup_plan, "create")) {
+    ctx$dslite_datasets
+  } else {
+    NULL
+  }
   support_files <- test_support_files()
   context <- list(
     role_text = build_test_role_guidance(ctx$datashield, ctx$ds_type, identical(setup_plan, "reuse"), offered_datasets, ctx$test_role_guidance, uses_connections),
     scheme_text = format_test_scheme_guidance(ctx$scheme, ctx$category_meanings, file_name, test_files),
-    categories = if (ctx$scheme$categorised) ctx$scheme$categories,
+    categories = if (ctx$scheme$categorised) {
+      ctx$scheme$categories
+    },
     test_files = test_files,
-    examples = if (length(test_files) == 0) example_test_files(ctx$scheme) else list(),
+    examples = if (length(test_files) == 0) {
+      example_test_files(ctx$scheme)
+    } else {
+      list()
+    },
     support_files = c(support_files, test_sourced_files(support_files)),
     test_data = ctx$test_data,
     test_results = format_test_results(baseline),
@@ -79,7 +93,9 @@ review_test_file <- function(f, parsed, state, ctx) {
   )
 
   result <- try_claude_call(function() ask_claude_for_tests(ctx$review_claude, parsed, context), f, paste0(function_name, "()"))
-  if (is.null(result)) return(finish(run))
+  if (is.null(result)) {
+    return(finish(run))
+  }
   run$decisions <- result$earlier_findings
 
   # Decisions on existing tests, per test file; declined ones stay out.
@@ -130,9 +146,15 @@ review_test_file <- function(f, parsed, state, ctx) {
     for (k in seq_along(failures)) {
       outcome <- handle_failed_new_test(failures[[k]]$fail, failures[[k]]$block, failures[[k]]$path, verdicts[[k]],
                                         function_name, ctx$code_issue_confidence, ctx$issue_confidence, ctx$comment_failures)
-      if (is.null(outcome)) next
-      if (outcome$kind == "bug") run$bugs[[length(run$bugs) + 1]] <- outcome$entry
-      if (outcome$kind == "failed") run$failed[[length(run$failed) + 1]] <- outcome$entry
+      if (is.null(outcome)) {
+        next
+      }
+      if (outcome$kind == "bug") {
+        run$bugs[[length(run$bugs) + 1]] <- outcome$entry
+      }
+      if (outcome$kind == "failed") {
+        run$failed[[length(run$failed) + 1]] <- outcome$entry
+      }
     }
   }
 

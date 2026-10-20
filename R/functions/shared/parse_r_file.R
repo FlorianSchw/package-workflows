@@ -8,7 +8,9 @@
 parse_r_file <- function(path) {
   lines <- readLines(path, warn = FALSE)
   defs <- read_r_definitions(path)
-  if (length(defs) == 0) return(NULL)
+  if (length(defs) == 0) {
+    return(NULL)
+  }
   if (length(defs) > 1) {
     warning(sprintf(
       "%s: found %d function definitions; only checking the first. Convention assumes one per file.",
@@ -20,23 +22,39 @@ parse_r_file <- function(path) {
   params <- defs[[1]]$args
 
   gap_end <- fn_start - 1
-  while (gap_end >= 1 && !nzchar(trimws(lines[gap_end]))) gap_end <- gap_end - 1
+  while (gap_end >= 1 && !nzchar(trimws(lines[gap_end]))) {
+    gap_end <- gap_end - 1
+  }
 
   rox_end <- gap_end
   rox_start <- rox_end
-  while (rox_start >= 1 && grepl("^\\s*#'", lines[rox_start])) rox_start <- rox_start - 1
+  while (rox_start >= 1 && grepl("^\\s*#'", lines[rox_start])) {
+    rox_start <- rox_start - 1
+  }
   rox_start <- rox_start + 1
   has_roxygen <- rox_start <= rox_end
-  roxygen_lines <- if (has_roxygen) lines[rox_start:rox_end] else character(0)
+  roxygen_lines <- if (has_roxygen) {
+    lines[rox_start:rox_end]
+  } else {
+    character(0)
+  }
 
-  pre_end <- if (has_roxygen) rox_start - 1 else fn_start - 1
+  pre_end <- if (has_roxygen) {
+    rox_start - 1
+  } else {
+    fn_start - 1
+  }
   gap_lines <- if (has_roxygen && (rox_end + 1) <= (fn_start - 1)) {
     lines[(rox_end + 1):(fn_start - 1)]
   } else {
     character(0)
   }
 
-  body_text <- if (length(roxygen_lines) > 0) sub("^\\s*#'\\s?", "", roxygen_lines) else character(0)
+  body_text <- if (length(roxygen_lines) > 0) {
+    sub("^\\s*#'\\s?", "", roxygen_lines)
+  } else {
+    character(0)
+  }
   is_exported <- any(grepl("^@export\\b", body_text))
 
   # Each tag together with its continuation lines (everything up to the next
@@ -66,8 +84,16 @@ parse_r_file <- function(path) {
   list(
     lines = lines, fn_start = fn_start, fn_name = fn_name, params = params,
     has_roxygen = has_roxygen,
-    roxygen_start = if (has_roxygen) rox_start else fn_start,
-    roxygen_end = if (has_roxygen) rox_end else fn_start - 1,
+    roxygen_start = if (has_roxygen) {
+      rox_start
+    } else {
+      fn_start
+    },
+    roxygen_end = if (has_roxygen) {
+      rox_end
+    } else {
+      fn_start - 1
+    },
     roxygen_lines = roxygen_lines,
     pre_end = pre_end,
     gap_lines = gap_lines,

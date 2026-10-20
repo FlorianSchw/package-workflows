@@ -6,12 +6,20 @@
 # silently dropping every suggestion. See
 # dev-notes/suggestion-thresholds.md.
 accepted_reasons <- function(input, configured, task) {
-  reasons <- if (nzchar(trimws(input))) trimws(strsplit(input, ",", fixed = TRUE)[[1]]) else unlist(configured)
+  reasons <- if (nzchar(trimws(input))) {
+    trimws(strsplit(input, ",", fixed = TRUE)[[1]])
+  } else {
+    unlist(configured)
+  }
   reasons <- reasons[nzchar(reasons)]
   known <- suggestion_reasons(task)
   if (length(reasons) == 0 || length(setdiff(reasons, known)) > 0) {
     stop(sprintf("accept-reasons is '%s' — use one or more of: %s, separated by commas.",
-                 if (nzchar(trimws(input))) input else paste(reasons, collapse = ","), paste(known, collapse = ", ")), call. = FALSE)
+                 if (nzchar(trimws(input))) {
+                   input
+                 } else {
+                   paste(reasons, collapse = ",")
+                 }, paste(known, collapse = ", ")), call. = FALSE)
   }
   reasons
 }

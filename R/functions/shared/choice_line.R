@@ -6,11 +6,25 @@
 # finding is a plain line (finding_line()).
 choice_line <- function(e, text, short = text) {
   choice <- suggestion_choice(e)
-  if (identical(choice, "none")) return(finding_line(e, text, short))
-  notes <- c(if (nzchar(e$sha)) e$sha, if (identical(choice, "declined")) "declined")
+  if (identical(choice, "none")) {
+    return(finding_line(e, text, short))
+  }
+  notes <- c(if (nzchar(e$sha)) {
+    e$sha
+  }, if (identical(choice, "declined")) {
+    "declined"
+  })
   sprintf("- [%s] %s%s <!-- choice:E%d -->",
-          if (identical(choice, "ticked")) "x" else " ",
+          if (identical(choice, "ticked")) {
+            "x"
+          } else {
+            " "
+          },
           text,
-          if (length(notes) > 0) sprintf(" _(%s)_", paste(notes, collapse = " · ")) else "",
+          if (length(notes) > 0) {
+            sprintf(" _(%s)_", paste(notes, collapse = " · "))
+          } else {
+            ""
+          },
           as.integer(e$id))
 }

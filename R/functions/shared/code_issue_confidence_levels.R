@@ -11,13 +11,18 @@ code_issue_confidence_levels <- function(input, configured) {
   levels <- if (nzchar(trimws(input))) {
     trimws(strsplit(input, ",", fixed = TRUE)[[1]])
   } else if (!is.null(configured)) {
-    if (length(unlist(configured)) == 0) return(character(0))   # an empty list in the policy: none
+    # an empty list in the policy: none
+    if (length(unlist(configured)) == 0) {
+      return(character(0))
+    }
     unlist(configured)
   } else {
     c("high", "medium")
   }
   levels <- levels[nzchar(levels)]
-  if (identical(levels, "none")) return(character(0))
+  if (identical(levels, "none")) {
+    return(character(0))
+  }
   unknown <- setdiff(levels, c("high", "medium", "low"))
   if (length(unknown) > 0 || length(levels) == 0) {
     stop(sprintf("code-issue-confidence is '%s' — use none, or high, medium and/or low, separated by commas.", input), call. = FALSE)

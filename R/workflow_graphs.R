@@ -19,7 +19,11 @@ library(httr2)
 library(jsonlite)
 library(purrr)
 
-functions_dir <- if (dir.exists(".shared-workflows/R/functions")) ".shared-workflows/R/functions" else "R/functions"
+functions_dir <- if (dir.exists(".shared-workflows/R/functions")) {
+  ".shared-workflows/R/functions"
+} else {
+  "R/functions"
+}
 walk(list.files(file.path(functions_dir, c("shared", "workflow-graphs")), pattern = "\\.R$", full.names = TRUE), source)
 
 gh_token      <- Sys.getenv("GH_TOKEN")
@@ -56,11 +60,21 @@ message(sprintf("%d called workflow(s), %d chain(s) between workflows.", length(
 # What each workflow produces can't be read from the YAML — it's described
 # in config/workflow-outcomes.yml (a caller's own copy is merged over it).
 outcomes_config <- read_config_yaml("config/workflow-outcomes.yml", required = FALSE)
-if (is.null(outcomes_config)) outcomes_config <- list()
+if (is.null(outcomes_config)) {
+  outcomes_config <- list()
+}
 
 blocks <- workflow_graph_blocks(workflows, called, chains, outcomes_config)
-current <- if (file.exists(readme_path)) readLines(readme_path, warn = FALSE) else NULL
-updated <- update_marked_blocks(if (is.null(current)) NULL else drop_old_starter_headings(current), blocks, workflow_readme_starter)
+current <- if (file.exists(readme_path)) {
+  readLines(readme_path, warn = FALSE)
+} else {
+  NULL
+}
+updated <- update_marked_blocks(if (is.null(current)) {
+  NULL
+} else {
+  drop_old_starter_headings(current)
+}, blocks, workflow_readme_starter)
 if (identical(current, updated)) {
   message("README is up to date.")
 } else {

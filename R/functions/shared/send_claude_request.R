@@ -13,11 +13,19 @@ send_claude_request <- function(claude, tool, messages, forced, renewed = FALSE)
     max_tokens = config$max_tokens,
     thinking = config$thinking,
     tools = list(tool),
-    tool_choice = if (forced) list(type = config$tool_choice_type, name = config$tool_name) else list(type = "auto"),
+    tool_choice = if (forced) {
+      list(type = config$tool_choice_type, name = config$tool_name)
+    } else {
+      list(type = "auto")
+    },
     messages = messages
   )
-  if (!is.null(config$effort)) body$output_config <- list(effort = config$effort)
-  if (!is.null(config$fallbacks)) body$fallbacks <- config$fallbacks
+  if (!is.null(config$effort)) {
+    body$output_config <- list(effort = config$effort)
+  }
+  if (!is.null(config$fallbacks)) {
+    body$fallbacks <- config$fallbacks
+  }
 
   req <- request("https://api.anthropic.com/v1/messages") |>
     req_headers(
@@ -34,7 +42,9 @@ send_claude_request <- function(claude, tool, messages, forced, renewed = FALSE)
     req_retry(max_tries = 4,
               retry_on_failure = TRUE,
               is_transient = function(resp) resp_status(resp) %in% c(429, 500, 502, 503, 504, 529))
-  if (!is.null(config$betas)) req <- req_headers(req, "anthropic-beta" = paste(unlist(config$betas), collapse = ","))
+  if (!is.null(config$betas)) {
+    req <- req_headers(req, "anthropic-beta" = paste(unlist(config$betas), collapse = ","))
+  }
 
   resp <- req_perform(req)
 
@@ -69,7 +79,11 @@ send_claude_request <- function(claude, tool, messages, forced, renewed = FALSE)
     stop(sprintf("Claude's response was cut off at max_tokens (%s) — raise max_tokens for this profile in config/claude.yml.", config$max_tokens))
   }
   if (identical(body$stop_reason, "refusal")) {
-    category <- if (is.null(body$stop_details$category)) "unknown" else body$stop_details$category
+    category <- if (is.null(body$stop_details$category)) {
+      "unknown"
+    } else {
+      body$stop_details$category
+    }
     stop(sprintf("Claude declined the request (refusal, category: %s).", category))
   }
   body

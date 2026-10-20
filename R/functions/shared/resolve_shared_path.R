@@ -6,5 +6,9 @@
 # templates, which are replaced as a whole; config files are merged
 # instead (read_config_yaml()).
 resolve_shared_path <- function(rel_path) {
-  if (file.exists(rel_path)) rel_path else file.path(".shared-workflows", rel_path)
+  if (file.exists(rel_path)) {
+    rel_path
+  } else {
+    file.path(".shared-workflows", rel_path)
+  }
 }
