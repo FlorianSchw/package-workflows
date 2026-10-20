@@ -134,6 +134,18 @@ first run widens dsSupportClient's existing rules to a prefix match, then
 the CI test round. Scripts in R, not bash (user). Work in
 `repo-governance` on a feature branch.
 
+**Outcome 2026-10-21: the Anthropic side stays manual.** Built and run
+(federated `org:admin` rule, token exchange succeeded), but every Admin
+API call answered 404 (403 for workspaces), also with the user's own
+`ant auth login` token: the Admin API is unavailable for individual
+Anthropic accounts ("Florian's Individual Org"), and converting to a team
+organization is not an option (user). Should have been checked first.
+The script was removed; `anthropic/config.json` in repo-governance stays
+as the hand-kept record of all service accounts, rules and IDs, the
+README there describes how a rule is set up by hand. Rules are changed in
+the Console. Revisit only if the bots move to a team or institute
+organization (e.g. at the move to nfdi4health).
+
 **Drafts** (not applied): rulesets for `main`, `dev` and `v*` tags, this
 repository's own PR-check caller and release (`v` tags, moving `v1`),
 and the governance YAML structure — [v1-drafts/](v1-drafts/README.md).

@@ -423,6 +423,17 @@ and `CONTRIBUTING.md`); no PRs until a branch model and rules exist.
   examples call `@main`, so they change when v1 is merged.
 - Federation rules for the other two accounts, before rolling out beyond
   dsSupportClient.
+- **Federation rules are managed by hand in the Console** (2026-10-21):
+  the Admin API is unavailable for individual Anthropic accounts, so the
+  repo-governance automation was removed; `anthropic/config.json` there
+  is the record of all 9 rules / 5 service accounts with their IDs (keep
+  it in step with the Console). Details in
+  [dev-notes/v1-planning.md](dev-notes/v1-planning.md) §5. **For the CI
+  test round:** dsSupportClient's two rules still pin
+  `job_workflow_ref …@refs/heads/main`; change them by hand (condition
+  `claims.job_workflow_ref.startsWith("FlorianSchw/package-workflows/.github/workflows/<file>@")`,
+  or temporarily `@refs/heads/v1/foundation`) before callers at
+  `@v1/foundation` can log in.
 - **High priority — service accounts per GitHub owner instead of per
   repository** (raised 2026-10-20; the user talks to the people involved
   first, keep everything as is until then). Decided in principle in
