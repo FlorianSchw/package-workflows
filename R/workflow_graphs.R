@@ -44,7 +44,6 @@ if (nzchar(pr_number)) {
 }
 
 workflows <- read_workflows(workflows_dir)
-message(sprintf("Read %d workflow file(s).", length(workflows)))
 
 called <- resolve_called_workflows(workflows)
 unreadable <- Filter(function(c) !isTRUE(c$readable), called)
@@ -55,7 +54,6 @@ if (length(unreadable) > 0) {
                   paste(vapply(unreadable, function(c) c$ref$label, character(1)), collapse = ", ")))
 }
 chains <- workflow_chains(workflows, called)
-message(sprintf("%d called workflow(s), %d chain(s) between workflows.", length(called), length(chains)))
 
 # What each workflow produces can't be read from the YAML — it's described
 # in config/workflow-outcomes.yml (a caller's own copy is merged over it).
@@ -72,10 +70,7 @@ if (file.exists(readme_path)) {
   cleaned <- drop_old_starter_headings(current)
 }
 updated <- update_marked_blocks(cleaned, blocks, workflow_readme_starter)
-if (identical(current, updated)) {
-  message("README is up to date.")
-} else {
+if (!identical(current, updated)) {
   dir.create(dirname(readme_path), recursive = TRUE, showWarnings = FALSE)
   writeLines(updated, readme_path)
-  message(sprintf("Wrote %s.", readme_path))
 }

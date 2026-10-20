@@ -79,7 +79,6 @@ if (length(to_write) == 0) {
   write_outputs(texts$report$nothing_to_do, character(0))
   quit(save = "no")
 }
-message(sprintf("Steps to write: %s", paste(to_write, collapse = ", ")))
 
 # --- 3. Packages -------------------------------------------------------------------
 

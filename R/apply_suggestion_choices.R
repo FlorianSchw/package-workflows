@@ -115,4 +115,3 @@ if (length(changed_files) > 0 || !identical(state, before)) {
   }
   writeLines(c(intro, report, "", markers), "new_body.md")
 }
-message(sprintf("%d file(s) changed.", length(unique(changed_files))))

@@ -46,9 +46,6 @@ server <- if (package_side == "client" && nzchar(server_dir) && dir.exists(serve
 }
 pkgs <- Filter(Negate(is.null), list(own, server))
 links <- link_server_calls(own, server)
-message(sprintf("Checking %s; %d client/server argument pairs found.",
-                paste(vapply(pkgs, function(p) sprintf("%s (%s, %d functions)", p$name, p$side, length(p$user_facing)), character(1)), collapse = " and "),
-                nrow(links)))
 
 # --- 2. Classification by code --------------------------------------------------
 

@@ -36,7 +36,6 @@ draft_steps_in_order <- function(to_write, plan, steps, existing, context, check
     }
     pending <- order[seq_along(order) > i]
     context$existing_steps <- format_existing_steps(sort(present$path[!present$step %in% c(id, pending)]))
-    message(sprintf("Writing step %s.", id))
 
     d <- tryCatch(draft_and_test_steps(id, plan, steps, present, context, checks, settings, texts), error = function(e) {
       message(sprintf("Claude call for step %s failed: %s", id, conditionMessage(e)))

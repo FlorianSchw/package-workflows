@@ -60,7 +60,6 @@ draft_and_test_steps <- function(to_write, plan, steps, existing, context, check
       break
     }
     requested <- names(outcome$problems)
-    message(sprintf("Repair round for: %s", paste(requested, collapse = ", ")))
     previous <- format_repair_request(outcome$problems, answers, context$repair_template)
   }
 

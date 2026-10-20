@@ -18,9 +18,6 @@
 review_roxygen_file <- function(f, parsed, state, ctx) {
   source_block <- review_source_block(f, parsed, ctx$bot_ref, ctx$base_rev)
   parsed <- source_block$parsed
-  if (source_block$from_bot) {
-    message(sprintf("%s: reviewing the block the open bot PR proposes.", f))
-  }
   fingerprint <- code_fingerprint(fn_source(parsed))
   declined <- declined_suggestions(state, function(e) identical(e$file, f), fingerprint, ctx$reviewed_sha)
   state <- declined$state

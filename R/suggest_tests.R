@@ -122,9 +122,6 @@ bot_tests <- materialize_bot_tests(bot_ref, base_rev)
 # run. The names to recognise: the R files' names (test_file_name()), plus
 # the function names, which other repositories' category files may use.
 scheme <- detect_test_scheme(unique(c(test_file_name(list.files("R", pattern = "[.][Rr]$")), package_function_names())))
-if (scheme$categorised) {
-  message("Test files are named by category: ", paste(scheme$categories, collapse = ", "))
-}
 
 # Structure of the test data the package's setup/helper files create —
 # once per run, in a separate R process.

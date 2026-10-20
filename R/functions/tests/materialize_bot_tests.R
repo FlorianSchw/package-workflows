@@ -36,8 +36,5 @@ materialize_bot_tests <- function(bot_ref, base_rev) {
     }
     out$materialized <- c(out$materialized, path)
   }
-  if (length(out$materialized) > 0) {
-    message("Reviewing on top of the open bot PR's test files: ", paste(out$materialized, collapse = ", "))
-  }
   out
 }
