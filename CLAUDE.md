@@ -423,6 +423,21 @@ and `CONTRIBUTING.md`); no PRs until a branch model and rules exist.
   examples call `@main`, so they change when v1 is merged.
 - Federation rules for the other two accounts, before rolling out beyond
   dsSupportClient.
+- **High priority — service accounts per GitHub owner instead of per
+  repository** (raised 2026-10-20; the user talks to the people involved
+  first, keep everything as is until then). Decided in principle in
+  [dev-notes/v1-planning.md](dev-notes/v1-planning.md) §2, but the
+  Console still has one per repository: 5 service accounts / 9 rules
+  (datashield: ds-survival + ds-survival-client; FlorianSchw: ds-analysis
+  + datashield-demo-analysis; nfdi4health: ds-support-client) would become
+  3 / 7, one rule per owner × workflow with an explicit
+  `repository_id in [...]` list (not all of an owner's repositories). Gains:
+  fewer objects, a new repository is one line, the same service account
+  and rule IDs for all of an owner's repositories (organization secrets in
+  datashield and nfdi4health). Costs: no cost split per repository on the
+  Cost page; caller secrets change for merged repositories; obsolete rules
+  archived by hand. Lives in repo-governance (`anthropic/config.json`:
+  `owner` + `repositories` map instead of one `repository`).
 - **Review of the Claude-assisted workflows** (2026-10-14): token levers
   and refactoring, ordered —
   [dev-notes/claude-workflow-review.md](dev-notes/claude-workflow-review.md).
