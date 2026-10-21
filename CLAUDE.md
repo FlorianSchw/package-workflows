@@ -442,6 +442,19 @@ and `CONTRIBUTING.md`); no PRs until a branch model and rules exist.
   (e.g. dsSupportClient #21) needs a conventional title, and a
   `BREAKING CHANGE:` line for a major release (dsSupportClient's first
   real release is meant to be 2.0.0, user 2026-10-21).
+- **Moved 2026-10-21:** `FlorianSchw/package-workflows` →
+  **`nfdi4health/datashield-workflows`** (transfer + rename by the user;
+  `b51dc5f` on `v1/foundation`: examples, docs, README, `count-run`, the
+  analysis gap issues; workflow graphs still recognise the old name, which
+  GitHub forwards). The 9 federation rules' `job_workflow_ref` changed by
+  hand in the Console; dsSupportClient's callers on branch
+  `ci/datashield-workflows` (PR into `dev`); the other callers
+  (dsAnalysis, dsSurvival, dsSurvivalClient, DataSHIELD_CONF_DEMO) still
+  use the old path through the redirect. `main` of this repository still
+  has the old names until v1 is merged. Docs site now
+  `nfdi4health.github.io/datashield-workflows` (no redirect from the old
+  one). Sections below still say package-workflows / FlorianSchw in
+  places — historical.
 - Federation rules for the other two accounts, before rolling out beyond
   dsSupportClient.
 - **Federation rules are managed by hand in the Console** (2026-10-21):
