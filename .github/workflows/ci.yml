@@ -58,16 +58,14 @@ jobs:
       # run: scripts (the image includes shellcheck).
       # (GitHub shows at most 10 annotations per step; the full output of
       # each check also goes into the job summary.)
-      # actionlint 1.7.12 predates two GitHub features used here, so their
-      # messages are ignored: the self-repository syntax `uses: $/…` and the
-      # `github.job_workflow_sha` context property. Remove the -ignore
-      # options once a release knows them.
+      # actionlint 1.7.12 predates the self-repository syntax `uses: $/…`,
+      # so its message is ignored. Remove the -ignore option once a release
+      # knows it.
       - name: actionlint
         run: |
           set +e   # collect the output even when the check fails
           docker run --rm -v "$PWD:/repo" --workdir /repo rhysd/actionlint:1.7.12 -oneline \
-            -ignore 'specifying action "\$/' \
-            -ignore 'property "job_workflow_sha" is not defined' > actionlint.txt
+            -ignore 'specifying action "\$/' > actionlint.txt
           status=$?
           sed -E 's/^([^:]+):([0-9]+):([0-9]+): (.*)$/::error file=\1,line=\2,col=\3::\4/' actionlint.txt
           { echo "### actionlint"; echo '```'; cat actionlint.txt; echo '```'; } >> "$GITHUB_STEP_SUMMARY"

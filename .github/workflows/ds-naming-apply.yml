@@ -73,13 +73,8 @@ jobs:
 
       # Actions and scripts at the commit of this workflow, so a caller
       # pinned to a version (or testing a branch) gets that version.
-      - name: Checkout shared scripts
-        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
-        with:
-          persist-credentials: false
-          repository: FlorianSchw/package-workflows
-          ref: ${{ github.job_workflow_sha }}
-          path: .shared-workflows
+      - name: Shared scripts
+        uses: $/.github/actions/shared-files
 
       - name: Resolve push token
         id: push_token

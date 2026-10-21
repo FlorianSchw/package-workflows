@@ -382,16 +382,24 @@ and `CONTRIBUTING.md`); no PRs until a branch model and rules exist.
     **self-repository syntax** `uses: $/.github/actions/…` — resolves to
     the file's own repository at the running commit, no checkout
     (changelog 2026-07-30; runner ≥ 2.336.0, not on GHES; no `@ref`).
-    `.shared-workflows` (R scripts, config, prompts) is checked out at
-    `github.job_workflow_sha`, after the caller (actions/checkout empties
-    its target folder). `package-release.yml`'s `config-ref` defaults to
-    empty = the workflow's own commit. Inline `${{ }}` in `run:` scripts
-    moved into `env:`; checkouts `persist-credentials: false` (pushes and
-    fetches pass their token; only `collect-usage.yml` keeps it); App
-    tokens request only contents + pull-requests. The repo name
-    `FlorianSchw/package-workflows` is still hard-coded in the checkouts
-    (change at the move). actionlint (1.7.12) predates `$/` and
-    `job_workflow_sha`: `ci.yml` ignores those two messages.
+    ~~`.shared-workflows` (R scripts, config, prompts) is checked out at
+    `github.job_workflow_sha`~~ — **that context property is empty**
+    (first test-round run, dsSupportClient PR #46, 2026-10-21: the authors
+    bot got `main`'s files, `bot-authors.json` instead of `.yml`), and
+    actions/checkout then silently takes the default branch. **Fixed
+    2026-10-21:** the composite action `shared-files` (`uses:
+    $/.github/actions/shared-files`, after the caller's checkout, which
+    would clean the workspace) copies this repository from its own action
+    folder — the runner fetches it at the running commit — into
+    `.shared-workflows` (`package-release.yml`: `.shared-config`;
+    `create-issue.yml` reads its template from there); `count-run` reads
+    the commit from its folder name. Not yet confirmed in CI. Inline
+    `${{ }}` in `run:` scripts moved into `env:`; checkouts
+    `persist-credentials: false` (pushes and fetches pass their token;
+    only `collect-usage.yml` keeps it); App tokens request only contents +
+    pull-requests. The repo name `FlorianSchw/package-workflows` is still
+    hard-coded in `count-run.sh` (change at the move). actionlint (1.7.12)
+    predates `$/`: `ci.yml` ignores that message.
   - **Federation rules** match `job_workflow_ref` exactly (incl.
     `@refs/heads/main`); tags need a prefix/condition match.
   - **Usage counting** relies on it: runs on a `vX` tag count as

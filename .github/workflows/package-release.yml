@@ -37,12 +37,9 @@ jobs:
 
       # The fallback .releaserc.json (a caller's own wins), from the same
       # commit as this workflow.
-      - name: Checkout shared release config
-        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - name: Shared release config
+        uses: $/.github/actions/shared-files
         with:
-          persist-credentials: false
-          repository: FlorianSchw/package-workflows   # this repository (changes at the move)
-          ref: ${{ github.job_workflow_sha }}       # the commit the caller runs
           path: .shared-config
 
       - uses: r-lib/actions/setup-r@f9a764fea8d5c63df6ef9a5c7795bf7deb5d7e05 # v2.14.0

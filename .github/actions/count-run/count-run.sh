@@ -6,7 +6,9 @@
 #                       (updated_files.txt, the commit step's manifest);
 #            nothing  — otherwise.
 #   channel: release  — a vX tag of package-workflows points to the commit
-#                       this run used (WORKFLOW_SHA);
+#                       this run used: the runner keeps this action in a
+#                       folder named after that commit (as shared-files
+#                       reads it);
 #            dev      — otherwise: @main or a branch, i.e. development and
 #                       testing.
 # Both lookups only read public data from GitHub; nothing about the calling
@@ -18,6 +20,11 @@ if [ "$JOB_STATUS" = "failure" ] || [ "$JOB_STATUS" = "cancelled" ]; then
   outcome="failed"
 elif [ -s "${GITHUB_WORKSPACE:-.}/updated_files.txt" ]; then
   outcome="proposed"
+fi
+
+WORKFLOW_SHA="$(basename "$(cd "$GITHUB_ACTION_PATH/../../.." && pwd)")"
+if ! [[ "$WORKFLOW_SHA" =~ ^[0-9a-f]{40}$ ]]; then
+  WORKFLOW_SHA=""
 fi
 
 channel="dev"

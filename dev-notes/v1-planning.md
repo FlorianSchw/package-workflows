@@ -15,7 +15,7 @@ round of caller changes) → refactoring → new workflows.
   semantic-release on merge into `main` (`vX.Y.Z` plus a moving `v1`).
   Only `dev` may merge into `main` (own `require-head-branch.yml`).
 - **Prerequisite:** workflows use actions and scripts from their own
-  commit (`.shared-workflows` at `github.job_workflow_sha`, local action
+  commit (`.shared-workflows` copied by the `shared-files` action — not a checkout at `github.job_workflow_sha`, which is empty — and local action
   paths) — else `@v1` and self-tests run `main`'s code.
 - **Testing:** actionlint, zizmor, shellcheck; testthat (Claude mocked)
   and bats; self-test workflows on **made-up fixture packages only**

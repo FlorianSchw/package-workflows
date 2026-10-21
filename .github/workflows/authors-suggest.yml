@@ -61,14 +61,9 @@ jobs:
           fetch-depth: 0
 
       # Scripts and config at the commit of this workflow.
-      - name: Checkout shared scripts
+      - name: Shared scripts
         if: steps.scope.outputs.skip != 'true'
-        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
-        with:
-          persist-credentials: false
-          repository: FlorianSchw/package-workflows
-          ref: ${{ github.job_workflow_sha }}
-          path: .shared-workflows
+        uses: $/.github/actions/shared-files
 
       # Self-test (the workflow repository's own CI): the fixture package
       # with a made-up history by several authors takes the place of the
