@@ -38,7 +38,7 @@ if (nzchar(pr_number)) {
   comment_once(pr_number, paste(
     "**Workflow graphs** can't commit on a pull request, so the diagrams weren't updated here.",
     "Run it on a push to the branch where merges land (e.g. `dev`) or by hand instead —",
-    "see the [example caller](https://github.com/FlorianSchw/package-workflows/blob/main/examples/workflow-graphs.yml)."
+    "see the [example caller](https://github.com/nfdi4health/datashield-workflows/blob/main/examples/workflow-graphs.yml)."
   ), "workflow graphs on a pull request")
   quit(save = "no")
 }

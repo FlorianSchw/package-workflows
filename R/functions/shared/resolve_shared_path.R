@@ -1,7 +1,7 @@
-# Resolves a path given relative to the package-workflows repo root (e.g.
+# Resolves a path given relative to this repository's root (e.g.
 # "prompts/roxygen-review-prompt.md"): the caller repo's own file at that
 # same relative path wins if it exists (an override — and what makes
-# running directly inside package-workflows work), otherwise the copy in
+# running directly inside this repository work), otherwise the copy in
 # the `.shared-workflows/` checkout the workflows create. For prompt
 # templates, which are replaced as a whole; config files are merged
 # instead (read_config_yaml()).

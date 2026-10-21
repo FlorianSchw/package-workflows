@@ -4,8 +4,8 @@
 # fixed width and cuts off what doesn't fit instead of growing the box.
 # Long words without spaces (repository paths, file names) are broken
 # after "/", and only where that isn't enough after "-", so
-# "FlorianSchw/package-workflows" becomes "FlorianSchw/" +
-# "package-workflows". NULL / NA / "" lines are skipped.
+# "nfdi4health/datashield-workflows" becomes "nfdi4health/" +
+# "datashield-workflows". NULL / NA / "" lines are skipped.
 mermaid_label <- function(lines, width = 26) {
   lines <- unlist(lines)
   lines <- lines[!is.na(lines) & nzchar(lines)]

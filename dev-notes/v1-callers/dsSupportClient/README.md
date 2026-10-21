@@ -23,7 +23,7 @@ on a branch of dsSupportClient, for the CI test round
 `workflow-graph.yml`: replace `@main` with `@v1/foundation`, e.g.
 
 ```bash
-sed -i 's#\(FlorianSchw/package-workflows/.github/workflows/[a-z-]*\.yml\)@main#\1@v1/foundation#' .github/workflows/*.yml
+sed -i 's#\(nfdi4health/datashield-workflows/.github/workflows/[a-z-]*\.yml\)@main#\1@v1/foundation#' .github/workflows/*.yml
 ```
 
 `release-publish.yml` passes no `config-repo` / `config-ref`, so it needs
@@ -34,7 +34,7 @@ nothing else; it stays `dry-run: true`.
 - **Federation rules:** the roxygen and test rules match
   `job_workflow_ref` exactly, today with `@refs/heads/main`. A run from
   `@v1/foundation` presents
-  `FlorianSchw/package-workflows/.github/workflows/<file>@refs/heads/v1/foundation`
+  `nfdi4health/datashield-workflows/.github/workflows/<file>@refs/heads/v1/foundation`
   and is refused until a rule matches it — add one per workflow for the
   test round (or make the claim a prefix match up to `@`).
 - **Config overrides:** none in dsSupportClient (no `config/` folder),

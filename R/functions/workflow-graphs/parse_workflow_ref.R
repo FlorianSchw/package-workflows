@@ -21,7 +21,13 @@ parse_workflow_ref <- function(uses) {
   if (length(m) == 0) {
     return(NULL)
   }
+  # The former name of this repository (GitHub forwards it), so callers not
+  # yet updated still find their workflows' outcomes.
+  id_repo <- sprintf("%s/%s", m[2], m[3])
+  if (identical(tolower(id_repo), "florianschw/package-workflows")) {
+    id_repo <- "nfdi4health/datashield-workflows"
+  }
   list(local = FALSE, owner = m[2], repo = m[3], path = m[4], ref = m[5],
-       file = basename(m[4]), key = uses, id = sprintf("%s/%s/%s", m[2], m[3], m[4]),
+       file = basename(m[4]), key = uses, id = sprintf("%s/%s", id_repo, m[4]),
        label = sprintf("%s/%s › %s@%s", m[2], m[3], basename(m[4]), m[5]))
 }

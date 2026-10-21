@@ -2,7 +2,7 @@ name: Count this run
 description: >
   Counts a run of a Claude-assisted workflow or authors-suggest once,
   anonymously: downloads one file from the usage-counter release of
-  package-workflows, named <workflow>-<outcome>-<channel>. GitHub counts the
+  datashield-workflows, named <workflow>-<outcome>-<channel>. GitHub counts the
   downloads per file. Nothing about the calling repository is sent.
   Design: dev-notes/usage-counting.md.
 

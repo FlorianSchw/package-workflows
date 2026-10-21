@@ -5,7 +5,7 @@
 #            proposed — the run wrote files for the suggestion PR
 #                       (updated_files.txt, the commit step's manifest);
 #            nothing  — otherwise.
-#   channel: release  — a vX tag of package-workflows points to the commit
+#   channel: release  — a vX tag of this repository points to the commit
 #                       this run used: the runner keeps this action in a
 #                       folder named after that commit (as shared-files
 #                       reads it);
@@ -13,7 +13,7 @@
 #                       testing.
 # Both lookups only read public data from GitHub; nothing about the calling
 # repository is sent. Design: dev-notes/usage-counting.md.
-repo_url="https://github.com/FlorianSchw/package-workflows"
+repo_url="https://github.com/nfdi4health/datashield-workflows"
 
 outcome="nothing"
 if [ "$JOB_STATUS" = "failure" ] || [ "$JOB_STATUS" = "cancelled" ]; then
