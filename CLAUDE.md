@@ -428,7 +428,13 @@ and `CONTRIBUTING.md`); no PRs until a branch model and rules exist.
   longer in `claude.yml`); the input renames (B) on the input tables'
   prose and in `examples/` (`review-scope`, `review-branch`, one
   `datashield-type` incl. authors, no `config-repo`/`config-ref`) — the
-  examples call `@main`, so they change when v1 is merged.
+  examples call `@main`, so they change when v1 is merged. Also from the
+  test round (2026-10-21): full-review PR titles ("… : full review"); the
+  test bot's bug issue gets one post per function and run — a new issue
+  lists all the failing tests (code folded), an open one only a short
+  "still failing" comment with the test names
+  (`test-suggest-review.qmd#failing-tests`); the checkboxes also work on
+  full-review PRs.
 - Federation rules for the other two accounts, before rolling out beyond
   dsSupportClient.
 - **Federation rules are managed by hand in the Console** (2026-10-21):

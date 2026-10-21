@@ -4,8 +4,9 @@
 # nothing is reported). Repeats of earlier failures are filtered out
 # before (repeated_failure()).
 # - a real bug with a confidence in `confidences` (code-issue-confidence):
-#   a possible bug in the code, with an issue at a confidence in
-#   `issue_confidences` (possible_bugs$open_issue of the policy file);
+#   a possible bug in the code; at a confidence in `issue_confidences`
+#   (possible_bugs$open_issue of the policy file) also `issue_finding`, which
+#   the caller puts into the function's issue (create_bug_issue());
 # - anything else: a failed test, commented on the PR when `comment` (a PR
 #   run with routing$tests$failed_test_comments), otherwise listed in the
 #   report.
@@ -17,13 +18,18 @@ handle_failed_new_test <- function(fail, block_text, path, classification, funct
   }
 
   if (identical(classification$category, "real_bug") && isTRUE(classification$confidence %in% confidences)) {
-    issue <- NULL
+    # For the issue (create_bug_issue()), reported once per function and
+    # run by the caller together with the function's other such tests.
+    finding <- NULL
     if (isTRUE(classification$confidence %in% issue_confidences)) {
-      issue <- create_bug_issue(function_name, block_text, fail$message, classification)
+      finding <- list(
+        description = fail$description, block = block_text, message = fail$message,
+        explanation = classification$explanation
+      )
     }
-    return(list(kind = "bug", entry = list(
+    return(list(kind = "bug", issue_finding = finding, entry = list(
       file = path, description = fail$description, origin = "failure", explanation = classification$explanation,
-      confidence = classification$confidence, issue = issue %||% ""
+      confidence = classification$confidence, issue = ""
     )))
   }
 

@@ -129,3 +129,26 @@ test_that("review_test_file() keeps passing new tests, classifies failing ones o
   kinds <- vapply(out$state$entries, `[[`, "", "kind")
   expect_setequal(kinds, c("new", "failed"))
 })
+
+test_that("a function's real-bug tests go into its issue together; an open issue only gets the test names", {
+  posted <- list()
+  local_global_mock(post_issue_once = function(title, body, context, comment = body) {
+    posted[[length(posted) + 1]] <<- list(title = title, body = body, comment = comment)
+    "https://github.com/o/r/issues/42"
+  })
+  findings <- list(
+    list(description = "counts for Study1", block = "test_that('a', {})", message = "Error A", explanation = "Bad predicate."),
+    list(description = "levels of Study3", block = "test_that('b', {})", message = "Error B", explanation = "Same cause.")
+  )
+  url <- create_bug_issue("ds.tableBatch", findings)
+
+  expect_equal(url, "https://github.com/o/r/issues/42")
+  expect_length(posted, 1)
+  p <- posted[[1]]
+  expect_equal(p$title, "Possible bug found by generated test: ds.tableBatch")
+  expect_match(p$body, "^2 tests written by the test suggestion workflow failed against `ds.tableBatch`")
+  expect_equal(lengths(regmatches(p$body, gregexpr("written by the test suggestion workflow", p$body))), 1)
+  expect_match(p$body, "### counts for Study1", fixed = TRUE)
+  expect_match(p$body, "<details><summary>Generated test and failure output</summary>", fixed = TRUE)
+  expect_equal(p$comment, "Still failing in a later review (2 tests):\n\n- counts for Study1\n- levels of Study3")
+})

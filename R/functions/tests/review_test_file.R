@@ -142,10 +142,13 @@ review_test_file <- function(f, parsed, state, ctx) {
 
   # All of the function's failed new tests classified at once (R where the
   # message decides, else one Claude call); real bugs reported, others
-  # commented or listed (handle_failed_new_test()).
+  # commented or listed (handle_failed_new_test()). Real bugs at an issue
+  # confidence go into the function's issue together, one post per run.
   failures <- applied$failures
   if (length(failures) > 0) {
     verdicts <- classify_failures(ctx$classification_claude, failures, fn_source(parsed), function_name)
+    findings <- list()
+    issue_bugs <- integer(0)
     for (k in seq_along(failures)) {
       outcome <- handle_failed_new_test(failures[[k]]$fail, failures[[k]]$block, failures[[k]]$path, verdicts[[k]],
                                         function_name, ctx$code_issue_confidence, ctx$issue_confidence, ctx$comment_failures)
@@ -154,9 +157,19 @@ review_test_file <- function(f, parsed, state, ctx) {
       }
       if (outcome$kind == "bug") {
         run$bugs[[length(run$bugs) + 1]] <- outcome$entry
+        if (!is.null(outcome$issue_finding)) {
+          findings[[length(findings) + 1]] <- outcome$issue_finding
+          issue_bugs <- c(issue_bugs, length(run$bugs))
+        }
       }
       if (outcome$kind == "failed") {
         run$failed[[length(run$failed) + 1]] <- outcome$entry
+      }
+    }
+    if (length(findings) > 0) {
+      issue <- create_bug_issue(function_name, findings) %||% ""
+      for (b in issue_bugs) {
+        run$bugs[[b]]$issue <- issue
       }
     }
   }
