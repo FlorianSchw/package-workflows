@@ -63,4 +63,4 @@ jobs:
           cp .github/release/releaserc.json .releaserc.json
           # The CHANGELOG commit and the moving-tag push go through this remote.
           git remote set-url origin "https://x-access-token:${TOKEN}@github.com/${GITHUB_REPOSITORY}.git"
-          npx --yes -p semantic-release@25.0.9 -p @semantic-release/changelog@7.0.0 -p @semantic-release/git@11.0.1 -p @semantic-release/exec@7.1.0 semantic-release  # zizmor: ignore[adhoc-packages] exact versions, no package.json here
+          npx --yes -p semantic-release@25.0.9 -p @semantic-release/changelog@7.0.0 -p @semantic-release/git@11.0.1 -p @semantic-release/exec@7.1.0 -p conventional-changelog-conventionalcommits@8.0.0 semantic-release  # zizmor: ignore[adhoc-packages] exact versions, no package.json here

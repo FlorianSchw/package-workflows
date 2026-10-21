@@ -56,7 +56,10 @@ jobs:
         # No lockfile: the caller has no package.json, and this repository ships
         # none yet (open: pin versions or commit a lockfile with the v1 release
         # setup). Signatures are checked in the next step.
-        run: npm install semantic-release @semantic-release/git @semantic-release/changelog @semantic-release/exec  # zizmor: ignore[adhoc-packages]
+        # conventionalcommits: the preset the configs use, so "feat!:" counts as
+        # breaking like a BREAKING CHANGE: footer (the default angular preset
+        # only knows the footer); 8.0.0 is what commit-analyzer 13 is tested with.
+        run: npm install semantic-release @semantic-release/git @semantic-release/changelog @semantic-release/exec conventional-changelog-conventionalcommits@8.0.0  # zizmor: ignore[adhoc-packages]
 
       - name: Verify npm registry signatures
         run: npm audit signatures

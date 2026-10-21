@@ -434,7 +434,14 @@ and `CONTRIBUTING.md`); no PRs until a branch model and rules exist.
   lists all the failing tests (code folded), an open one only a short
   "still failing" comment with the test names
   (`test-suggest-review.qmd#failing-tests`); the checkboxes also work on
-  full-review PRs.
+  full-review PRs. Release page: the shared release configs use the
+  `conventionalcommits` preset (2026-10-21), so `feat!:` as well as a
+  `BREAKING CHANGE:` footer make a major release (with the default angular
+  preset only the footer did); a caller's own `.releaserc.json` needs the
+  preset itself to get that; squash-merging non-conventional commits
+  (e.g. dsSupportClient #21) needs a conventional title, and a
+  `BREAKING CHANGE:` line for a major release (dsSupportClient's first
+  real release is meant to be 2.0.0, user 2026-10-21).
 - Federation rules for the other two accounts, before rolling out beyond
   dsSupportClient.
 - **Federation rules are managed by hand in the Console** (2026-10-21):
