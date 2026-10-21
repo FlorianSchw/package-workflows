@@ -219,7 +219,7 @@ jobs:
           comment-summary-file: 'suggestion_summary.md'
           sweep-branch-prefix: 'bot-suggest/tests-all'
           sweep-commit-message: 'test: monthly test coverage sweep'
-          sweep-pr-title: 'Monthly test coverage sweep'
+          sweep-pr-title: 'Test suggestions: full review'
           sweep-pr-body: 'New and updated tests from the test suggestion workflow. Every new or changed test passed a real run; changes to existing tests are listed below with their reason — review before merging.'
 
       # What this review covered, as an annotation of the run: the next

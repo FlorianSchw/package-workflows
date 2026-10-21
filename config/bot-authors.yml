@@ -21,3 +21,5 @@ bot_commit_subjects:
   - DataSHIELD analysis scripts
   - Monthly roxygen documentation sweep
   - Monthly test coverage sweep
+  - "Roxygen documentation: full review"
+  - "Test suggestions: full review"

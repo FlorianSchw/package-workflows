@@ -211,7 +211,7 @@ jobs:
           sweep-base: ${{ steps.scope.outputs.branch }}
           sweep-branch-prefix: 'bot-suggest/docs-all'
           sweep-commit-message: 'docs: monthly roxygen suggestion sweep'
-          sweep-pr-title: 'Monthly roxygen documentation sweep'
+          sweep-pr-title: 'Roxygen documentation: full review'
           sweep-pr-body: 'Automated suggestions from the roxygen doc-assist workflow. Review before merging.'
 
       # What this review covered, as an annotation of the run: the next
