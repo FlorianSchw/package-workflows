@@ -2,7 +2,7 @@
 # deterministic-assembly principle as roxygen-suggest's
 # build_submit_review_tool(): Claude returns discrete fields (never
 # assembled test_that() syntax), the R script does the actual stitching.
-# The cap on new tests (max_new_tests in config/claude.yml) is maxItems
+# The cap on new tests (tests.max_new_tests in config/suggestion-policy.yml) is maxItems
 # here and enforced in R too (ask_claude_for_tests()), since strict tool
 # use doesn't send maxItems — not just prompt wording.
 #

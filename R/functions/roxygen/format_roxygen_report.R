@@ -74,7 +74,7 @@ format_roxygen_report <- function(state, latest = NULL, legacy = NULL, open = in
     body <- c(body,
       report_heading(sprintf("No changes applied (%d)", count(dropped)), style),
       "",
-      "Suggestions whose reason isn't on the accepted list (the `accept-reasons` input, or `accept_reasons` in `config/claude.yml`). Tick one to apply it: the branch follows within a minute.",
+      "Suggestions whose reason isn't on the accepted list (the `accept-reasons` input, or the reasons marked `accept: true` in `config/suggestion-policy.yml`). Tick one to apply it: the branch follows within a minute.",
       "",
       dropped_groups
     )
