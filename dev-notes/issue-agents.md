@@ -74,7 +74,8 @@ refactor agent (applies the naming transformation config).
   "a client/server pair the DataSHIELD way", DSLite tests, design-note
   template), usable locally and by claude-code-action (`plugins` input).
   If it comes: **its own repo**, so its clone count isn't drowned by the
-  CI checkouts of the workflow repo.
+  CI checkouts of the workflow repo. Name (user, 2026-10-21):
+  **`nfdi4health/datashield-skills`**.
 - **Being told when an agent finished something substantial** (user's
   wish, 2026-10-16): its results are issues/PRs, so GitHub's own
   notifications (e-mail or GitHub mobile push) cover it — the agent

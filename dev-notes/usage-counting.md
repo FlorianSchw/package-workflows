@@ -140,7 +140,7 @@ repo (columns, same-day replace, next day).
   downloads; the daily snapshot in the KPI repo is the backup.
 - **Priority:** complete, safe raw counts first; monthly/quarterly
   reports later.
-- **Plugin KPI** (if a plugin comes, in its own repo): daily clones and
+- **Plugin KPI** (if a plugin comes, in its own repo `nfdi4health/datashield-skills`): daily clones and
   unique cloners from the traffic API (admin token), see
   [issue-agents.md](issue-agents.md).
 - **Idea for later, not built:** Claude costs per workspace from the
