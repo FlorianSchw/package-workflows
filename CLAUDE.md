@@ -462,16 +462,14 @@ and `CONTRIBUTING.md`); no PRs until a branch model and rules exist.
   repo-governance automation was removed; `anthropic/config.json` there
   is the record of all 9 rules / 5 service accounts with their IDs (keep
   it in step with the Console). Details in
-  [dev-notes/v1-planning.md](dev-notes/v1-planning.md) §5. **For the CI
-  test round:** dsSupportClient's two rules still pin
-  `job_workflow_ref …@refs/heads/main`; change them by hand (condition
-  `claims.job_workflow_ref.startsWith("FlorianSchw/package-workflows/.github/workflows/<file>@")`,
-  or temporarily `@refs/heads/v1/foundation`) before callers at
-  `@v1/foundation` can log in. **Done 2026-10-21 the temporary way:**
-  both dsSupportClient rules now pin `…@refs/heads/v1/foundation`, so
-  its `@main` bot runs can't log in — **switch both back to
-  `@refs/heads/main` after the test round** (or to the `startsWith`
-  condition).
+  [dev-notes/v1-planning.md](dev-notes/v1-planning.md) §5. ~~For the CI
+  test round: pin `@refs/heads/v1/foundation`, switch back after~~
+  **Since the move (2026-10-21) all 9 rules use one CEL expression**
+  (no subject, no static claims): `repository_owner_id` and
+  `repository_id` of the repository, and
+  `claims.job_workflow_ref.startsWith("nfdi4health/datashield-workflows/.github/workflows/<file>@")`
+  — any branch or tag, both GitHub subject forms; nothing to switch back.
+  Template in repo-governance's README.
 - **High priority — service accounts per GitHub owner instead of per
   repository** (raised 2026-10-20; the user talks to the people involved
   first, keep everything as is until then). Decided in principle in

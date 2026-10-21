@@ -49,7 +49,7 @@ Found and fixed during the round:
 
 Still open: `workflow-graph` on the push of the merge into `dev`, the
 release chain (`dev` → `main`, `dry-run`), a scheduled run, and
-switching the two federation rules back.
+the federation rules (now one CEL expression each, any ref — done).
 
 ## Before starting
 
