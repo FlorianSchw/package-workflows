@@ -15,6 +15,42 @@ matching `@refs/heads/v1/foundation`), are in
 The items below still apply, with the new input names (`review-scope`
 instead of `scan-mode`).
 
+## Results of 2026-10-21 (dsSupportClient PR #46, branch `test/v1-foundation`)
+
+Confirmed in real CI against `v1/foundation`:
+
+- **Federation rules** pinned to `…@refs/heads/v1/foundation` (by hand
+  in the Console; switch back after the round): both Claude bots got a
+  token.
+- **Full review** (manual, scope `all`): roxygen → #47 (16 applied,
+  3 not applied, 2 possible bugs), tests → #48 (14 new tests passing a
+  real run, 8 failed and only reported, 3 possible bugs — a real defect
+  in `ds.tableBatch()`, already known in #21).
+- **Checkboxes** (`suggestion-choices.yml`) on #47: ticking and unticking
+  applied to the bot branch; ~1 min per click, mostly installing R (left
+  as is, user's decision); quick clicks queue, waiting runs are merged.
+- **Cleanup** on closing #48: the bot branch was deleted.
+- **"changed" mode on a PR** (one comment line in `R/ds.wrapper.R`): both
+  bots reviewed only that file; tests → #49 (3 new tests), roxygen →
+  nothing to change plus a possible-bug comment; link comment on #46.
+- Authors bot, commitlint, R CMD check: green.
+
+Found and fixed during the round:
+
+- `github.job_workflow_sha` is empty: every workflow had checked out
+  `main`'s scripts and config (`bot-authors.json` missing). Now the
+  `shared-files` action copies the repository at the running commit
+  (`25acb84`); Self-test green.
+- `suggestion-choices` skipped full-review PRs (`bot-suggest/docs-all-…`);
+  dsSupportClient had no caller for it (`9030d7e`, caller added).
+- Report text pointed to `accept_reasons` in `config/claude.yml`
+  (`23f82bb`); full-review PR titles no longer say "Monthly … sweep"
+  (`c659378`).
+
+Still open: `workflow-graph` on the push of the merge into `dev`, the
+release chain (`dev` → `main`, `dry-run`), a scheduled run, and
+switching the two federation rules back.
+
 ## Before starting
 
 - `main` of package-workflows contains everything to test (callers use
