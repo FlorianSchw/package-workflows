@@ -13,6 +13,7 @@ on a branch of dsSupportClient, for the CI test round
 |---|---|
 | `docs-suggest.yml` | `datashield: true` dropped (`datashield-type: client` alone); `actions: read` + `checks: read`; manual runs get a `scope` input (changed / all) passed as `review-scope`. |
 | `test-suggest.yml` | the same; the `scan-mode` expression is gone, so a scheduled run reviews only what changed since the last review (a full review: run it by hand with scope `all`). |
+| `suggestion-choices.yml` | **new** (2026-10-21, was missing): the checkbox workflow, from `examples/`; also full-review PRs (`bot-suggest/docs-all-…`, `…/tests-all-…`). |
 | `check-author-included.yml` | `datashield-type: client` (for the usage counts only); `id-token: write` dropped — the authors bot calls no Claude. |
 
 ## Unchanged files — only the ref

@@ -8,7 +8,7 @@ jobs:
   apply-choices:
     # Only roxygen and test bot PRs, and only edits by a person.
     if: >-
-      (startsWith(github.head_ref, 'bot-suggest/tests/') || startsWith(github.head_ref, 'bot-suggest/docs/'))
+      (startsWith(github.head_ref, 'bot-suggest/tests') || startsWith(github.head_ref, 'bot-suggest/docs'))
       && github.event.sender.type != 'Bot'
     permissions:
       contents: write

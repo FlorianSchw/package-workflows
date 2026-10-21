@@ -23,13 +23,13 @@ on:
 jobs:
   apply-choices:
     if: >-
-      (startsWith(github.head_ref, 'bot-suggest/tests/') || startsWith(github.head_ref, 'bot-suggest/docs/'))
+      (startsWith(github.head_ref, 'bot-suggest/tests') || startsWith(github.head_ref, 'bot-suggest/docs'))
       && github.event.sender.type != 'Bot'
     runs-on: ubuntu-latest
     # The same group as the bot's own runs for the PR's base branch: a
     # choice and a bot run never write the bot branch at the same time.
     concurrency:
-      group: ${{ startsWith(github.head_ref, 'bot-suggest/tests/') && 'test-suggest' || 'roxygen-suggest' }}-${{ github.repository }}-${{ github.base_ref }}
+      group: ${{ startsWith(github.head_ref, 'bot-suggest/tests') && 'test-suggest' || 'roxygen-suggest' }}-${{ github.repository }}-${{ github.base_ref }}
       cancel-in-progress: false
     permissions:
       contents: write
@@ -78,7 +78,7 @@ jobs:
 
       - name: Apply the choices
         env:
-          KIND: ${{ startsWith(github.head_ref, 'bot-suggest/tests/') && 'tests' || 'docs' }}
+          KIND: ${{ startsWith(github.head_ref, 'bot-suggest/tests') && 'tests' || 'docs' }}
           BASE_REF: origin/${{ github.base_ref }}
           PR_BODY_FILE: pr_body.md
         run: |
