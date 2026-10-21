@@ -433,7 +433,11 @@ and `CONTRIBUTING.md`); no PRs until a branch model and rules exist.
   `job_workflow_ref …@refs/heads/main`; change them by hand (condition
   `claims.job_workflow_ref.startsWith("FlorianSchw/package-workflows/.github/workflows/<file>@")`,
   or temporarily `@refs/heads/v1/foundation`) before callers at
-  `@v1/foundation` can log in.
+  `@v1/foundation` can log in. **Done 2026-10-21 the temporary way:**
+  both dsSupportClient rules now pin `…@refs/heads/v1/foundation`, so
+  its `@main` bot runs can't log in — **switch both back to
+  `@refs/heads/main` after the test round** (or to the `startsWith`
+  condition).
 - **High priority — service accounts per GitHub owner instead of per
   repository** (raised 2026-10-20; the user talks to the people involved
   first, keep everything as is until then). Decided in principle in
